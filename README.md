@@ -110,43 +110,31 @@ On first run the backend creates the tables in `campus-hub.db` and, if the `user
 | `npm run preview` | Serve the production build locally. |
 | `npm run lint` | Run ESLint. |
 
-## 🔌 API Documentation
+## API reference
 
-### Base URL
-```
-http://localhost:3001/api
-```
+Base URL: `http://localhost:3001/api`. See [Known limitations](#known-limitations) before relying on any of these routes for access control.
 
-### Health Check
-```http
-GET /health
-```
-Response: `{ success: boolean, database: "ready" | "error" }`
+| Method | Path | Description |
+| --- | --- | --- |
+| GET | `/health` | Server and database status. |
+| POST | `/auth/login` | Sign in with `email` and `password`. |
+| POST | `/auth/register` | Create a student account. |
+| POST | `/auth/change-password` | Change a user's password. |
+| GET | `/auth/verify` | Look up the user named in the `Authorization: Bearer <user id>` header. |
+| GET | `/auth/users` | List users (id, name, email, role, phone, department). |
 
-### Authentication Endpoints
-```http
-POST /auth/login
-POST /auth/register
-```
+Each content module has the same three routes: `GET /<module>` to list, `POST /<module>` to create and `DELETE /<module>/:id` to remove.
 
-### Data Endpoints
-```http
-GET/POST /complaints
-GET/POST /notices
-GET/POST /marketplace
-GET/POST /animal-welfare
-GET/POST /blood-donation
-GET/POST /students
-GET/POST /faculty-suggestions
-GET/POST /lost-found
-```
-
-### Authentication
-- Requests are authenticated via JWT tokens stored in localStorage
-- Include token in `Authorization: Bearer <token>` header
-- Server validates token before processing requests
-
----
+| Module path | Content |
+| --- | --- |
+| `/complaints` | Complaints with category and status |
+| `/notices` | Announcements |
+| `/marketplace` | Items for sale |
+| `/lost-found` | Lost and found items |
+| `/bicycles` | Bicycle entries |
+| `/animal-welfare` | Animal welfare reports |
+| `/blood-donation` | Blood donors |
+| `/faculty-suggestions` | Faculty feedback and ratings |
 
 ## 🗄️ Database Schema
 
