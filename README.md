@@ -154,27 +154,16 @@ SQLite, in `campus-hub.db` at the project root. `server.js` creates every table 
 
 Every table also has `id`, `created_at` and `updated_at`. Passwords are stored exactly as entered; see [Authentication and security](#authentication-and-security).
 
-## 🔐 Authentication & Security
+## Authentication and security
 
-### Authentication Flow
-1. User submits email/password via Auth page
-2. Backend validates credentials and checks server health
-3. JWT token generated and stored in localStorage
-4. Token used for subsequent API requests
-5. AuthContext manages global auth state
+This is a prototype-level login, not production authentication.
 
-### Authorization
-- **Protected Routes**: ProtectedRoute component checks authentication
-- **Role-Based Access**: Student/Admin roles with conditional rendering
-- **Server Health**: Verified before each login attempt
+1. The sign-in form posts the email and password to `POST /api/auth/login`.
+2. The server looks for a `users` row with that exact email and password, and returns the user object. It does not issue a token.
+3. The frontend keeps that user in `localStorage` and in `AuthContext`. `ProtectedRoute` redirects visitors who are not signed in to `/auth`, and routes marked admin-only send other users back to the dashboard.
+4. Requests to `/auth/verify` use the user's id as the bearer value.
 
-### Security Best Practices
-- Passwords stored as hashed values in database
-- CORS enabled for localhost development
-- Error messages sanitized for production
-- Sensitive data never logged or cached insecurely
-
----
+Sign-up checks the email format and that the password has at least 8 characters, with an upper-case letter, a lower-case letter, a digit and one of `@$!%*?&`. The database stores the password as typed.
 
 ## 🌐 Deployment
 
