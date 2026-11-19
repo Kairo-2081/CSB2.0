@@ -195,11 +195,9 @@ Issues and pull requests are welcome on [GitHub](https://github.com/Kairo-2081/C
 3. Run `npm run lint` and try the change locally with `npm run dev`.
 4. Push the branch and open a pull request.
 
-## 📄 License
+## License
 
-This project is part of a hackathon initiative. For licensing information, please contact the project maintainers.
-
----
+No license file is included. The project was built as part of a hackathon, so contact the maintainers before reusing it.
 
 ## 📞 Support & Contact
 
