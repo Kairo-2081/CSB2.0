@@ -42,40 +42,15 @@ Campus Hub gives students and administrators one place for campus activity. Stud
 - **Assistant**: a chat widget that answers from a built-in knowledge base (`src/services/ai-knowledge-base.ts`). It runs in the browser and calls no external AI service.
 - **Interface**: shadcn/ui components and toast notifications.
 
-## 🛠️ Technology Stack
+## Tech stack
 
-### Frontend
-- **Build Tool**: Vite v5.4.19 with React-SWC plugin
-- **Framework**: React 18.3.1 with React Router 6.30.1
-- **Language**: TypeScript 5.8.3 with strict type checking
-- **Styling**: Tailwind CSS 3.4.17 with PostCSS and Autoprefixer
-- **UI Components**: shadcn/ui (Radix UI primitives)
-- **Form Management**: React Hook Form 7.61.1 with Zod 3.25.76 validation
-- **State Management**: 
-  - React Context API (Auth)
-  - TanStack React Query 5.83.0 (Server state)
-- **Data Fetching**: Native Fetch API with error handling
-- **Notifications**: Sonner 1.7.4 (Toast notifications)
-- **Icons**: Lucide React 0.462.0
-- **Utilities**: 
-  - date-fns 3.6.0 (Date operations)
-  - next-themes 0.3.0 (Theme management)
-  - Embla Carousel 8.6.0 (Carousel components)
-
-### Backend
-- **Runtime**: Node.js with Express.js 4.22.1
-- **Database**: SQLite3 5.1.7 with sqlite abstraction layer
-- **Middleware**: CORS 2.8.5 for cross-origin requests
-- **Port**: 3001 (Express development server)
-- **Database File**: csb-2.0.db
-
-### Development & Build Tools
-- **Package Manager**: npm
-- **Linting**: ESLint 9.32.0 with TypeScript support
-- **Concurrency**: concurrently 8.2.2 (Run frontend & backend together)
-- **Node Version**: 22.16.5 (LTS)
-
----
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, TypeScript 5.8, Vite 5 with the React SWC plugin, React Router 6, Tailwind CSS 3, shadcn/ui (Radix UI), Sonner, Lucide icons |
+| Backend | Node.js (ES modules), Express 4, CORS |
+| Database | SQLite through `sqlite3` and `sqlite`, stored in `campus-hub.db` |
+| Optional | Supabase JS client and `supabase/migrations/init.sql`, used only by the database test page and two sample components |
+| Tooling | ESLint 9, `concurrently` |
 
 ## 📁 Project Structure
 
