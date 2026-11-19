@@ -72,38 +72,31 @@ Campus Hub gives students and administrators one place for campus activity. Stud
 └── vite.config.ts, tailwind.config.ts, eslint.config.js, ...
 ```
 
-## 🚀 Getting Started
+## Getting started
 
 ### Prerequisites
-- Node.js 18+ and npm 9+ ([Install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
-- Git
-- Modern web browser
 
-### Installation
+- Node.js 18 or newer and npm.
+- Git.
 
-1. **Clone the repository**
+### Install and run
+
 ```bash
-git clone <YOUR_GIT_URL>
-cd campus-hub-main
-```
-
-2. **Install dependencies**
-```bash
+git clone https://github.com/Kairo-2081/CSB2.0.git
+cd CSB2.0
 npm install
-```
-
-3. **Start development servers**
-```bash
 npm run dev
 ```
-This command runs both frontend (Vite on port 8080) and backend (Express on port 3001) concurrently.
 
-### Accessing the Application
-- **Frontend**: http://localhost:8080
-- **Backend API**: http://localhost:3001/api
-- **Health Check**: http://localhost:3001/api/health
+`npm run dev` starts the Vite frontend and the Express backend together.
 
----
+| What | URL |
+| --- | --- |
+| Frontend | http://localhost:8080 |
+| API | http://localhost:3001/api |
+| Health check | http://localhost:3001/api/health |
+
+On first run the backend creates the tables in `campus-hub.db` and, if the `users` table is empty, seeds one admin and five student accounts (see `server.js`). You can also create an account from the sign-up form.
 
 ## 💻 Development
 
