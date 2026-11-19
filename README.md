@@ -136,32 +136,23 @@ Each content module has the same three routes: `GET /<module>` to list, `POST /<
 | `/blood-donation` | Blood donors |
 | `/faculty-suggestions` | Faculty feedback and ratings |
 
-## 🗄️ Database Schema
+## Database
 
-### Users Table
-| Column | Type | Description |
-|--------|------|-------------|
-| id | TEXT (PK) | Unique user identifier |
-| name | TEXT | User full name |
-| email | TEXT (UNIQUE) | Email address |
-| password | TEXT | Hashed password |
-| role | TEXT | 'admin' or 'student' |
-| phone | TEXT | Contact number |
-| department | TEXT | Department/faculty |
-| created_at | TEXT | Account creation timestamp |
-| updated_at | TEXT | Last update timestamp |
+SQLite, in `campus-hub.db` at the project root. `server.js` creates every table with `CREATE TABLE IF NOT EXISTS` on startup.
 
-### Related Tables
-- **complaints**: Issue tracking and resolution
-- **notices**: Campus announcements
-- **marketplace**: Buy/sell items
-- **animal_welfare**: Animal care reports
-- **blood_donation**: Donor and donation records
-- **students**: Student profiles
-- **faculty_suggestions**: Feedback submissions
-- **lost_found**: Lost/found item tracking
+| Table | Main columns |
+| --- | --- |
+| `users` | `id`, `name`, `email` (unique), `password`, `role` (`student` by default), `phone`, `department`, `created_at`, `updated_at` |
+| `complaints` | `title`, `description`, `category`, `posted_by`, `status`, `user_id` |
+| `notices` | `title`, `description`, `category`, `posted_by` |
+| `marketplace` | `title`, `description`, `price`, `seller`, `phone` |
+| `lost_found` | `title`, `description`, `item_type`, `status` (`lost` by default), `location`, `contact_number`, `user_id` |
+| `bicycles` | `brand`, `color`, `location`, `contact_number`, `description` |
+| `animal_welfare` | `title`, `description`, `location`, `urgency` |
+| `blood_donation` | `name`, `blood_type`, `contact_number`, `location`, `available_date` |
+| `faculty_suggestions` | `title`, `faculty_name`, `rating`, `feedback` |
 
----
+Every table also has `id`, `created_at` and `updated_at`. Passwords are stored exactly as entered; see [Authentication and security](#authentication-and-security).
 
 ## 🔐 Authentication & Security
 
