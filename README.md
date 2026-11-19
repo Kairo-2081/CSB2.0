@@ -52,64 +52,25 @@ Campus Hub gives students and administrators one place for campus activity. Stud
 | Optional | Supabase JS client and `supabase/migrations/init.sql`, used only by the database test page and two sample components |
 | Tooling | ESLint 9, `concurrently` |
 
-## 📁 Project Structure
+## Project structure
 
-```
-campus-hub-main/
-├── public/                     # Static assets
+```text
+.
+├── server.js            Express API and SQLite setup (port 3001)
+├── start-dev.js         Helper that starts the backend and the frontend together
+├── campus-hub.db        SQLite database file, created on first run (a copy is committed)
 ├── src/
-│   ├── components/
-│   │   ├── ui/                # shadcn/ui components (reusable)
-│   │   ├── dashboard/         # Dashboard-specific components
-│   │   ├── layout/            # Layout components (MainLayout, Sidebar)
-│   │   ├── AIAssistant.tsx    # AI assistant component
-│   │   ├── ProtectedRoute.tsx # Route protection HOC
-│   │   └── NavLink.tsx        # Navigation component
-│   ├── contexts/
-│   │   └── AuthContext.tsx    # Global auth state management
-│   ├── hooks/
-│   │   ├── use-mobile.tsx     # Mobile detection hook
-│   │   └── use-toast.ts       # Toast notification hook
-│   ├── pages/                 # Route page components
-│   │   ├── Dashboard.tsx
-│   │   ├── Auth.tsx
-│   │   ├── LostFound.tsx
-│   │   ├── Complaints.tsx
-│   │   ├── Notices.tsx
-│   │   ├── Marketplace.tsx
-│   │   ├── AnimalWelfare.tsx
-│   │   ├── BloodDonation.tsx
-│   │   ├── Students.tsx
-│   │   ├── FacultySuggestions.tsx
-│   │   ├── Profile.tsx
-│   │   └── NotFound.tsx
-│   ├── services/
-│   │   ├── api.service.ts     # Generic API functions
-│   │   ├── auth.service.ts    # Authentication service
-│   │   ├── database.service.ts # Database operations
-│   │   ├── ai-knowledge-base.ts # AI knowledge base
-│   │   └── credentials.ts      # Credential management
-│   ├── lib/
-│   │   └── utils.ts           # Utility functions
-│   ├── App.tsx                # Root component
-│   ├── main.tsx               # Entry point
-│   ├── index.css              # Global styles
-│   └── vite-env.d.ts          # Vite environment types
-├── supabase/
-│   ├── config.toml            # Supabase configuration
-│   └── migrations/
-│       └── init.sql           # Database initialization
-├── server.js                  # Express backend server
-├── vite.config.ts             # Vite configuration
-├── tailwind.config.ts         # Tailwind CSS configuration
-├── postcss.config.js          # PostCSS configuration
-├── tsconfig.json              # TypeScript configuration
-├── eslint.config.js           # ESLint configuration
-├── package.json               # Project dependencies
-└── README.md                  # This file
+│   ├── pages/           One component per route: Dashboard, Auth, Complaints, Notices, ...
+│   ├── components/      ui/ (shadcn/ui), dashboard/, layout/, AIAssistant, ProtectedRoute
+│   ├── contexts/        AuthContext
+│   ├── services/        API, auth and database services, plus the assistant's knowledge base
+│   ├── integrations/    Supabase client and generated types
+│   ├── hooks/, lib/     Shared hooks and utilities
+│   └── App.tsx, main.tsx
+├── supabase/            config.toml and migrations/init.sql
+├── public/              Static assets
+└── vite.config.ts, tailwind.config.ts, eslint.config.js, ...
 ```
-
----
 
 ## 🚀 Getting Started
 
