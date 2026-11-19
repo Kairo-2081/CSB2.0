@@ -98,47 +98,17 @@ npm run dev
 
 On first run the backend creates the tables in `campus-hub.db` and, if the `users` table is empty, seeds one admin and five student accounts (see `server.js`). You can also create an account from the sign-up form.
 
-## 💻 Development
+## Scripts
 
-### Available Scripts
-
-```bash
-# Start both frontend and backend in development mode
-npm run dev
-
-# Start only frontend (Vite dev server with HMR)
-npm run dev:frontend
-
-# Start only backend (Express server)
-npm run dev:backend
-
-# Build for production
-npm run build
-
-# Build for development environment
-npm run build:dev
-
-# Run ESLint to check code quality
-npm run lint
-
-# Preview production build locally
-npm run preview
-```
-
-### Development Workflow
-
-1. **Frontend Development**: Vite provides hot module replacement (HMR) for instant feedback
-2. **Backend Development**: Express server runs with nodemon-like functionality
-3. **API Testing**: Use browser DevTools or Postman to test API endpoints
-4. **Database**: SQLite database automatically initializes on first backend run
-
-### Code Quality
-- Run `npm run lint` before committing code
-- Ensure TypeScript strict mode compliance
-- Follow shadcn/ui component patterns
-- Use Zod for form validation
-
----
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the frontend and the backend together. |
+| `npm run dev:frontend` | Start only the Vite dev server (port 8080). |
+| `npm run dev:backend` | Start only the API with `node server.js` (port 3001). It does not reload on changes. |
+| `npm run build` | Build the frontend into `dist/`. |
+| `npm run build:dev` | Build the frontend in development mode. |
+| `npm run preview` | Serve the production build locally. |
+| `npm run lint` | Run ESLint. |
 
 ## 🔌 API Documentation
 
