@@ -199,15 +199,6 @@ Issues and pull requests are welcome on [GitHub](https://github.com/Kairo-2081/C
 
 No license file is included. The project was built as part of a hackathon, so contact the maintainers before reusing it.
 
-## 📞 Support & Contact
-
-For issues, feature requests, or questions:
-1. Open an issue on GitHub
-2. Contact the development team
-3. Check existing documentation
-
----
-
 ## 🎯 Roadmap
 
 - [ ] Integrate Supabase for cloud database
