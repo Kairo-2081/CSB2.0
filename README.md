@@ -186,20 +186,14 @@ The app is built for local use. To run it on a server today:
 
 The Express server does not serve `dist/` itself, and the frontend does not read `VITE_API_URL`. Fix the points under [Known limitations](#known-limitations) before exposing it to the internet.
 
-## 🤝 Contributing
+## Contributing
 
-1. Create a feature branch: `git checkout -b feature/amazing-feature`
-2. Commit changes: `git commit -m 'Add amazing feature'`
-3. Push to branch: `git push origin feature/amazing-feature`
-4. Open a Pull Request
+Issues and pull requests are welcome on [GitHub](https://github.com/Kairo-2081/CSB2.0/issues).
 
-### Code Standards
-- Use TypeScript for type safety
-- Follow ESLint rules
-- Write meaningful commit messages
-- Test changes before submitting PR
-
----
+1. Create a feature branch: `git checkout -b feature/short-name`
+2. Commit your changes with a clear message.
+3. Run `npm run lint` and try the change locally with `npm run dev`.
+4. Push the branch and open a pull request.
 
 ## 📄 License
 
