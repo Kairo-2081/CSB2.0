@@ -4,22 +4,22 @@ Campus Hub is a full-stack web app for everyday campus life. Students and admins
 
 This repository is a fork of [unthinkingFool/CSB2.0](https://github.com/unthinkingFool/CSB2.0).
 
-## 📋 Table of Contents
+## Contents
 
 - [Overview](#overview)
 - [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Development](#development)
-- [API Documentation](#api-documentation)
-- [Database Schema](#database-schema)
-- [Authentication & Security](#authentication--security)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Getting started](#getting-started)
+- [Scripts](#scripts)
+- [API reference](#api-reference)
+- [Database](#database)
+- [Authentication and security](#authentication-and-security)
+- [Known limitations](#known-limitations)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
-
----
+- [Roadmap](#roadmap)
 
 ## 🎯 Overview
 
