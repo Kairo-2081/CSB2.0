@@ -199,7 +199,7 @@ Issues and pull requests are welcome on [GitHub](https://github.com/Kairo-2081/C
 
 No license file is included. The project was built as part of a hackathon, so contact the maintainers before reusing it.
 
-## 🎯 Roadmap
+## Roadmap
 
 - [ ] Integrate Supabase for cloud database
 - [ ] Add email notifications
