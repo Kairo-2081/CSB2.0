@@ -25,31 +25,22 @@ This repository is a fork of [unthinkingFool/CSB2.0](https://github.com/unthinki
 
 Campus Hub gives students and administrators one place for campus activity. Students sign up, post to and browse the modules listed below, and manage their own entries; admins can remove content posted by others, such as complaints. The whole backend is a single Express file (`server.js`) that creates the SQLite database on first run.
 
-## ✨ Features
+## Features
 
-### Core Functionalities
-- **User Authentication & Authorization**: Role-based access control (Student/Admin)
-- **Dashboard**: Personalized user dashboard with activity feed and quick actions
-- **Student Directory**: Searchable student profiles with contact information
-- **Lost & Found**: Community-driven system for tracking lost/found items
-- **Complaints Management**: Submit and track campus complaints with status updates
-- **Notices Board**: Campus announcements and important notifications
-- **Marketplace**: Buy/sell campus items and services
-- **Animal Welfare**: Track and report animal welfare concerns
-- **Blood Donation**: Coordinate blood donation drives and donor information
-- **Faculty Suggestions**: Submit feedback and suggestions to faculty
-- **User Profiles**: Manage personal information and preferences
-- **AI Assistant**: Intelligent assistant for campus-related queries
-
-### Advanced Features
-- Real-time toast notifications
-- Responsive mobile-first design
-- Dark mode support
-- Form validation with Zod schemas
-- Optimized performance with code splitting
-- Error handling and recovery mechanisms
-
----
+- **Accounts and roles**: sign up, sign in and change your password. There are two roles, `student` and `admin`; new sign-ups are always students.
+- **Dashboard**: the landing page after sign-in, with summary cards. The subtitles on those cards are static placeholder text.
+- **Students**: a list of registered users with search and a role filter.
+- **Complaints**: submit complaints with a category and track their status. You can delete your own; admins can delete any.
+- **Notices**: campus announcements with a category.
+- **Marketplace**: list items for sale with a price and a contact number.
+- **Lost and found**: report lost or found items with a location and contact number.
+- **Bicycles**: post bicycle entries with brand, colour, location and contact details.
+- **Animal welfare**: report animals that need help, with a location and an urgency level.
+- **Blood donation**: list donors by blood type, location and availability date.
+- **Faculty suggestions**: leave feedback and a rating for a faculty member.
+- **Profile**: view and edit your own details.
+- **Assistant**: a chat widget that answers from a built-in knowledge base (`src/services/ai-knowledge-base.ts`). It runs in the browser and calls no external AI service.
+- **Interface**: shadcn/ui components and toast notifications.
 
 ## 🛠️ Technology Stack
 
