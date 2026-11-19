@@ -176,43 +176,15 @@ Read these before deploying or entering real data.
 - **Repository contents:** the SQLite file, `.env` (Supabase project settings) and default seed accounts are committed.
 - **Unused dependencies:** Zod and React Hook Form are installed but not used for form validation.
 
-## 🌐 Deployment
+## Deployment
 
-### Build for Production
-```bash
-npm run build
-```
-Creates optimized production bundle in `dist/` directory.
+The app is built for local use. To run it on a server today:
 
-### Hosting Options
+1. Build the frontend with `npm run build` and serve `dist/` from any static host.
+2. Run `node server.js` on the same host, since the frontend calls `http://localhost:3001/api`. Changing that means editing the `API_URL` constants in `src/services/` and the fetch calls in `src/pages/`.
+3. Keep `campus-hub.db` somewhere that persists, because the server reads and writes it in place.
 
-#### Vercel (Recommended)
-1. Push code to GitHub
-2. Connect repository to Vercel
-3. Set environment variables
-4. Vercel auto-deploys on push
-
-#### Netlify
-1. Connect GitHub repository
-2. Configure build command: `npm run build`
-3. Set publish directory: `dist`
-
-#### Traditional Hosting (VPS/Shared Hosting)
-1. Build frontend: `npm run build`
-2. Deploy `dist/` folder to web server
-3. Set up Node.js environment for backend
-4. Configure environment variables
-5. Start backend: `node server.js`
-
-### Environment Variables
-Create `.env.local` for development:
-```
-VITE_API_URL=http://localhost:3001/api
-```
-
-For production, set appropriate backend API URL.
-
----
+The Express server does not serve `dist/` itself, and the frontend does not read `VITE_API_URL`. Fix the points under [Known limitations](#known-limitations) before exposing it to the internet.
 
 ## 🤝 Contributing
 
