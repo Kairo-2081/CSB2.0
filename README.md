@@ -1,8 +1,8 @@
-# Campus Hub - CSB 2.0
+# Campus Hub (CSB 2.0)
 
-A comprehensive campus community management platform designed to streamline campus operations and enhance student-faculty interactions through an integrated digital ecosystem.
+Campus Hub is a full-stack web app for everyday campus life. Students and admins share notices, report complaints, trade in a marketplace, track lost items, coordinate blood donation and animal welfare, and more. It is a React single-page app on top of an Express API with a SQLite database.
 
----
+This repository is a fork of [unthinkingFool/CSB2.0](https://github.com/unthinkingFool/CSB2.0).
 
 ## 📋 Table of Contents
 
