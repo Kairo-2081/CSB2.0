@@ -21,20 +21,9 @@ This repository is a fork of [unthinkingFool/CSB2.0](https://github.com/unthinki
 - [License](#license)
 - [Roadmap](#roadmap)
 
-## 🎯 Overview
+## Overview
 
-**Campus Hub** is a full-stack web application that serves as a centralized platform for campus community management. It provides students, faculty, and administrators with tools to collaborate, communicate, and manage campus activities efficiently.
-
-### Key Objectives
-- Centralized campus information management
-- Streamlined student-faculty communication
-- Real-time notifications and updates
-- Community-driven features (marketplace, lost & found, blood donation)
-- Animal welfare tracking
-- Complaint and feedback management
-- Student directory and profile management
-
----
+Campus Hub gives students and administrators one place for campus activity. Students sign up, post to and browse the modules listed below, and manage their own entries; admins can remove content posted by others, such as complaints. The whole backend is a single Express file (`server.js`) that creates the SQLite database on first run.
 
 ## ✨ Features
 
