@@ -165,6 +165,17 @@ This is a prototype-level login, not production authentication.
 
 Sign-up checks the email format and that the password has at least 8 characters, with an upper-case letter, a lower-case letter, a digit and one of `@$!%*?&`. The database stores the password as typed.
 
+## Known limitations
+
+Read these before deploying or entering real data.
+
+- **Passwords are stored in plain text** and compared directly in SQL. Use throwaway passwords only.
+- **The API does not check who is calling.** No route verifies a session or token, and rules such as "delete your own complaint, or any if you are an admin" use the `userId` and `userRole` sent by the client. Treat all data as publicly readable and writable. `GET /auth/users` lists every user's email and phone number.
+- **The API address is hard-coded.** `http://localhost:3001/api` appears in `src/services/*.ts` and in some pages, so the frontend only works against a backend on the same machine.
+- **CORS is open to every origin.**
+- **Repository contents:** the SQLite file, `.env` (Supabase project settings) and default seed accounts are committed.
+- **Unused dependencies:** Zod and React Hook Form are installed but not used for form validation.
+
 ## 🌐 Deployment
 
 ### Build for Production
