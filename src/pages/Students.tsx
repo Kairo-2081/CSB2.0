@@ -60,9 +60,9 @@ export default function Students() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <div className="overflow-hidden rounded-md border border-border">
+        <div className="glass-panel overflow-hidden rounded-2xl">
           <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-left">
+            <thead className="bg-white/[0.035] text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Email</th>
@@ -72,7 +72,7 @@ export default function Students() {
             </thead>
             <tbody>
               {filtered.map((user) => (
-                <tr key={user.id} className="border-t border-border">
+                <tr key={user.id} className="border-t border-white/8 transition-colors hover:bg-white/[0.035]">
                   <td className="px-4 py-3 font-medium">{user.name}</td>
                   <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
                   <td className="px-4 py-3 text-muted-foreground">{user.department || "-"}</td>

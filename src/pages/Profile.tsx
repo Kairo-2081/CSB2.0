@@ -22,7 +22,7 @@ export default function Profile() {
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-1">
             <CardContent className="p-6 text-center">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
+              <div className="glass-control mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold text-primary">
                 {user.name?.charAt(0).toUpperCase() || "U"}
               </div>
               <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
