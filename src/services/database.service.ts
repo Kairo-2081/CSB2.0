@@ -1,6 +1,5 @@
 // Using local API backend - No Supabase
-// All requests go to http://localhost:3001/api
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Helper function for API calls
 const api = {

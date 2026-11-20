@@ -147,7 +147,7 @@ export default function Marketplace() {
             <p className="text-muted-foreground mt-1">Buy and sell items within the campus</p>
           </div>
           <Button 
-            variant="glow" 
+             
             className="gap-2"
             onClick={() => setIsDialogOpen(true)}
           >
@@ -193,11 +193,10 @@ export default function Marketplace() {
           {filteredItems.map((item, index) => (
             <Card 
               key={item.id} 
-              variant="interactive"
-              className="animate-slide-up overflow-hidden"
+              className="overflow-hidden"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="h-32 bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
+              <div className="h-32 bg-muted flex items-center justify-center">
                 <Tag className="h-12 w-12 text-muted-foreground" />
               </div>
               <CardContent className="p-5 space-y-4">
@@ -250,7 +249,7 @@ export default function Marketplace() {
         </div>
 
         {filteredItems.length === 0 && (
-          <Card variant="glass" className="p-12 text-center">
+          <Card className="p-12 text-center">
             <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">No items found</h3>
             <p className="text-muted-foreground mt-1">Try adjusting your search or filters</p>

@@ -17,10 +17,9 @@ import BloodDonation from "./pages/BloodDonation";
 import Students from "./pages/Students";
 import FacultySuggestions from "./pages/FacultySuggestions";
 import Profile from "./pages/Profile";
-import DatabaseTest from "./pages/DatabaseTest";
 import CentralAdmin from "./pages/CentralAdmin";
 import NotFound from "./pages/NotFound";
-import AIAssistant from "@/components/AIAssistant";
+import Bicycles from "./pages/Bicycles";
 
 const queryClient = new QueryClient();
 
@@ -42,13 +41,12 @@ const App = () => (
             <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
             <Route path="/animal-welfare" element={<ProtectedRoute><AnimalWelfare /></ProtectedRoute>} />
             <Route path="/blood-donation" element={<ProtectedRoute><BloodDonation /></ProtectedRoute>} />
+            <Route path="/bicycles" element={<ProtectedRoute><Bicycles /></ProtectedRoute>} />
             <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
             <Route path="/faculty-suggestions" element={<ProtectedRoute><FacultySuggestions /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/test-db" element={<ProtectedRoute><DatabaseTest /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <AIAssistant />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

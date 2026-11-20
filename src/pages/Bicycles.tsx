@@ -60,7 +60,6 @@ const statusConfig = {
   },
 };
 
-const mockBicycles: Bicycle[] = [];
 
 export default function Bicycles() {
   const [filter, setFilter] = useState<string>("all");
@@ -168,7 +167,7 @@ export default function Bicycles() {
 
         {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-4">
-          <Card variant="glass" className="p-4">
+          <Card className="p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Bike className="h-5 w-5" />
@@ -179,7 +178,7 @@ export default function Bicycles() {
               </div>
             </div>
           </Card>
-          <Card variant="glass" className="p-4">
+          <Card className="p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
                 <CheckCircle className="h-5 w-5" />
@@ -190,7 +189,7 @@ export default function Bicycles() {
               </div>
             </div>
           </Card>
-          <Card variant="glass" className="p-4">
+          <Card className="p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
                 <Clock className="h-5 w-5" />
@@ -201,7 +200,7 @@ export default function Bicycles() {
               </div>
             </div>
           </Card>
-          <Card variant="glass" className="p-4">
+          <Card className="p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
                 <XCircle className="h-5 w-5" />
@@ -246,8 +245,7 @@ export default function Bicycles() {
             return (
               <Card 
                 key={bicycle.id} 
-                variant="interactive"
-                className="animate-slide-up"
+                className=""
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardContent className="p-6">
@@ -302,7 +300,7 @@ export default function Bicycles() {
         </div>
 
         {filteredBicycles.length === 0 && (
-          <Card variant="glass" className="p-12 text-center">
+          <Card className="p-12 text-center">
             <Bike className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">No bicycles found</h3>
             <p className="text-muted-foreground mt-1">Try adjusting your filters</p>
