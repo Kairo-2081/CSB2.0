@@ -11,24 +11,19 @@ import {
   ShoppingBag,
   Heart,
   Droplets,
-  Database,
-  GraduationCap,
   User,
-  ChevronDown,
-  ChevronRight,
+  GraduationCap,
   Menu,
   X,
   LogOut,
-  Settings,
   Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface NavItem {
   title: string;
-  href?: string;
+  href: string;
   icon: React.ComponentType<{ className?: string }>;
-  children?: { title: string; href: string }[];
 }
 
 const navItems: NavItem[] = [
@@ -42,35 +37,18 @@ const navItems: NavItem[] = [
     href: "/lost-found",
     icon: Search,
   },
-  {
-    title: "Queries",
-    icon: MessageSquare,
-    children: [
-      { title: "Complaints", href: "/complaints" },
-      { title: "Notices", href: "/notices" },
-    ],
-  },
+  { title: "Complaints", href: "/complaints", icon: MessageSquare },
+  { title: "Notices", href: "/notices", icon: Bell },
   {
     title: "Marketplace",
     href: "/marketplace",
     icon: ShoppingBag,
   },
-  {
-    title: "Health",
-    icon: Heart,
-    children: [
-      { title: "Animal Welfare", href: "/animal-welfare" },
-      { title: "Blood Donation", href: "/blood-donation" },
-    ],
-  },
-  {
-    title: "Database",
-    icon: Database,
-    children: [
-      { title: "Student Directory", href: "/students" },
-      { title: "Faculty Suggestions", href: "/faculty-suggestions" },
-    ],
-  },
+  { title: "Bicycles", href: "/bicycles", icon: Bike },
+  { title: "Animal Welfare", href: "/animal-welfare", icon: Heart },
+  { title: "Blood Donation", href: "/blood-donation", icon: Droplets },
+  { title: "Student Directory", href: "/students", icon: User },
+  { title: "Faculty Suggestions", href: "/faculty-suggestions", icon: GraduationCap },
   {
     title: "Profile",
     href: "/profile",
@@ -214,7 +192,7 @@ export function Sidebar() {
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          className=          "fixed inset-0 z-40 bg-foreground/20 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
