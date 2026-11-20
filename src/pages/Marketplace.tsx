@@ -23,6 +23,7 @@ import {
   Trash2
 } from "lucide-react";
 import { marketplaceService } from "@/services/database.service";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface MarketplaceItem {
@@ -39,6 +40,7 @@ interface MarketplaceItem {
 }
 
 export default function Marketplace() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -72,6 +74,10 @@ export default function Marketplace() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error("Please login to post items");
+      return;
+    }
     if (!formData.title.trim() || !formData.description.trim() || !formData.price || !formData.phone) {
       toast.error("Please fill in all fields");
       return;
@@ -82,7 +88,7 @@ export default function Marketplace() {
       await marketplaceService.createItem({
         ...formData,
         price: parseFloat(formData.price),
-        user_id: "current-user-id",
+        user_id: user.id,
       });
       toast.success("Item posted successfully!");
       setFormData({
@@ -97,7 +103,8 @@ export default function Marketplace() {
       await loadItems();
     } catch (error) {
       console.error("Error creating item:", error);
-      toast.error("Failed to post item");
+      const errorMsg = error instanceof Error ? error.message : "Failed to post item";
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -108,12 +115,16 @@ export default function Marketplace() {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       try {
+        setIsLoading(true);
         await marketplaceService.deleteItem(id);
         toast.success("Item deleted successfully!");
         await loadItems();
       } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Failed to delete item";
         console.error("Error deleting item:", error);
-        toast.error("Failed to delete item");
+        toast.error(errorMsg);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -221,12 +232,13 @@ export default function Marketplace() {
                   <Button variant="outline" className="flex-1">
                     Contact Seller
                   </Button>
-                  {item.user_id === "current-user-id" && (
+                  {user && item.user_id === user.id && (
                     <Button 
                       variant="destructive" 
                       size="sm"
                       onClick={() => handleDelete(item.id)}
                       className="gap-2"
+                      disabled={isLoading}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

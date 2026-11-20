@@ -6,7 +6,10 @@ const API_URL = 'http://localhost:3001/api';
 const api = {
   async get(endpoint: string) {
     const response = await fetch(`${API_URL}${endpoint}`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `API Error: ${response.statusText}`);
+    }
     return response.json();
   },
   async post(endpoint: string, data: any) {
@@ -15,7 +18,10 @@ const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `API Error: ${response.statusText}`);
+    }
     return response.json();
   },
   async delete(endpoint: string, data?: any) {
@@ -24,7 +30,10 @@ const api = {
       headers: { 'Content-Type': 'application/json' },
       body: data ? JSON.stringify(data) : undefined,
     });
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `API Error: ${response.statusText}`);
+    }
     return response.json();
   },
 };
@@ -37,7 +46,14 @@ export const complaintService = {
     return api.post('/complaints', complaint);
   },
   async deleteComplaint(id: string) {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      throw new Error('User not authenticated. Please login to delete complaints.');
+    }
+    const user = JSON.parse(userStr);
+    if (!user.id || !user.role) {
+      throw new Error('Invalid user session. Please login again.');
+    }
     return api.delete(`/complaints/${id}`, {
       userId: user.id,
       userRole: user.role
@@ -53,7 +69,14 @@ export const noticeService = {
     return api.post('/notices', notice);
   },
   async deleteNotice(id: string) {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      throw new Error('User not authenticated. Please login to delete notices.');
+    }
+    const user = JSON.parse(userStr);
+    if (!user.id || !user.role) {
+      throw new Error('Invalid user session. Please login again.');
+    }
     return api.delete(`/notices/${id}`, {
       userId: user.id,
       userRole: user.role
@@ -69,7 +92,14 @@ export const marketplaceService = {
     return api.post('/marketplace', item);
   },
   async deleteItem(id: string) {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      throw new Error('User not authenticated. Please login to delete items.');
+    }
+    const user = JSON.parse(userStr);
+    if (!user.id || !user.role) {
+      throw new Error('Invalid user session. Please login again.');
+    }
     return api.delete(`/marketplace/${id}`, {
       userId: user.id,
       userRole: user.role
@@ -85,7 +115,14 @@ export const animalWelfareService = {
     return api.post('/animal-welfare', report);
   },
   async deleteReport(id: string) {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      throw new Error('User not authenticated. Please login to delete reports.');
+    }
+    const user = JSON.parse(userStr);
+    if (!user.id || !user.role) {
+      throw new Error('Invalid user session. Please login again.');
+    }
     return api.delete(`/animal-welfare/${id}`, {
       userId: user.id,
       userRole: user.role
@@ -101,7 +138,14 @@ export const facultySuggestionService = {
     return api.post('/faculty-suggestions', suggestion);
   },
   async deleteSuggestion(id: string) {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      throw new Error('User not authenticated. Please login to delete suggestions.');
+    }
+    const user = JSON.parse(userStr);
+    if (!user.id || !user.role) {
+      throw new Error('Invalid user session. Please login again.');
+    }
     return api.delete(`/faculty-suggestions/${id}`, {
       userId: user.id,
       userRole: user.role
@@ -117,7 +161,14 @@ export const bloodDonationService = {
     return api.post('/blood-donation', donor);
   },
   async deleteDonor(id: string) {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      throw new Error('User not authenticated. Please login to delete donor entries.');
+    }
+    const user = JSON.parse(userStr);
+    if (!user.id || !user.role) {
+      throw new Error('Invalid user session. Please login again.');
+    }
     return api.delete(`/blood-donation/${id}`, {
       userId: user.id,
       userRole: user.role
@@ -133,7 +184,14 @@ export const bicycleService = {
     return api.post('/bicycles', report);
   },
   async deleteReport(id: string) {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      throw new Error('User not authenticated. Please login to delete bicycle entries.');
+    }
+    const user = JSON.parse(userStr);
+    if (!user.id || !user.role) {
+      throw new Error('Invalid user session. Please login again.');
+    }
     return api.delete(`/bicycles/${id}`, {
       userId: user.id,
       userRole: user.role
@@ -149,7 +207,14 @@ export const lostFoundService = {
     return api.post('/lost-found', item);
   },
   async deleteItem(id: string) {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      throw new Error('User not authenticated. Please login to delete items.');
+    }
+    const user = JSON.parse(userStr);
+    if (!user.id || !user.role) {
+      throw new Error('Invalid user session. Please login again.');
+    }
     return api.delete(`/lost-found/${id}`, {
       userId: user.id,
       userRole: user.role

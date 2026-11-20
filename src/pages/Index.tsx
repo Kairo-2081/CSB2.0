@@ -188,7 +188,7 @@ export default function Index() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
                 C
               </div>
-              <span className="text-sm text-muted-foreground">CSB 2.0 © 2024</span>
+              <span className="text-sm text-muted-foreground">CSB 2.0 © 2025</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Built by The Redemption
