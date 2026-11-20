@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService, University } from "@/services/auth.service";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -186,25 +186,19 @@ export default function Auth() {
   const isPasswordValid = Object.values(passwordValidation).every(v => v);
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl relative">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="glass-control flex h-12 w-12 items-center justify-center rounded-xl text-primary font-bold text-xl">
-              C
-            </div>
-            <div className="text-left">
-              <h1 className="text-3xl font-bold text-foreground">Campus Hub</h1>
-              <p className="text-sm text-muted-foreground">University Management System</p>
-            </div>
-          </div>
-        </div>
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
+      <div className="relative w-full max-w-4xl">
+        <Link to="/" className="mb-8 flex items-center justify-center gap-3">
+          <span className="brand-mark flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-bold">C</span>
+          <span>
+            <span className="block text-left text-xl font-semibold text-foreground">CSB 2.0</span>
+            <span className="block text-left text-sm text-muted-foreground">Campus services</span>
+          </span>
+        </Link>
 
         <div className="mx-auto max-w-2xl">
-          <div>
-            <Card className="glass-shell">
-              <CardContent className="p-6">
+          <Card className="overflow-hidden rounded-[26px]">
+              <CardContent className="p-5 sm:p-8">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="login">Login</TabsTrigger>
@@ -262,7 +256,8 @@ export default function Auth() {
 
                       <Button
                         type="submit"
-                        className="w-full bg-primary hover:bg-primary/90"
+                        className="w-full"
+                        size="lg"
                         disabled={isLoading}
                       >
                         {isLoading ? (
@@ -423,32 +418,32 @@ export default function Auth() {
                           <p className="font-medium text-foreground mb-2">Password Strength:</p>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasMinLength ? <Check className="h-3 w-3 text-green-600" /> : <X className="h-3 w-3 text-red-600" />}
-                              <span className={passwordValidation.hasMinLength ? "text-green-600" : "text-red-600"}>
+                              {passwordValidation.hasMinLength ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
+                              <span className={passwordValidation.hasMinLength ? "text-success" : "text-destructive"}>
                                 At least 8 characters
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasUpperCase ? <Check className="h-3 w-3 text-green-600" /> : <X className="h-3 w-3 text-red-600" />}
-                              <span className={passwordValidation.hasUpperCase ? "text-green-600" : "text-red-600"}>
+                              {passwordValidation.hasUpperCase ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
+                              <span className={passwordValidation.hasUpperCase ? "text-success" : "text-destructive"}>
                                 One uppercase letter
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasLowerCase ? <Check className="h-3 w-3 text-green-600" /> : <X className="h-3 w-3 text-red-600" />}
-                              <span className={passwordValidation.hasLowerCase ? "text-green-600" : "text-red-600"}>
+                              {passwordValidation.hasLowerCase ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
+                              <span className={passwordValidation.hasLowerCase ? "text-success" : "text-destructive"}>
                                 One lowercase letter
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasNumber ? <Check className="h-3 w-3 text-green-600" /> : <X className="h-3 w-3 text-red-600" />}
-                              <span className={passwordValidation.hasNumber ? "text-green-600" : "text-red-600"}>
+                              {passwordValidation.hasNumber ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
+                              <span className={passwordValidation.hasNumber ? "text-success" : "text-destructive"}>
                                 One number
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasSpecialChar ? <Check className="h-3 w-3 text-green-600" /> : <X className="h-3 w-3 text-red-600" />}
-                              <span className={passwordValidation.hasSpecialChar ? "text-green-600" : "text-red-600"}>
+                              {passwordValidation.hasSpecialChar ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
+                              <span className={passwordValidation.hasSpecialChar ? "text-success" : "text-destructive"}>
                                 One special character (@$!%*?&)
                               </span>
                             </div>
@@ -488,7 +483,8 @@ export default function Auth() {
 
                       <Button
                         type="submit"
-                        className="w-full bg-primary hover:bg-primary/90"
+                        className="w-full"
+                        size="lg"
                         disabled={isLoading || !isPasswordValid || registerPassword !== registerConfirmPassword}
                       >
                         {isLoading ? (
@@ -509,7 +505,6 @@ export default function Auth() {
                 </Tabs>
               </CardContent>
             </Card>
-          </div>
         </div>
       </div>
     </div>
