@@ -1,205 +1,419 @@
-# Campus Hub (CSB 2.0)
+# Campus Hub - CSB 2.0
 
-Campus Hub is a full-stack web app for everyday campus life. Students and admins share notices, report complaints, trade in a marketplace, track lost items, coordinate blood donation and animal welfare, and more. It is a React single-page app on top of an Express API with a SQLite database.
+A comprehensive campus community management platform designed to streamline campus operations and enhance student-faculty interactions through an integrated digital ecosystem.
 
-This repository is a fork of [unthinkingFool/CSB2.0](https://github.com/unthinkingFool/CSB2.0).
+---
 
-## Contents
+## 📋 Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
-- [Tech stack](#tech-stack)
-- [Project structure](#project-structure)
-- [Getting started](#getting-started)
-- [Scripts](#scripts)
-- [API reference](#api-reference)
-- [Database](#database)
-- [Authentication and security](#authentication-and-security)
-- [Known limitations](#known-limitations)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Development](#development)
+- [API Documentation](#api-documentation)
+- [Database Schema](#database-schema)
+- [Authentication & Security](#authentication--security)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
-- [Roadmap](#roadmap)
 
-## Overview
+---
 
-Campus Hub gives students and administrators one place for campus activity. Students sign up, post to and browse the modules listed below, and manage their own entries; admins can remove content posted by others, such as complaints. The whole backend is a single Express file (`server.js`) that creates the SQLite database on first run.
+## 🎯 Overview
 
-## Features
+**Campus Hub** is a full-stack web application that serves as a centralized platform for campus community management. It provides students, faculty, and administrators with tools to collaborate, communicate, and manage campus activities efficiently.
 
-- **Accounts and roles**: sign up, sign in and change your password. There are two roles, `student` and `admin`; new sign-ups are always students.
-- **Dashboard**: the landing page after sign-in, with summary cards. The subtitles on those cards are static placeholder text.
-- **Students**: a list of registered users with search and a role filter.
-- **Complaints**: submit complaints with a category and track their status. You can delete your own; admins can delete any.
-- **Notices**: campus announcements with a category.
-- **Marketplace**: list items for sale with a price and a contact number.
-- **Lost and found**: report lost or found items with a location and contact number.
-- **Bicycles**: post bicycle entries with brand, colour, location and contact details.
-- **Animal welfare**: report animals that need help, with a location and an urgency level.
-- **Blood donation**: list donors by blood type, location and availability date.
-- **Faculty suggestions**: leave feedback and a rating for a faculty member.
-- **Profile**: view and edit your own details.
-- **Assistant**: a chat widget that answers from a built-in knowledge base (`src/services/ai-knowledge-base.ts`). It runs in the browser and calls no external AI service.
-- **Interface**: shadcn/ui components and toast notifications.
+### Key Objectives
+- Centralized campus information management
+- Streamlined student-faculty communication
+- Real-time notifications and updates
+- Community-driven features (marketplace, lost & found, blood donation)
+- Animal welfare tracking
+- Complaint and feedback management
+- Student directory and profile management
 
-## Tech stack
+---
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | React 18, TypeScript 5.8, Vite 5 with the React SWC plugin, React Router 6, Tailwind CSS 3, shadcn/ui (Radix UI), Sonner, Lucide icons |
-| Backend | Node.js (ES modules), Express 4, CORS |
-| Database | SQLite through `sqlite3` and `sqlite`, stored in `campus-hub.db` |
-| Optional | Supabase JS client and `supabase/migrations/init.sql`, used only by the database test page and two sample components |
-| Tooling | ESLint 9, `concurrently` |
+## ✨ Features
 
-## Project structure
+### Core Functionalities
+- **User Authentication & Authorization**: Role-based access control (Student/Admin)
+- **Dashboard**: Personalized user dashboard with activity feed and quick actions
+- **Student Directory**: Searchable student profiles with contact information
+- **Lost & Found**: Community-driven system for tracking lost/found items
+- **Complaints Management**: Submit and track campus complaints with status updates
+- **Notices Board**: Campus announcements and important notifications
+- **Marketplace**: Buy/sell campus items and services
+- **Animal Welfare**: Track and report animal welfare concerns
+- **Blood Donation**: Coordinate blood donation drives and donor information
+- **Faculty Suggestions**: Submit feedback and suggestions to faculty
+- **User Profiles**: Manage personal information and preferences
+- **AI Assistant**: Intelligent assistant for campus-related queries
 
-```text
-.
-├── server.js            Express API and SQLite setup (port 3001)
-├── start-dev.js         Helper that starts the backend and the frontend together
-├── campus-hub.db        SQLite database file, created on first run (a copy is committed)
+### Advanced Features
+- Real-time toast notifications
+- Responsive mobile-first design
+- Dark mode support
+- Form validation with Zod schemas
+- Optimized performance with code splitting
+- Error handling and recovery mechanisms
+
+---
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **Build Tool**: Vite v5.4.19 with React-SWC plugin
+- **Framework**: React 18.3.1 with React Router 6.30.1
+- **Language**: TypeScript 5.8.3 with strict type checking
+- **Styling**: Tailwind CSS 3.4.17 with PostCSS and Autoprefixer
+- **UI Components**: shadcn/ui (Radix UI primitives)
+- **Form Management**: React Hook Form 7.61.1 with Zod 3.25.76 validation
+- **State Management**:
+  - React Context API (Auth)
+  - TanStack React Query 5.83.0 (Server state)
+- **Data Fetching**: Native Fetch API with error handling
+- **Notifications**: Sonner 1.7.4 (Toast notifications)
+- **Icons**: Lucide React 0.462.0
+- **Utilities**:
+  - date-fns 3.6.0 (Date operations)
+  - next-themes 0.3.0 (Theme management)
+  - Embla Carousel 8.6.0 (Carousel components)
+
+### Backend
+- **Runtime**: Node.js with Express.js 4.22.1
+- **Database**: SQLite3 5.1.7 with sqlite abstraction layer
+- **Middleware**: CORS 2.8.5 for cross-origin requests
+- **Port**: 3001 (Express development server)
+- **Database File**: csb-2.0.db
+
+### Development & Build Tools
+- **Package Manager**: npm
+- **Linting**: ESLint 9.32.0 with TypeScript support
+- **Concurrency**: concurrently 8.2.2 (Run frontend & backend together)
+- **Node Version**: 22.16.5 (LTS)
+
+---
+
+## 📁 Project Structure
+
+```
+campus-hub-main/
+├── public/                     # Static assets
 ├── src/
-│   ├── pages/           One component per route: Dashboard, Auth, Complaints, Notices, ...
-│   ├── components/      ui/ (shadcn/ui), dashboard/, layout/, AIAssistant, ProtectedRoute
-│   ├── contexts/        AuthContext
-│   ├── services/        API, auth and database services, plus the assistant's knowledge base
-│   ├── integrations/    Supabase client and generated types
-│   ├── hooks/, lib/     Shared hooks and utilities
-│   └── App.tsx, main.tsx
-├── supabase/            config.toml and migrations/init.sql
-├── public/              Static assets
-└── vite.config.ts, tailwind.config.ts, eslint.config.js, ...
+│   ├── components/
+│   │   ├── ui/                # shadcn/ui components (reusable)
+│   │   ├── dashboard/         # Dashboard-specific components
+│   │   ├── layout/            # Layout components (MainLayout, Sidebar)
+│   │   ├── AIAssistant.tsx    # AI assistant component
+│   │   ├── ProtectedRoute.tsx # Route protection HOC
+│   │   └── NavLink.tsx        # Navigation component
+│   ├── contexts/
+│   │   └── AuthContext.tsx    # Global auth state management
+│   ├── hooks/
+│   │   ├── use-mobile.tsx     # Mobile detection hook
+│   │   └── use-toast.ts       # Toast notification hook
+│   ├── pages/                 # Route page components
+│   │   ├── Dashboard.tsx
+│   │   ├── Auth.tsx
+│   │   ├── LostFound.tsx
+│   │   ├── Complaints.tsx
+│   │   ├── Notices.tsx
+│   │   ├── Marketplace.tsx
+│   │   ├── AnimalWelfare.tsx
+│   │   ├── BloodDonation.tsx
+│   │   ├── Students.tsx
+│   │   ├── FacultySuggestions.tsx
+│   │   ├── Profile.tsx
+│   │   └── NotFound.tsx
+│   ├── services/
+│   │   ├── api.service.ts     # Generic API functions
+│   │   ├── auth.service.ts    # Authentication service
+│   │   ├── database.service.ts # Database operations
+│   │   ├── ai-knowledge-base.ts # AI knowledge base
+│   │   └── credentials.ts      # Credential management
+│   ├── lib/
+│   │   └── utils.ts           # Utility functions
+│   ├── App.tsx                # Root component
+│   ├── main.tsx               # Entry point
+│   ├── index.css              # Global styles
+│   └── vite-env.d.ts          # Vite environment types
+├── supabase/
+│   ├── config.toml            # Supabase configuration
+│   └── migrations/
+│       └── init.sql           # Database initialization
+├── server.js                  # Express backend server
+├── vite.config.ts             # Vite configuration
+├── tailwind.config.ts         # Tailwind CSS configuration
+├── postcss.config.js          # PostCSS configuration
+├── tsconfig.json              # TypeScript configuration
+├── eslint.config.js           # ESLint configuration
+├── package.json               # Project dependencies
+└── README.md                  # This file
 ```
 
-## Getting started
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
+- Node.js 18+ and npm 9+ ([Install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
+- Git
+- Modern web browser
 
-- Node.js 18 or newer and npm.
-- Git.
+### Installation
 
-### Install and run
-
+1. **Clone the repository**
 ```bash
-git clone https://github.com/Kairo-2081/CSB2.0.git
-cd CSB2.0
-npm install
-npm run dev
+git clone <YOUR_GIT_URL>
+cd campus-hub-main
 ```
 
-`npm run dev` starts the Vite frontend and the Express backend together.
+2. **Install dependencies**
+```bash
+npm install
+```
 
-| What | URL |
-| --- | --- |
-| Frontend | http://localhost:8080 |
-| API | http://localhost:3001/api |
-| Health check | http://localhost:3001/api/health |
+3. **Start development servers**
+```bash
+npm run dev
+```
+This command runs both frontend (Vite on port 8080) and backend (Express on port 3001) concurrently.
 
-On first run the backend creates the tables in `campus-hub.db` and, if the `users` table is empty, seeds one admin and five student accounts (see `server.js`). You can also create an account from the sign-up form.
+### Accessing the Application
+- **Frontend**: http://localhost:8080
+- **Backend API**: http://localhost:3001/api
+- **Health Check**: http://localhost:3001/api/health
 
-## Scripts
+---
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Start the frontend and the backend together. |
-| `npm run dev:frontend` | Start only the Vite dev server (port 8080). |
-| `npm run dev:backend` | Start only the API with `node server.js` (port 3001). It does not reload on changes. |
-| `npm run build` | Build the frontend into `dist/`. |
-| `npm run build:dev` | Build the frontend in development mode. |
-| `npm run preview` | Serve the production build locally. |
-| `npm run lint` | Run ESLint. |
+## 💻 Development
 
-## API reference
+### Available Scripts
 
-Base URL: `http://localhost:3001/api`. See [Known limitations](#known-limitations) before relying on any of these routes for access control.
+```bash
+# Start both frontend and backend in development mode
+npm run dev
 
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/health` | Server and database status. |
-| POST | `/auth/login` | Sign in with `email` and `password`. |
-| POST | `/auth/register` | Create a student account. |
-| POST | `/auth/change-password` | Change a user's password. |
-| GET | `/auth/verify` | Look up the user named in the `Authorization: Bearer <user id>` header. |
-| GET | `/auth/users` | List users (id, name, email, role, phone, department). |
+# Start only frontend (Vite dev server with HMR)
+npm run dev:frontend
 
-Each content module has the same three routes: `GET /<module>` to list, `POST /<module>` to create and `DELETE /<module>/:id` to remove.
+# Start only backend (Express server)
+npm run dev:backend
 
-| Module path | Content |
-| --- | --- |
-| `/complaints` | Complaints with category and status |
-| `/notices` | Announcements |
-| `/marketplace` | Items for sale |
-| `/lost-found` | Lost and found items |
-| `/bicycles` | Bicycle entries |
-| `/animal-welfare` | Animal welfare reports |
-| `/blood-donation` | Blood donors |
-| `/faculty-suggestions` | Faculty feedback and ratings |
+# Build for production
+npm run build
 
-## Database
+# Build for development environment
+npm run build:dev
 
-SQLite, in `campus-hub.db` at the project root. `server.js` creates every table with `CREATE TABLE IF NOT EXISTS` on startup.
+# Run ESLint to check code quality
+npm run lint
 
-| Table | Main columns |
-| --- | --- |
-| `users` | `id`, `name`, `email` (unique), `password`, `role` (`student` by default), `phone`, `department`, `created_at`, `updated_at` |
-| `complaints` | `title`, `description`, `category`, `posted_by`, `status`, `user_id` |
-| `notices` | `title`, `description`, `category`, `posted_by` |
-| `marketplace` | `title`, `description`, `price`, `seller`, `phone` |
-| `lost_found` | `title`, `description`, `item_type`, `status` (`lost` by default), `location`, `contact_number`, `user_id` |
-| `bicycles` | `brand`, `color`, `location`, `contact_number`, `description` |
-| `animal_welfare` | `title`, `description`, `location`, `urgency` |
-| `blood_donation` | `name`, `blood_type`, `contact_number`, `location`, `available_date` |
-| `faculty_suggestions` | `title`, `faculty_name`, `rating`, `feedback` |
+# Preview production build locally
+npm run preview
+```
 
-Every table also has `id`, `created_at` and `updated_at`. Passwords are stored exactly as entered; see [Authentication and security](#authentication-and-security).
+### Development Workflow
 
-## Authentication and security
+1. **Frontend Development**: Vite provides hot module replacement (HMR) for instant feedback
+2. **Backend Development**: Express server runs with nodemon-like functionality
+3. **API Testing**: Use browser DevTools or Postman to test API endpoints
+4. **Database**: SQLite database automatically initializes on first backend run
 
-This is a prototype-level login, not production authentication.
+### Code Quality
+- Run `npm run lint` before committing code
+- Ensure TypeScript strict mode compliance
+- Follow shadcn/ui component patterns
+- Use Zod for form validation
 
-1. The sign-in form posts the email and password to `POST /api/auth/login`.
-2. The server looks for a `users` row with that exact email and password, and returns the user object. It does not issue a token.
-3. The frontend keeps that user in `localStorage` and in `AuthContext`. `ProtectedRoute` redirects visitors who are not signed in to `/auth`, and routes marked admin-only send other users back to the dashboard.
-4. Requests to `/auth/verify` use the user's id as the bearer value.
+---
 
-Sign-up checks the email format and that the password has at least 8 characters, with an upper-case letter, a lower-case letter, a digit and one of `@$!%*?&`. The database stores the password as typed.
+## 🔌 API Documentation
 
-## Known limitations
+### Base URL
+```
+http://localhost:3001/api
+```
 
-Read these before deploying or entering real data.
+### Health Check
+```http
+GET /health
+```
+Response: `{ success: boolean, database: "ready" | "error" }`
 
-- **Passwords are stored in plain text** and compared directly in SQL. Use throwaway passwords only.
-- **The API does not check who is calling.** No route verifies a session or token, and rules such as "delete your own complaint, or any if you are an admin" use the `userId` and `userRole` sent by the client. Treat all data as publicly readable and writable. `GET /auth/users` lists every user's email and phone number.
-- **The API address is hard-coded.** `http://localhost:3001/api` appears in `src/services/*.ts` and in some pages, so the frontend only works against a backend on the same machine.
-- **CORS is open to every origin.**
-- **Repository contents:** the SQLite file, `.env` (Supabase project settings) and default seed accounts are committed.
-- **Unused dependencies:** Zod and React Hook Form are installed but not used for form validation.
+### Authentication Endpoints
+```http
+POST /auth/login
+POST /auth/register
+GET  /auth/verify
+GET  /universities
+GET  /admin/metrics
+```
 
-## Deployment
+Student registration collects a name, email, password, contact number, university,
+department, home district, and current residence. Universities not yet in the
+suggested list are added to the shared registry when a student enters their
+official name.
 
-The app is built for local use. To run it on a server today:
+The central administrator can open **University network** from the sidebar to
+view registry-wide student totals and university-level registration counts.
+The metrics endpoint requires a server-issued session token and an administrator
+account.
 
-1. Build the frontend with `npm run build` and serve `dist/` from any static host.
-2. Run `node server.js` on the same host, since the frontend calls `http://localhost:3001/api`. Changing that means editing the `API_URL` constants in `src/services/` and the fetch calls in `src/pages/`.
-3. Keep `campus-hub.db` somewhere that persists, because the server reads and writes it in place.
+### Central PostgreSQL schema
 
-The Express server does not serve `dist/` itself, and the frontend does not read `VITE_API_URL`. Fix the points under [Known limitations](#known-limitations) before exposing it to the internet.
+`schema.sql` is the initial PostgreSQL/PLpgSQL model for the cross-university
+registry. It includes a shared university catalog, account records, student
+profiles partitioned by university, registration functions, and an aggregate
+view for central-admin metrics. It seeds a starter catalog; additional
+universities can be registered through `register_university`.
 
-## Contributing
+The running development backend still uses the existing SQLite database
+(`campus-hub.db`) and applies its local schema/migrations in `server.js`.
+`schema.sql` is the PostgreSQL foundation for the later central-database
+migration; it is not automatically applied by `npm run dev`. The data model is
+an initial framework and can be revised when the ERD is provided.
 
-Issues and pull requests are welcome on [GitHub](https://github.com/Kairo-2081/CSB2.0/issues).
+### Data Endpoints
+```http
+GET/POST /complaints
+GET/POST /notices
+GET/POST /marketplace
+GET/POST /animal-welfare
+GET/POST /blood-donation
+GET/POST /students
+GET/POST /faculty-suggestions
+GET/POST /lost-found
+```
 
-1. Create a feature branch: `git checkout -b feature/short-name`
-2. Commit your changes with a clear message.
-3. Run `npm run lint` and try the change locally with `npm run dev`.
-4. Push the branch and open a pull request.
+### Authentication
+- Requests are authenticated via JWT tokens stored in localStorage
+- Include token in `Authorization: Bearer <token>` header
+- Server validates token before processing requests
 
-## License
+---
 
-No license file is included. The project was built as part of a hackathon, so contact the maintainers before reusing it.
+## 🗄️ Database Schema
 
-## Roadmap
+### Users Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT (PK) | Unique user identifier |
+| name | TEXT | User full name |
+| email | TEXT (UNIQUE) | Email address |
+| password | TEXT | Hashed password |
+| role | TEXT | 'admin' or 'student' |
+| phone | TEXT | Contact number |
+| department | TEXT | Department/faculty |
+| created_at | TEXT | Account creation timestamp |
+| updated_at | TEXT | Last update timestamp |
+
+### Related Tables
+- **complaints**: Issue tracking and resolution
+- **notices**: Campus announcements
+- **marketplace**: Buy/sell items
+- **animal_welfare**: Animal care reports
+- **blood_donation**: Donor and donation records
+- **students**: Student profiles
+- **faculty_suggestions**: Feedback submissions
+- **lost_found**: Lost/found item tracking
+
+---
+
+## 🔐 Authentication & Security
+
+### Authentication Flow
+1. User submits email/password via Auth page
+2. Backend validates credentials and checks server health
+3. JWT token generated and stored in localStorage
+4. Token used for subsequent API requests
+5. AuthContext manages global auth state
+
+### Authorization
+- **Protected Routes**: ProtectedRoute component checks authentication
+- **Role-Based Access**: Student/Admin roles with conditional rendering
+- **Server Health**: Verified before each login attempt
+
+### Security Best Practices
+- Passwords stored as hashed values in database
+- CORS enabled for localhost development
+- Error messages sanitized for production
+- Sensitive data never logged or cached insecurely
+
+---
+
+## 🌐 Deployment
+
+### Build for Production
+```bash
+npm run build
+```
+Creates optimized production bundle in `dist/` directory.
+
+### Hosting Options
+
+#### Vercel (Recommended)
+1. Push code to GitHub
+2. Connect repository to Vercel
+3. Set environment variables
+4. Vercel auto-deploys on push
+
+#### Netlify
+1. Connect GitHub repository
+2. Configure build command: `npm run build`
+3. Set publish directory: `dist`
+
+#### Traditional Hosting (VPS/Shared Hosting)
+1. Build frontend: `npm run build`
+2. Deploy `dist/` folder to web server
+3. Set up Node.js environment for backend
+4. Configure environment variables
+5. Start backend: `node server.js`
+
+### Environment Variables
+Create `.env.local` for development:
+```
+VITE_API_URL=http://localhost:3001/api
+```
+
+For production, set appropriate backend API URL.
+
+---
+
+## 🤝 Contributing
+
+1. Create a feature branch: `git checkout -b feature/amazing-feature`
+2. Commit changes: `git commit -m 'Add amazing feature'`
+3. Push to branch: `git push origin feature/amazing-feature`
+4. Open a Pull Request
+
+### Code Standards
+- Use TypeScript for type safety
+- Follow ESLint rules
+- Write meaningful commit messages
+- Test changes before submitting PR
+
+---
+
+## 📄 License
+
+This project is part of a hackathon initiative. For licensing information, please contact the project maintainers.
+
+---
+
+## 📞 Support & Contact
+
+For issues, feature requests, or questions:
+1. Open an issue on GitHub
+2. Contact the development team
+3. Check existing documentation
+
+---
+
+## 🎯 Roadmap
 
 - [ ] Integrate Supabase for cloud database
 - [ ] Add email notifications
@@ -209,3 +423,7 @@ No license file is included. The project was built as part of a hackathon, so co
 - [ ] Analytics dashboard
 - [ ] API rate limiting
 - [ ] Webhook integrations
+
+---
+
+**Last Updated**: December 2025 | **Version**: 2.0

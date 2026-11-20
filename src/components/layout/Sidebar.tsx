@@ -20,6 +20,7 @@ import {
   X,
   LogOut,
   Settings,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -81,6 +82,9 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const visibleNavItems: NavItem[] = user?.role === "admin"
+    ? [{ title: "University network", href: "/central-admin", icon: Building2 }, ...navItems]
+    : navItems;
   const [expandedItems, setExpandedItems] = useState<string[]>(["Queries", "Health", "Database"]);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -115,7 +119,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <li key={item.title}>
               {item.href ? (
                 <Link

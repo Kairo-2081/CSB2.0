@@ -9,17 +9,46 @@ export interface User {
   role: 'admin' | 'student';
   phone?: string;
   department?: string;
+  universityId?: string;
+  universityName?: string;
+  homeDistrict?: string;
+  currentResidence?: string;
+}
+
+export interface University {
+  id: string;
+  name: string;
+  shortName: string | null;
+  division: string | null;
+}
+
+export interface UniversityMetrics {
+  id: string;
+  name: string;
+  shortName: string | null;
+  division: string | null;
+  studentCount: number;
+  studentsThisMonth: number;
+}
+
+export interface CentralAdminMetrics {
+  universityCount: number;
+  studentCount: number;
+  studentsThisMonth: number;
+  universities: UniversityMetrics[];
 }
 
 export interface LoginResponse {
   success: boolean;
   user: User;
+  token: string;
   message?: string;
 }
 
 export interface RegisterResponse {
   success: boolean;
   user: User;
+  token: string;
   message?: string;
 }
 
@@ -61,6 +90,42 @@ async function parseErrorResponse(response: Response): Promise<string> {
 }
 
 class AuthService {
+  async getUniversities(): Promise<University[]> {
+    const response = await fetch(`${API_URL}/universities`);
+    if (!response.ok) {
+      throw new Error(await parseErrorResponse(response));
+    }
+
+    const data = await response.json();
+    if (!data.success || !Array.isArray(data.universities)) {
+      throw new Error(data.error || 'Failed to load universities');
+    }
+    return data.universities;
+  }
+
+  async getCentralAdminMetrics(): Promise<CentralAdminMetrics> {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Your session has expired. Please sign in again.');
+    }
+
+    const response = await fetch(`${API_URL}/admin/metrics`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorResponse(response));
+    }
+
+    const data = await response.json();
+    if (!data.success || !Array.isArray(data.universities)) {
+      throw new Error(data.error || 'Failed to load university metrics');
+    }
+    return data as CentralAdminMetrics;
+  }
+
   /**
    * Login user with email and password
    */
@@ -87,9 +152,9 @@ class AuthService {
 
       const data = await response.json();
       
-      if (data.success && data.user) {
+      if (data.success && data.user && data.token) {
         // Store user in localStorage
-        this.setCurrentUser(data.user);
+        this.setCurrentUser(data.user, data.token);
         return data;
       } else {
         throw new Error(data.error || 'Login failed');
@@ -107,8 +172,11 @@ class AuthService {
     name: string;
     email: string;
     password: string;
-    phone?: string;
-    department?: string;
+    phone: string;
+    department: string;
+    universityName: string;
+    homeDistrict: string;
+    currentResidence: string;
   }): Promise<RegisterResponse> {
     try {
       // Check server health first
@@ -132,8 +200,8 @@ class AuthService {
 
       const data = await response.json();
 
-      if (data.success && data.user) {
-        this.setCurrentUser(data.user);
+      if (data.success && data.user && data.token) {
+        this.setCurrentUser(data.user, data.token);
         return data;
       } else {
         throw new Error(data.error || 'Registration failed');
@@ -167,8 +235,11 @@ class AuthService {
   /**
    * Set current user in localStorage
    */
-  setCurrentUser(user: User): void {
+  setCurrentUser(user: User, token?: string): void {
     localStorage.setItem('user', JSON.stringify(user));
+    if (token) {
+      localStorage.setItem('authToken', token);
+    }
   }
 
   /**
@@ -191,13 +262,13 @@ class AuthService {
    */
   async verifyAuth(): Promise<boolean> {
     try {
-      const user = this.getCurrentUser();
-      if (!user) return false;
+      const token = localStorage.getItem('authToken');
+      if (!token || !this.getCurrentUser()) return false;
 
       const response = await fetch(`${API_URL}/auth/verify`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${user.id}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 

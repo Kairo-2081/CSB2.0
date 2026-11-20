@@ -18,6 +18,7 @@ import Students from "./pages/Students";
 import FacultySuggestions from "./pages/FacultySuggestions";
 import Profile from "./pages/Profile";
 import DatabaseTest from "./pages/DatabaseTest";
+import CentralAdmin from "./pages/CentralAdmin";
 import NotFound from "./pages/NotFound";
 import AIAssistant from "@/components/AIAssistant";
 
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/central-admin" element={<ProtectedRoute requireAdmin><CentralAdmin /></ProtectedRoute>} />
             <Route path="/lost-found" element={<ProtectedRoute><LostFound /></ProtectedRoute>} />
             <Route path="/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
             <Route path="/notices" element={<ProtectedRoute><Notices /></ProtectedRoute>} />

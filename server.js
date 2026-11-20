@@ -3,6 +3,7 @@ import cors from 'cors';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import path from 'path';
+import { randomBytes } from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,6 +11,21 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3001;
+const authSessions = new Map();
+const UNIVERSITY_CATALOG = [
+  { name: 'Bangladesh University of Engineering and Technology', shortName: 'BUET', division: 'Dhaka' },
+  { name: 'Rajshahi University of Engineering and Technology', shortName: 'RUET', division: 'Rajshahi' },
+  { name: 'University of Dhaka', shortName: 'DU', division: 'Dhaka' },
+  { name: 'University of Rajshahi', shortName: 'RU', division: 'Rajshahi' },
+  { name: 'University of Chittagong', shortName: 'CU', division: 'Chattogram' },
+  { name: 'Jahangirnagar University', shortName: 'JU', division: 'Dhaka' },
+  { name: 'Khulna University', shortName: 'KU', division: 'Khulna' },
+  { name: 'Shahjalal University of Science and Technology', shortName: 'SUST', division: 'Sylhet' },
+  { name: 'Chittagong University of Engineering and Technology', shortName: 'CUET', division: 'Chattogram' },
+  { name: 'Khulna University of Engineering and Technology', shortName: 'KUET', division: 'Khulna' },
+  { name: 'Dhaka University of Engineering and Technology', shortName: 'DUET', division: 'Dhaka' },
+  { name: 'Bangladesh Agricultural University', shortName: 'BAU', division: 'Mymensingh' },
+];
 
 // Middleware
 app.use(cors());
@@ -48,6 +64,19 @@ async function initializeDatabase() {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS universities (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      slug TEXT NOT NULL UNIQUE,
+      short_name TEXT,
+      division TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_universities_name
+      ON universities(name COLLATE NOCASE);
 
     CREATE TABLE IF NOT EXISTS complaints (
       id TEXT PRIMARY KEY,
@@ -144,6 +173,27 @@ async function initializeDatabase() {
     );
   `);
 
+  const userColumns = await db.all('PRAGMA table_info(users)');
+  const existingUserColumns = new Set(userColumns.map((column) => column.name));
+  for (const [column, definition] of [
+    ['university_id', 'TEXT'],
+    ['home_district', 'TEXT'],
+    ['current_residence', 'TEXT'],
+  ]) {
+    if (!existingUserColumns.has(column)) {
+      await db.exec(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
+    }
+  }
+
+  for (const university of UNIVERSITY_CATALOG) {
+    const slug = university.shortName.toLowerCase();
+    await db.run(
+      `INSERT OR IGNORE INTO universities (id, name, slug, short_name, division)
+       VALUES (?, ?, ?, ?, ?)`,
+      [slug, university.name, slug, university.shortName, university.division]
+    );
+  }
+
   // Insert default users (Admin + 5 Students)
   try {
     const existingUsers = await db.all('SELECT COUNT(*) as count FROM users');
@@ -221,6 +271,33 @@ function validatePassword(password) {
   );
 }
 
+function createAuthToken(userId) {
+  const token = randomBytes(32).toString('hex');
+  authSessions.set(token, {
+    userId,
+    expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+  });
+  return token;
+}
+
+function getAuthenticatedUserId(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+  const session = authSessions.get(token);
+  if (!session) {
+    return null;
+  }
+  if (session.expiresAt <= Date.now()) {
+    authSessions.delete(token);
+    return null;
+  }
+  return session.userId;
+}
+
 // Login endpoint
 app.post('/api/auth/login', async (req, res) => {
   try {
@@ -234,7 +311,10 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = await db.get(
-      'SELECT * FROM users WHERE email = ? AND password = ?',
+      `SELECT users.*, universities.name AS university_name
+       FROM users
+       LEFT JOIN universities ON universities.id = users.university_id
+       WHERE lower(users.email) = lower(?) AND users.password = ?`,
       [email, password]
     );
 
@@ -247,13 +327,18 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       success: true,
+      token: createAuthToken(user.id),
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
         phone: user.phone,
-        department: user.department
+        department: user.department,
+        universityId: user.university_id,
+        universityName: user.university_name,
+        homeDistrict: user.home_district,
+        currentResidence: user.current_residence
       }
     });
   } catch (error) {
@@ -268,17 +353,20 @@ app.post('/api/auth/login', async (req, res) => {
 // Register endpoint
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, phone, department } = req.body;
+    const { name, email, password, phone, department, universityName, homeDistrict, currentResidence } = req.body;
+    const requiredFields = [name, email, password, phone, department, universityName, homeDistrict, currentResidence];
 
-    // Validation
-    if (!name || !email || !password || !department) {
+    if (
+      requiredFields.some((field) => typeof field !== 'string' || !field.trim())
+    ) {
       return res.status(400).json({
         success: false,
-        error: 'Name, email, password, and department are required'
+        error: 'Name, email, password, phone, university, department, home district, and current residence are required'
       });
     }
 
-    if (!validateEmail(email)) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!validateEmail(normalizedEmail)) {
       return res.status(400).json({
         success: false,
         error: 'Invalid email format'
@@ -293,36 +381,94 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     // Check if email already exists
-    const existingUser = await db.get(
-      'SELECT * FROM users WHERE email = ?',
-      [email]
-    );
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        error: 'Email already registered'
-      });
-    }
-
-    // Create new user
     const id = generateId();
     const now = new Date().toISOString();
+    const normalizedUniversityName = universityName.trim().replace(/\s+/g, ' ');
+    const slugBase = normalizedUniversityName
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || `university-${Date.now()}`;
 
-    await db.run(
-      'INSERT INTO users (id, name, email, password, role, phone, department, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, name, email, password, 'student', phone || null, department, now, now]
-    );
+    await db.exec('BEGIN IMMEDIATE');
+    let university;
+    try {
+      const existingUser = await db.get(
+        'SELECT id FROM users WHERE lower(email) = ?',
+        [normalizedEmail]
+      );
+      if (existingUser) {
+        await db.exec('ROLLBACK');
+        return res.status(409).json({
+          success: false,
+          error: 'Email already registered'
+        });
+      }
+
+      university = await db.get(
+        'SELECT id, name FROM universities WHERE name = ? COLLATE NOCASE AND is_active = 1',
+        [normalizedUniversityName]
+      );
+
+      if (!university) {
+        const slug = `${slugBase}-${Date.now().toString(36)}`;
+        university = {
+          id: slug,
+          name: normalizedUniversityName,
+        };
+        await db.run(
+          `INSERT INTO universities (id, name, slug, short_name, division)
+           VALUES (?, ?, ?, NULL, NULL)`,
+          [university.id, university.name, slug]
+        );
+      }
+
+      await db.run(
+        `INSERT INTO users (
+          id, name, email, password, role, phone, department,
+          university_id, home_district, current_residence, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, 'student', ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          id,
+          name.trim(),
+          normalizedEmail,
+          password,
+          phone.trim(),
+          department.trim(),
+          university.id,
+          homeDistrict.trim(),
+          currentResidence.trim(),
+          now,
+          now,
+        ]
+      );
+      await db.exec('COMMIT');
+    } catch (error) {
+      await db.exec('ROLLBACK');
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res.status(409).json({
+          success: false,
+          error: 'Email already registered'
+        });
+      }
+      throw error;
+    }
 
     res.status(201).json({
       success: true,
+      token: createAuthToken(id),
       user: {
         id,
         name,
-        email,
+        email: normalizedEmail,
         role: 'student',
-        phone: phone || null,
-        department
+        phone: phone.trim(),
+        department: department.trim(),
+        universityId: university.id,
+        universityName: university.name,
+        homeDistrict: homeDistrict.trim(),
+        currentResidence: currentResidence.trim()
       },
       message: 'Account created successfully'
     });
@@ -338,16 +484,21 @@ app.post('/api/auth/register', async (req, res) => {
 // Verify auth endpoint (optional)
 app.get('/api/auth/verify', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'No authorization token' 
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'A valid session is required'
       });
     }
 
-    const userId = authHeader.substring(7);
-    const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
+    const user = await db.get(
+      `SELECT users.*, universities.name AS university_name
+       FROM users
+       LEFT JOIN universities ON universities.id = users.university_id
+       WHERE users.id = ?`,
+      [userId]
+    );
 
     if (!user) {
       return res.status(401).json({ 
@@ -364,7 +515,11 @@ app.get('/api/auth/verify', async (req, res) => {
         email: user.email,
         role: user.role,
         phone: user.phone,
-        department: user.department
+        department: user.department,
+        universityId: user.university_id,
+        universityName: user.university_name,
+        homeDistrict: user.home_district,
+        currentResidence: user.current_residence
       }
     });
   } catch (error) {
@@ -372,6 +527,82 @@ app.get('/api/auth/verify', async (req, res) => {
       success: false, 
       error: 'Verification failed' 
     });
+  }
+});
+
+app.get('/api/universities', async (req, res) => {
+  try {
+    const universities = await db.all(
+      `SELECT id, name, short_name AS shortName, division
+       FROM universities
+       WHERE is_active = 1
+       ORDER BY name COLLATE NOCASE`
+    );
+    res.json({ success: true, universities });
+  } catch (error) {
+    console.error('University list error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load universities' });
+  }
+});
+
+app.get('/api/admin/metrics', async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication is required' });
+    }
+
+    const account = await db.get('SELECT role FROM users WHERE id = ?', [userId]);
+    if (!account) {
+      return res.status(401).json({ success: false, error: 'User not found' });
+    }
+    if (account.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Central administrator access is required' });
+    }
+
+    const universities = await db.all(
+      `SELECT
+        universities.id,
+        universities.name,
+        universities.short_name AS shortName,
+        universities.division,
+        COUNT(CASE WHEN users.role = 'student' THEN users.id END) AS studentCount,
+        COUNT(CASE
+          WHEN users.role = 'student'
+            AND strftime('%Y-%m', users.created_at) = strftime('%Y-%m', 'now')
+          THEN users.id
+        END) AS studentsThisMonth
+      FROM universities
+      LEFT JOIN users ON users.university_id = universities.id
+      WHERE universities.is_active = 1
+      GROUP BY universities.id
+      ORDER BY studentCount DESC, universities.name COLLATE NOCASE`
+    );
+    const totals = await db.get(
+      `SELECT
+        COUNT(*) AS universityCount,
+        COALESCE(SUM(studentCount), 0) AS studentCount,
+        COALESCE(SUM(studentsThisMonth), 0) AS studentsThisMonth
+      FROM (
+        SELECT
+          universities.id,
+          COUNT(CASE WHEN users.role = 'student' THEN users.id END) AS studentCount,
+          COUNT(CASE
+            WHEN users.role = 'student'
+              AND strftime('%Y-%m', users.created_at) = strftime('%Y-%m', 'now')
+            THEN users.id
+          END) AS studentsThisMonth
+        FROM universities
+        LEFT JOIN users ON users.university_id = universities.id
+        WHERE universities.is_active = 1
+        GROUP BY universities.id
+      ) AS university_totals`
+    );
+
+    res.json({ success: true, ...totals, universities });
+  } catch (error) {
+    console.error('Admin metrics error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load university metrics' });
   }
 });
 
