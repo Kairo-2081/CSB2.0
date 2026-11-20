@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { authService, University } from "@/services/auth.service";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,7 +81,7 @@ interface PasswordValidation {
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { login: contextLogin, register: contextRegister, isAuthenticated } = useAuth();
+  const { login: contextLogin, register: contextRegister, isAuthenticated, user } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -98,13 +99,26 @@ export default function Auth() {
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [registerPhone, setRegisterPhone] = useState("");
   const [registerDepartment, setRegisterDepartment] = useState("");
+  const [registerUniversityName, setRegisterUniversityName] = useState("");
+  const [registerHomeDistrict, setRegisterHomeDistrict] = useState("");
+  const [registerCurrentResidence, setRegisterCurrentResidence] = useState("");
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [universityLoadError, setUniversityLoadError] = useState("");
 
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate(user?.role === 'admin' ? '/central-admin' : '/dashboard');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user?.role]);
+
+  useEffect(() => {
+    authService.getUniversities()
+      .then(setUniversities)
+      .catch((err: unknown) => {
+        setUniversityLoadError(err instanceof Error ? err.message : "Could not load the university list.");
+      });
+  }, []);
 
   const validatePassword = (password: string): PasswordValidation => {
     return {
@@ -141,7 +155,7 @@ export default function Auth() {
       toast.success(`Welcome back! 👋`);
       setLoginEmail("");
       setLoginPassword("");
-      navigate("/dashboard");
+      navigate(authService.getCurrentUser()?.role === 'admin' ? "/central-admin" : "/dashboard");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed. Please try again.";
       setError(message);
@@ -156,7 +170,16 @@ export default function Auth() {
     setError("");
 
     // Validation
-    if (!registerName.trim() || !registerEmail.trim() || !registerPassword.trim() || !registerDepartment) {
+    if (
+      !registerName.trim() ||
+      !registerEmail.trim() ||
+      !registerPassword.trim() ||
+      !registerPhone.trim() ||
+      !registerDepartment ||
+      !registerUniversityName.trim() ||
+      !registerHomeDistrict.trim() ||
+      !registerCurrentResidence.trim()
+    ) {
       setError("Please fill in all required fields");
       return;
     }
@@ -185,6 +208,9 @@ export default function Auth() {
         password: registerPassword,
         phone: registerPhone,
         department: registerDepartment,
+        universityName: registerUniversityName,
+        homeDistrict: registerHomeDistrict,
+        currentResidence: registerCurrentResidence,
       });
       toast.success("Account created successfully! 🎉");
       setRegisterName("");
@@ -193,6 +219,9 @@ export default function Auth() {
       setRegisterConfirmPassword("");
       setRegisterPhone("");
       setRegisterDepartment("");
+      setRegisterUniversityName("");
+      setRegisterHomeDistrict("");
+      setRegisterCurrentResidence("");
       setActiveTab("login");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
@@ -209,7 +238,7 @@ export default function Auth() {
     try {
       await contextLogin(email, password);
       toast.success(`Welcome, ${name}! 🎓`);
-      navigate("/dashboard");
+      navigate(authService.getCurrentUser()?.role === 'admin' ? "/central-admin" : "/dashboard");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Quick login failed";
       setError(message);
@@ -417,6 +446,30 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
+                        <Label htmlFor="university-name">University *</Label>
+                        <Input
+                          id="university-name"
+                          list="public-universities"
+                          placeholder="Start typing your public university"
+                          value={registerUniversityName}
+                          onChange={(e) => setRegisterUniversityName(e.target.value)}
+                          disabled={isLoading}
+                          required
+                        />
+                        <datalist id="public-universities">
+                          {universities.map((university) => (
+                            <option key={university.id} value={university.name} />
+                          ))}
+                        </datalist>
+                        <p className="text-xs text-muted-foreground">
+                          If your university is not listed, enter its official name.
+                        </p>
+                        {universityLoadError && (
+                          <p role="alert" className="text-xs text-destructive">{universityLoadError}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
                         <Label htmlFor="department">Department *</Label>
                         <select
                           id="department"
@@ -437,13 +490,39 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone (Optional)</Label>
+                        <Label htmlFor="phone">Contact number *</Label>
                         <Input
                           id="phone"
-                          placeholder="+91 98765 43210"
+                          type="tel"
+                          placeholder="+880 1XXX-XXXXXX"
                           value={registerPhone}
                           onChange={(e) => setRegisterPhone(e.target.value)}
                           disabled={isLoading}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="home-district">Home district *</Label>
+                        <Input
+                          id="home-district"
+                          placeholder="Your home district"
+                          value={registerHomeDistrict}
+                          onChange={(e) => setRegisterHomeDistrict(e.target.value)}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="current-residence">Current residence *</Label>
+                        <Input
+                          id="current-residence"
+                          placeholder="Hall, area, or current address"
+                          value={registerCurrentResidence}
+                          onChange={(e) => setRegisterCurrentResidence(e.target.value)}
+                          disabled={isLoading}
+                          required
                         />
                       </div>
 
