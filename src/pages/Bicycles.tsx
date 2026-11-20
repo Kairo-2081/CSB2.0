@@ -60,6 +60,26 @@ const statusConfig = {
   },
 };
 
+const unavailableStatus = {
+  label: "Status unavailable",
+  variant: "secondary" as const,
+  icon: AlertTriangle,
+  color: "text-muted-foreground",
+};
+
+function getBicycleStatus(status?: string) {
+  switch (status) {
+    case "available":
+      return statusConfig.available;
+    case "rented":
+      return statusConfig.rented;
+    case "maintenance":
+      return statusConfig.maintenance;
+    default:
+      return unavailableStatus;
+  }
+}
+
 
 export default function Bicycles() {
   const [filter, setFilter] = useState<string>("all");
@@ -239,7 +259,7 @@ export default function Bicycles() {
         {/* Bicycles Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredBicycles.map((bicycle, index) => {
-            const status = statusConfig[bicycle.status];
+            const status = getBicycleStatus(bicycle.status);
             const StatusIcon = status.icon;
             
             return (
@@ -286,9 +306,13 @@ export default function Bicycles() {
                         <Button variant="outline" size="sm" className="flex-1" disabled>
                           In Use
                         </Button>
-                      ) : (
+                      ) : bicycle.status === "maintenance" ? (
                         <Button variant="destructive" size="sm" className="flex-1" disabled>
                           Maintenance
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="flex-1" disabled>
+                          Status unavailable
                         </Button>
                       )}
                     </div>
