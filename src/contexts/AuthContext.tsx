@@ -10,8 +10,11 @@ interface AuthContextType {
     name: string;
     email: string;
     password: string;
-    phone?: string;
-    department?: string;
+    phone: string;
+    department: string;
+    universityName: string;
+    homeDistrict: string;
+    currentResidence: string;
   }) => Promise<void>;
   logout: () => void;
   clearError: () => void;
@@ -53,8 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string;
     email: string;
     password: string;
-    phone?: string;
-    department?: string;
+    phone: string;
+    department: string;
+    universityName: string;
+    homeDistrict: string;
+    currentResidence: string;
   }) => {
     setIsLoading(true);
     setError(null);
