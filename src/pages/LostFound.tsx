@@ -141,7 +141,7 @@ export default function LostFound() {
             <p className="text-muted-foreground mt-1">Report lost items or help others find theirs</p>
           </div>
           <Button 
-            variant="glow" 
+             
             className="gap-2"
             onClick={() => setIsDialogOpen(true)}
           >
@@ -191,8 +191,7 @@ export default function LostFound() {
           {filteredItems.map((item, index) => (
             <Card 
               key={item.id}
-              variant="interactive"
-              className="animate-slide-up"
+              className=""
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <CardHeader className="pb-3">
@@ -245,7 +244,7 @@ export default function LostFound() {
         </div>
 
         {filteredItems.length === 0 && (
-          <Card variant="glass" className="p-12 text-center">
+          <Card className="p-12 text-center">
             <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">No items found</h3>
             <p className="text-muted-foreground mt-1">Try adjusting your search or filters</p>

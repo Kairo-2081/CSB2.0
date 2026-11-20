@@ -44,7 +44,6 @@ const statusConfig = {
   high: { label: "High Priority", variant: "destructive" as const },
 };
 
-const mockReports: AnimalReport[] = [];
 
 export default function AnimalWelfare() {
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
@@ -134,7 +133,7 @@ export default function AnimalWelfare() {
             <h1 className="text-3xl font-bold text-foreground">Animal Welfare</h1>
             <p className="text-muted-foreground mt-1">Report and track animal welfare issues on campus</p>
           </div>
-          <Button variant="glow" className="gap-2" onClick={() => setIsDialogOpen(true)}>
+          <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             Report Issue
           </Button>
@@ -259,8 +258,7 @@ export default function AnimalWelfare() {
                 return (
                   <Card 
                     key={report.id} 
-                    variant="interactive"
-                    className="animate-slide-up"
+                    className=""
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <CardContent className="p-6">
@@ -312,7 +310,7 @@ export default function AnimalWelfare() {
 
           {/* Info Section */}
           <div>
-            <Card variant="glass">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">How to Report</CardTitle>
               </CardHeader>
