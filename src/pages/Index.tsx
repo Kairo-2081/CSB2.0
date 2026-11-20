@@ -1,66 +1,118 @@
 import { Link } from "react-router-dom";
+import {
+  ArrowUpRight,
+  Bike,
+  Bell,
+  BookOpen,
+  Droplets,
+  Heart,
+  LayoutDashboard,
+  MessageSquare,
+  Search,
+  ShoppingBag,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Search, MessageSquare, Bike, ShoppingBag, Bell, Heart, Droplets } from "lucide-react";
 
 const modules = [
-  { title: "Lost and found", description: "Report or locate campus items", href: "/lost-found", icon: Search },
-  { title: "Complaints", description: "File and track an issue", href: "/complaints", icon: MessageSquare },
-  { title: "Bicycle sharing", description: "View and register bicycles", href: "/bicycles", icon: Bike },
-  { title: "Marketplace", description: "Buy and sell items", href: "/marketplace", icon: ShoppingBag },
-  { title: "Notices", description: "Read official announcements", href: "/notices", icon: Bell },
-  { title: "Blood donation", description: "View donation entries", href: "/blood-donation", icon: Droplets },
+  { title: "Notices", description: "Read university announcements", href: "/notices", icon: Bell },
+  { title: "Complaints", description: "Report and track campus issues", href: "/complaints", icon: MessageSquare },
+  { title: "Lost and found", description: "Report or locate an item", href: "/lost-found", icon: Search },
+  { title: "Lend and borrow", description: "Share useful items on campus", href: "/lend-borrow", icon: BookOpen },
+  { title: "Marketplace", description: "Browse campus listings", href: "/marketplace", icon: ShoppingBag },
+  { title: "Bicycles", description: "View and register bicycles", href: "/bicycles", icon: Bike },
+  { title: "Blood donation", description: "View donor entries", href: "/blood-donation", icon: Droplets },
   { title: "Animal welfare", description: "Report an animal issue", href: "/animal-welfare", icon: Heart },
 ];
 
 export default function Index() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 px-3 pt-3">
-        <div className="glass-shell mx-auto flex max-w-6xl items-center justify-between rounded-2xl px-5 py-3">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">C</div>
-            <div>
-              <p className="font-semibold">CSB 2.0</p>
-              <p className="text-xs text-muted-foreground">Campus services</p>
+    <div className="min-h-screen p-2 sm:p-3">
+      <div className="app-stage landing-stage mx-auto max-w-[1600px] overflow-hidden">
+        <header className="sticky top-0 z-30 px-4 pt-4 sm:px-8">
+          <div className="glass-shell mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-2xl px-4 py-3 sm:rounded-full sm:px-5">
+            <Link to="/" className="flex shrink-0 items-center gap-3">
+              <span className="brand-mark flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold">C</span>
+              <span>
+                <span className="block font-semibold leading-tight">CSB 2.0</span>
+                <span className="hidden text-xs text-muted-foreground sm:block">Campus services</span>
+              </span>
+            </Link>
+            <nav aria-label="Account" className="flex shrink-0 items-center gap-2">
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Link to="/auth">Sign in</Link>
+              </Button>
+              <Button asChild size="sm" className="w-10 px-0 sm:w-auto sm:px-3">
+                <Link to="/dashboard" aria-label="Open dashboard">
+                  <LayoutDashboard aria-hidden="true" />
+                  <span className="hidden sm:inline">Open dashboard</span>
+                </Link>
+              </Button>
+            </nav>
+          </div>
+        </header>
+
+        <main className="relative z-10 mx-auto max-w-7xl">
+          <section className="landing-hero flex min-h-[min(74vh,760px)] flex-col items-center justify-center px-6 py-24 text-center sm:px-12">
+            <div className="relative z-10 max-w-4xl">
+              <h1 className="text-balance text-5xl font-semibold leading-[1.04] tracking-[-0.035em] text-foreground sm:text-6xl lg:text-7xl">
+                Campus services,
+                <br className="hidden sm:block" /> one place to start.
+              </h1>
+              <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+                Read notices, report campus issues, find items, and share resources with your university community.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Button asChild size="lg">
+                  <a href="#services">
+                    Browse services
+                    <ArrowUpRight aria-hidden="true" />
+                  </a>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link to="/auth">Sign in</Link>
+                </Button>
+              </div>
             </div>
-          </Link>
-          <div className="flex gap-2">
-            <Button asChild variant="ghost"><Link to="/auth">Sign in</Link></Button>
-            <Button asChild><Link to="/dashboard"><LayoutDashboard className="h-4 w-4" />Dashboard</Link></Button>
-          </div>
-        </div>
-      </header>
+          </section>
 
-      <main className="mx-auto max-w-6xl px-6 pb-16">
-        <section className="py-16 sm:py-24">
-          <div className="glass-panel relative overflow-hidden rounded-[28px] px-7 py-12 sm:px-12 sm:py-16">
-            <div className="absolute right-[-8rem] top-[-8rem] h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-            <h1 className="relative max-w-4xl text-4xl font-bold leading-[1.04] sm:text-6xl lg:text-7xl">Campus services, in one clear workspace.</h1>
-          <p className="relative mt-6 max-w-2xl text-lg text-muted-foreground">Find notices, report issues, post items, and use campus resources without switching between separate tools.</p>
-          <div className="relative mt-8 flex flex-wrap gap-3">
-            <Button asChild><Link to="/dashboard">Open dashboard</Link></Button>
-            <Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button>
-          </div>
-          </div>
-        </section>
+          <section id="services" aria-labelledby="services-heading" className="scroll-mt-24 px-5 pb-16 sm:px-8">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 id="services-heading" className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                  Campus services
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">Choose a service to continue.</p>
+              </div>
+            </div>
 
-        <section className="py-12" aria-labelledby="modules-heading">
-          <h2 id="modules-heading" className="mb-6 text-2xl font-semibold">Campus modules</h2>
-          <div className="glass-panel divide-y divide-white/8 overflow-hidden rounded-2xl">
-            {modules.map((module) => (
-              <Link key={module.href} to={module.href} className="group flex items-center gap-4 px-5 py-4 transition-colors duration-150 hover:bg-white/[0.055]">
-                <div className="glass-control flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
-                  <module.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-medium">{module.title}</h3>
-                  <p className="text-sm text-muted-foreground">{module.description}</p>
-                </div>
-              </Link>
-            ))}
+            <div className="glass-panel grid overflow-hidden rounded-2xl sm:grid-cols-2">
+              {modules.map((module) => (
+                <Link
+                  key={module.href}
+                  to={module.href}
+                  className="group flex min-w-0 items-center gap-4 border-b border-white/[0.07] p-5 transition-colors duration-200 hover:bg-white/[0.045] sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(odd)]:border-r-white/[0.07]"
+                >
+                  <span className="glass-control flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-primary transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
+                    <module.icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-foreground">{module.title}</span>
+                    <span className="mt-1 block text-sm text-muted-foreground">{module.description}</span>
+                  </span>
+                  <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden="true" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        </main>
+
+        <footer className="relative z-10 border-t border-white/[0.07] px-5 py-5 text-sm text-muted-foreground sm:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+            <span>CSB 2.0</span>
+            <span>Campus services</span>
           </div>
-        </section>
-      </main>
+        </footer>
+      </div>
     </div>
   );
 }

@@ -20,6 +20,7 @@ import Profile from "./pages/Profile";
 import CentralAdmin from "./pages/CentralAdmin";
 import NotFound from "./pages/NotFound";
 import Bicycles from "./pages/Bicycles";
+import LendBorrow from "./pages/LendBorrow";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/animal-welfare" element={<ProtectedRoute><AnimalWelfare /></ProtectedRoute>} />
             <Route path="/blood-donation" element={<ProtectedRoute><BloodDonation /></ProtectedRoute>} />
             <Route path="/bicycles" element={<ProtectedRoute><Bicycles /></ProtectedRoute>} />
+            <Route path="/lend-borrow" element={<ProtectedRoute><LendBorrow /></ProtectedRoute>} />
             <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
             <Route path="/faculty-suggestions" element={<ProtectedRoute><FacultySuggestions /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
