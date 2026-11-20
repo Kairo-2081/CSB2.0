@@ -12,8 +12,6 @@ import {
   Mail, 
   Lock, 
   User,
-  Shield,
-  GraduationCap,
   AlertCircle,
   Loader2,
   Eye,
@@ -22,54 +20,6 @@ import {
   X
 } from "lucide-react";
 import { toast } from "sonner";
-
-// Demo credentials for testing
-const DEMO_CREDENTIALS = {
-  admin: {
-    name: 'Admin User',
-    email: 'admin@campushub.com',
-    password: 'Admin@123',
-    role: 'admin',
-    department: 'Administration',
-  },
-  students: [
-    {
-      name: 'Raj Kumar',
-      email: 'raj@student.com',
-      password: 'Student@123',
-      role: 'student',
-      department: 'Computer Science',
-    },
-    {
-      name: 'Priya Singh',
-      email: 'priya@student.com',
-      password: 'Student@123',
-      role: 'student',
-      department: 'Engineering',
-    },
-    {
-      name: 'Amit Patel',
-      email: 'amit@student.com',
-      password: 'Student@123',
-      role: 'student',
-      department: 'Business',
-    },
-    {
-      name: 'Sarah Johnson',
-      email: 'sarah@student.com',
-      password: 'Student@123',
-      role: 'student',
-      department: 'Medical',
-    },
-    {
-      name: 'Michael Chen',
-      email: 'michael@student.com',
-      password: 'Student@123',
-      role: 'student',
-      department: 'Science',
-    },
-  ]
-};
 
 interface PasswordValidation {
   hasMinLength: boolean;
@@ -152,7 +102,7 @@ export default function Auth() {
     setIsLoading(true);
     try {
       await contextLogin(loginEmail, loginPassword);
-      toast.success(`Welcome back! 👋`);
+      toast.success("Welcome back");
       setLoginEmail("");
       setLoginPassword("");
       navigate(authService.getCurrentUser()?.role === 'admin' ? "/central-admin" : "/dashboard");
@@ -232,38 +182,16 @@ export default function Auth() {
     }
   };
 
-  const quickLogin = async (email: string, password: string, name: string) => {
-    setError("");
-    setIsLoading(true);
-    try {
-      await contextLogin(email, password);
-      toast.success(`Welcome, ${name}! 🎓`);
-      navigate(authService.getCurrentUser()?.role === 'admin' ? "/central-admin" : "/dashboard");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Quick login failed";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const passwordValidation = validatePassword(registerPassword);
   const isPasswordValid = Object.values(passwordValidation).every(v => v);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
-      </div>
-
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-4xl relative">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold text-xl shadow-lg">
+            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-xl">
               C
             </div>
             <div className="text-left">
@@ -273,67 +201,8 @@ export default function Auth() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Demo Credentials - Left Side */}
-          <div className="md:col-span-1 space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-foreground mb-1">Demo Accounts</h2>
-              <p className="text-xs text-muted-foreground">Quick access for testing</p>
-            </div>
-
-            {/* Admin Demo Card */}
-            <Card className="border-red-200 dark:border-red-900/30 bg-gradient-to-br from-red-50 to-red-50/50 dark:from-red-950/20 dark:to-red-950/10">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-red-600" />
-                  <CardTitle className="text-sm text-red-900 dark:text-red-200">Admin</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="bg-white dark:bg-slate-900 p-2 rounded text-xs">
-                  <p className="font-mono text-foreground break-all">admin@campushub.com</p>
-                  <p className="text-muted-foreground text-xs mt-1">Admin@123</p>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => quickLogin('admin@campushub.com', 'Admin@123', 'Admin User')}
-                  disabled={isLoading}
-                  className="w-full bg-red-600 hover:bg-red-700 h-8"
-                >
-                  {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Login"}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Students Demo Cards */}
-            <div>
-              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                <GraduationCap className="h-4 w-4 text-blue-600" />
-                Students
-              </h3>
-              <div className="space-y-2">
-                {DEMO_CREDENTIALS.students.slice(0, 3).map((user, idx) => (
-                  <Card key={idx} className="border-blue-200 dark:border-blue-900/30">
-                    <CardContent className="p-2">
-                      <p className="text-xs font-medium text-foreground">{user.name}</p>
-                      <p className="text-xs text-muted-foreground font-mono">{user.email}</p>
-                      <Button
-                        size="sm"
-                        onClick={() => quickLogin(user.email, user.password, user.name)}
-                        disabled={isLoading}
-                        className="w-full mt-2 h-7 text-xs bg-blue-600 hover:bg-blue-700"
-                      >
-                        {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Login"}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Login/Register Form - Right Side */}
-          <div className="md:col-span-2">
+        <div className="mx-auto max-w-2xl">
+          <div>
             <Card className="border-primary/20">
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
