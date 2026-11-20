@@ -8,8 +8,8 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="min-h-screen">
       <Sidebar />
-      <main className="lg:pl-72">
-        <div className="min-h-screen">
+      <main className="min-h-screen lg:pl-72">
+        <div className="app-stage">
           {children}
         </div>
       </main>

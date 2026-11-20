@@ -4,38 +4,38 @@
 
 @layer base {
   :root {
-    --background: 218 50% 7%;
-    --foreground: 220 30% 96%;
-    --card: 218 38% 12%;
-    --card-foreground: 220 30% 96%;
-    --popover: 218 38% 12%;
-    --popover-foreground: 220 30% 96%;
-    --primary: 218 100% 73%;
-    --primary-foreground: 218 55% 10%;
-    --secondary: 218 28% 17%;
-    --secondary-foreground: 220 25% 94%;
-    --muted: 218 24% 14%;
-    --muted-foreground: 218 18% 72%;
-    --accent: 258 75% 77%;
-    --accent-foreground: 218 55% 10%;
-    --destructive: 0 90% 72%;
-    --destructive-foreground: 218 55% 10%;
-    --success: 145 55% 66%;
-    --success-foreground: 218 55% 10%;
-    --warning: 42 90% 70%;
-    --warning-foreground: 218 55% 10%;
-    --border: 218 30% 24%;
-    --input: 218 30% 22%;
-    --ring: 218 100% 73%;
-    --radius: 0.75rem;
-    --sidebar-background: 218 46% 9%;
-    --sidebar-foreground: 220 25% 88%;
-    --sidebar-primary: 218 100% 73%;
-    --sidebar-primary-foreground: 218 55% 10%;
-    --sidebar-accent: 218 38% 18%;
-    --sidebar-accent-foreground: 220 30% 96%;
-    --sidebar-border: 218 30% 21%;
-    --sidebar-ring: 218 100% 73%;
+    --background: 240 24% 4%;
+    --foreground: 245 18% 97%;
+    --card: 245 22% 9%;
+    --card-foreground: 245 18% 97%;
+    --popover: 245 24% 8%;
+    --popover-foreground: 245 18% 97%;
+    --primary: 248 100% 68%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 244 21% 14%;
+    --secondary-foreground: 245 18% 95%;
+    --muted: 244 18% 12%;
+    --muted-foreground: 244 13% 74%;
+    --accent: 262 88% 77%;
+    --accent-foreground: 245 28% 8%;
+    --destructive: 0 78% 66%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 151 52% 64%;
+    --success-foreground: 155 45% 8%;
+    --warning: 39 88% 68%;
+    --warning-foreground: 38 55% 9%;
+    --border: 246 22% 22%;
+    --input: 246 20% 17%;
+    --ring: 249 100% 74%;
+    --radius: 0.875rem;
+    --sidebar-background: 241 29% 6%;
+    --sidebar-foreground: 245 18% 89%;
+    --sidebar-primary: 248 100% 72%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 246 24% 15%;
+    --sidebar-accent-foreground: 245 18% 97%;
+    --sidebar-border: 247 22% 20%;
+    --sidebar-ring: 249 100% 74%;
   }
 
   * {
@@ -48,24 +48,37 @@
 
   body {
     @apply antialiased;
-    min-width: 320px;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background:
-      radial-gradient(circle at 18% 12%, rgba(74, 144, 255, 0.16), transparent 28rem),
-      radial-gradient(circle at 82% 78%, rgba(139, 92, 246, 0.12), transparent 30rem),
+      radial-gradient(ellipse at 5% 2%, rgba(76, 69, 184, 0.22), transparent 40rem),
+      radial-gradient(ellipse at 96% 28%, rgba(61, 81, 172, 0.14), transparent 38rem),
+      radial-gradient(ellipse at 72% 100%, rgba(91, 48, 151, 0.12), transparent 42rem),
       hsl(var(--background));
     color: hsl(var(--foreground));
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
   }
 
   body::before {
     content: "";
     position: fixed;
     inset: 0;
-    z-index: -1;
+    z-index: 0;
     pointer-events: none;
     background:
-      linear-gradient(115deg, rgba(255, 255, 255, 0.025), transparent 38%),
-      repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 24px, rgba(255, 255, 255, 0.008) 25px);
+      radial-gradient(1px 1px at 8% 13%, rgba(231, 228, 255, 0.62) 45%, transparent 100%),
+      radial-gradient(1px 1px at 16% 76%, rgba(186, 193, 255, 0.48) 45%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 28% 34%, rgba(245, 240, 255, 0.56) 45%, transparent 100%),
+      radial-gradient(1px 1px at 39% 88%, rgba(184, 184, 255, 0.42) 45%, transparent 100%),
+      radial-gradient(1px 1px at 54% 17%, rgba(240, 236, 255, 0.5) 45%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 67% 63%, rgba(202, 196, 255, 0.48) 45%, transparent 100%),
+      radial-gradient(1px 1px at 78% 28%, rgba(240, 237, 255, 0.52) 45%, transparent 100%),
+      radial-gradient(1px 1px at 91% 81%, rgba(192, 200, 255, 0.48) 45%, transparent 100%);
+    opacity: 0.62;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -73,7 +86,7 @@
   }
 
   ::selection {
-    background: rgba(118, 167, 255, 0.32);
+    background: rgba(147, 130, 255, 0.38);
     color: white;
   }
 
@@ -88,32 +101,90 @@
 }
 
 @layer components {
-  .glass-shell {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.045));
-    border: 1px solid rgba(255, 255, 255, 0.13);
+  .app-stage {
+    min-height: calc(100vh - 24px);
+    margin: 12px 12px 12px 0;
+    border: 1px solid rgba(196, 187, 255, 0.12);
+    border-radius: 28px;
+    background:
+      radial-gradient(ellipse at 78% 0%, rgba(91, 74, 218, 0.12), transparent 38rem),
+      linear-gradient(155deg, rgba(10, 10, 19, 0.98), rgba(6, 6, 12, 0.985));
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      0 18px 50px rgba(0, 0, 0, 0.24);
+      inset 0 1px 0 rgba(255, 255, 255, 0.055),
+      0 24px 70px rgba(0, 0, 0, 0.42),
+      0 0 44px rgba(83, 65, 213, 0.08);
+  }
+
+  .landing-hero {
+    background:
+      radial-gradient(ellipse at 50% 48%, rgba(86, 73, 220, 0.14), transparent 35rem),
+      radial-gradient(ellipse at 50% 100%, rgba(85, 57, 178, 0.07), transparent 32rem);
+  }
+
+  .glass-shell {
+    background: linear-gradient(145deg, rgba(22, 21, 40, 0.94), rgba(10, 10, 19, 0.9));
+    border: 1px solid rgba(196, 187, 255, 0.16);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.085),
+      0 22px 60px rgba(0, 0, 0, 0.38),
+      0 0 34px rgba(94, 72, 225, 0.08);
+    backdrop-filter: blur(22px) saturate(138%);
+    -webkit-backdrop-filter: blur(22px) saturate(138%);
+  }
+
+  .glass-panel {
+    background: linear-gradient(145deg, rgba(25, 23, 45, 0.78), rgba(11, 11, 20, 0.88));
+    border: 1px solid rgba(196, 187, 255, 0.13);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.065),
+      0 16px 42px rgba(0, 0, 0, 0.28);
     backdrop-filter: blur(18px) saturate(135%);
     -webkit-backdrop-filter: blur(18px) saturate(135%);
   }
 
-  .glass-panel {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
-    border: 1px solid rgba(255, 255, 255, 0.11);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.09),
-      0 12px 36px rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(14px) saturate(130%);
-    -webkit-backdrop-filter: blur(14px) saturate(130%);
+  .glass-control {
+    background: linear-gradient(145deg, rgba(40, 37, 68, 0.72), rgba(19, 18, 33, 0.76));
+    border: 1px solid rgba(203, 195, 255, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    backdrop-filter: blur(12px) saturate(138%);
+    -webkit-backdrop-filter: blur(12px) saturate(138%);
   }
 
-  .glass-control {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.055));
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(10px) saturate(130%);
-    -webkit-backdrop-filter: blur(10px) saturate(130%);
+  .brand-mark {
+    background: linear-gradient(145deg, #7060eb, #604bfa 56%, #4934d8);
+    border: 1px solid rgba(224, 218, 255, 0.3);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 8px 24px rgba(88, 70, 235, 0.34);
+    color: white;
+  }
+
+  .button-primary {
+    border: 1px solid rgba(224, 218, 255, 0.24);
+    background: linear-gradient(135deg, #7060eb, #604bfa 54%, #4934d8);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.34),
+      0 8px 24px rgba(83, 67, 231, 0.32);
+    transition: filter 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .button-primary:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.38),
+      0 10px 30px rgba(91, 74, 255, 0.48);
+  }
+
+  .button-primary:active {
+    transform: translateY(1px);
+  }
+}
+
+@media (max-width: 1023px) {
+  .app-stage {
+    min-height: calc(100vh - 16px);
+    margin: 8px;
+    padding-top: 56px;
+    border-radius: 24px;
   }
 }
 
@@ -127,12 +198,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(165, 151, 255, 0.32);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: rgba(184, 171, 255, 0.5);
 }
 
 @media (prefers-reduced-motion: reduce) {

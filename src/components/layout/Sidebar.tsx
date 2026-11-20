@@ -60,7 +60,7 @@ export function Sidebar() {
   const NavContent = () => (
     <div className="flex h-full flex-col">
       <div className="flex h-20 items-center gap-3 px-5">
-        <div className="glass-control flex h-11 w-11 items-center justify-center rounded-xl text-lg font-bold text-primary">
+        <div className="brand-mark flex h-11 w-11 items-center justify-center rounded-xl text-lg font-bold">
           C
         </div>
         <div>
@@ -82,14 +82,16 @@ export function Sidebar() {
                   className={cn(
                     "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
                     active
-                      ? "glass-control text-foreground"
-                      : "text-sidebar-foreground hover:bg-white/[0.055] hover:text-foreground",
+                      ? "border border-primary/25 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.11),0_0_24px_rgba(97,75,255,0.12)]"
+                      : "border border-transparent text-sidebar-foreground hover:bg-white/[0.045] hover:text-foreground",
                   )}
                 >
                   <item.icon
                     className={cn(
                       "h-[18px] w-[18px] transition-colors",
-                      active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                      active
+                        ? "text-primary drop-shadow-[0_0_10px_rgba(143,124,255,0.7)]"
+                        : "text-muted-foreground group-hover:text-foreground",
                     )}
                   />
                   {item.title}
@@ -100,7 +102,7 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="m-3 rounded-xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-xl">
+      <div className="m-3 rounded-xl border border-white/[0.08] bg-black/20 p-3 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <div className="glass-control flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-primary">
             {user?.name?.charAt(0).toUpperCase() || "U"}
