@@ -29,7 +29,7 @@ A comprehensive campus community management platform designed to streamline camp
 - Centralized campus information management
 - Streamlined student-faculty communication
 - Real-time notifications and updates
-- Community-driven features (marketplace, lost & found, blood donation)
+- Community-driven features (marketplace, lost & found, blood donation, lending)
 - Animal welfare tracking
 - Complaint and feedback management
 - Student directory and profile management
@@ -46,6 +46,7 @@ A comprehensive campus community management platform designed to streamline camp
 - **Complaints Management**: Submit and track campus complaints with status updates
 - **Notices Board**: Campus announcements and important notifications
 - **Marketplace**: Buy/sell campus items and services
+- **Lend & Borrow**: Share items with people at your university and manage borrow requests
 - **Animal Welfare**: Track and report animal welfare concerns
 - **Blood Donation**: Coordinate blood donation drives and donor information
 - **Faculty Suggestions**: Submit feedback and suggestions to faculty
@@ -282,12 +283,19 @@ an initial framework and can be revised when the ERD is provided.
 GET/POST /complaints
 GET/POST /notices
 GET/POST /marketplace
+GET/POST /lend-borrow/items
+GET /lend-borrow/requests
+POST /lend-borrow/items/:id/requests
+PATCH /lend-borrow/requests/:id
 GET/POST /animal-welfare
 GET/POST /blood-donation
 GET/POST /students
 GET/POST /faculty-suggestions
 GET/POST /lost-found
 ```
+
+Lend and borrow endpoints require an authenticated session. Listings and requests
+are scoped to the signed-in user's university.
 
 ### Authentication
 - Requests are authenticated via JWT tokens stored in localStorage
@@ -315,6 +323,7 @@ GET/POST /lost-found
 - **complaints**: Issue tracking and resolution
 - **notices**: Campus announcements
 - **marketplace**: Buy/sell items
+- **lending_items**, **lending_requests**: University-scoped item listings and borrow requests
 - **animal_welfare**: Animal care reports
 - **blood_donation**: Donor and donation records
 - **students**: Student profiles

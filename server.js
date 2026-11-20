@@ -1232,7 +1232,10 @@ app.post('/api/lend-borrow/items/:id/requests', async (req, res) => {
     );
     res.status(201).json({ success: true, id, status: 'pending' });
   } catch (error) {
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    if (
+      error.code === 'SQLITE_CONSTRAINT' &&
+      error.message.includes('UNIQUE constraint failed: lending_requests.item_id, lending_requests.requester_id')
+    ) {
       return res.status(409).json({ success: false, error: 'You already have an active request for this item' });
     }
     console.error('Create borrow request error:', error);

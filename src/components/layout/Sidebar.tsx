@@ -17,6 +17,7 @@ import {
   LogOut,
   Building2,
   GraduationCap,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { title: "Notices", href: "/notices", icon: Bell },
   { title: "Marketplace", href: "/marketplace", icon: ShoppingBag },
   { title: "Bicycles", href: "/bicycles", icon: Bike },
+  { title: "Lend and borrow", href: "/lend-borrow", icon: BookOpen },
   { title: "Animal welfare", href: "/animal-welfare", icon: Heart },
   { title: "Blood donation", href: "/blood-donation", icon: Droplets },
   { title: "Student directory", href: "/students", icon: User },

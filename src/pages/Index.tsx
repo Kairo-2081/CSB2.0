@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Search, MessageSquare, Bike, ShoppingBag, Bell, Heart, Droplets } from "lucide-react";
+import { LayoutDashboard, Search, MessageSquare, Bike, ShoppingBag, Bell, Heart, Droplets, BookOpen } from "lucide-react";
 
 const modules = [
   { title: "Lost and found", description: "Report or locate campus items", href: "/lost-found", icon: Search },
   { title: "Complaints", description: "File and track an issue", href: "/complaints", icon: MessageSquare },
   { title: "Bicycle sharing", description: "View and register bicycles", href: "/bicycles", icon: Bike },
+  { title: "Lend and borrow", description: "Share useful items at your university", href: "/lend-borrow", icon: BookOpen },
   { title: "Marketplace", description: "Buy and sell items", href: "/marketplace", icon: ShoppingBag },
   { title: "Notices", description: "Read official announcements", href: "/notices", icon: Bell },
   { title: "Blood donation", description: "View donation entries", href: "/blood-donation", icon: Droplets },
