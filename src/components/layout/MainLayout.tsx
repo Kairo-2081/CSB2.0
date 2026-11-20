@@ -9,7 +9,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className="min-h-screen">
       <Sidebar />
       <main className="min-h-screen lg:pl-72">
-        <div className="app-stage">
+        <div className="app-stage app-stage-authenticated">
           {children}
         </div>
       </main>
