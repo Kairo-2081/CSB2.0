@@ -1,6 +1,55 @@
 // Using local API backend - No Supabase
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+export interface LendingItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  item_condition: string;
+  handoff_location: string;
+  status: 'available' | 'borrowed';
+  owner_id: string;
+  owner_name: string;
+  university_id: string | null;
+  has_active_request: boolean | number;
+  created_at: string;
+}
+
+export interface LendingRequest {
+  id: string;
+  item_id: string;
+  requester_id: string;
+  message: string | null;
+  status: 'pending' | 'approved' | 'declined' | 'returned';
+  item_title: string;
+  owner_id: string;
+  item_status: 'available' | 'borrowed';
+  owner_name: string;
+  requester_name: string;
+  created_at: string;
+}
+
+async function authenticatedRequest<T>(endpoint: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('Your session has expired. Please sign in again.');
+  }
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(init?.headers || {}),
+    },
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || `API Error: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 // Helper function for API calls
 const api = {
   async get(endpoint: string) {
@@ -217,6 +266,45 @@ export const lostFoundService = {
     return api.delete(`/lost-found/${id}`, {
       userId: user.id,
       userRole: user.role
+    });
+  },
+};
+
+export const lendingService = {
+  getItems(): Promise<LendingItem[]> {
+    return authenticatedRequest('/lend-borrow/items');
+  },
+  getRequests(): Promise<LendingRequest[]> {
+    return authenticatedRequest('/lend-borrow/requests');
+  },
+  createItem(item: {
+    title: string;
+    description: string;
+    category: string;
+    itemCondition: string;
+    handoffLocation: string;
+  }): Promise<LendingItem> {
+    return authenticatedRequest('/lend-borrow/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    });
+  },
+  requestToBorrow(itemId: string, message: string): Promise<{ success: boolean; id: string; status: string }> {
+    return authenticatedRequest(`/lend-borrow/items/${encodeURIComponent(itemId)}/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+  },
+  updateRequest(
+    requestId: string,
+    action: 'approve' | 'decline' | 'return',
+  ): Promise<{ success: boolean; status: string }> {
+    return authenticatedRequest(`/lend-borrow/requests/${encodeURIComponent(requestId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
     });
   },
 };
