@@ -121,7 +121,7 @@ export default function Notices() {
             <p className="text-muted-foreground mt-1">Official announcements and updates</p>
           </div>
           <Button 
-            variant="glow" 
+             
             className="gap-2"
             onClick={() => setIsDialogOpen(true)}
           >
@@ -138,8 +138,7 @@ export default function Notices() {
             return (
               <Card 
                 key={notice.id} 
-                variant="interactive"
-                className="animate-slide-up group"
+                className="group"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardContent className="p-6">
@@ -185,7 +184,7 @@ export default function Notices() {
         </div>
 
         {notices.length === 0 && (
-          <Card variant="glass" className="p-12 text-center">
+          <Card className="p-12 text-center">
             <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">No notices yet</h3>
             <p className="text-muted-foreground mt-1">Check back later for announcements</p>

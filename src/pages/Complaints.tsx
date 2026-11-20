@@ -133,26 +133,7 @@ export default function Complaints() {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this complaint?")) {
       try {
-        // Pass user info for authorization
-        const complaintService_with_auth = {
-          ...complaintService,
-          deleteComplaint: async (complaintId: string) => {
-            const user_data = JSON.parse(localStorage.getItem('user') || '{}');
-            return fetch(`http://localhost:3001/api/complaints/${complaintId}`, {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId: user_data.id,
-                userRole: user_data.role
-              }),
-            }).then(res => {
-              if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
-              return res.json();
-            });
-          }
-        };
-        
-        await complaintService_with_auth.deleteComplaint(id);
+        await complaintService.deleteComplaint(id);
         toast.success("Complaint deleted successfully!");
         await loadComplaints();
       } catch (error) {
@@ -172,7 +153,7 @@ export default function Complaints() {
             <p className="text-muted-foreground mt-1">Submit and track your complaints</p>
           </div>
           <Button 
-            variant="glow" 
+             
             className="gap-2"
             onClick={() => setIsDialogOpen(true)}
           >
@@ -225,8 +206,7 @@ export default function Complaints() {
             return (
               <Card 
                 key={complaint.id} 
-                variant="interactive"
-                className="animate-slide-up"
+                className=""
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardContent className="p-6">
@@ -282,7 +262,7 @@ export default function Complaints() {
         </div>
 
         {filteredComplaints.length === 0 && (
-          <Card variant="glass" className="p-12 text-center">
+          <Card className="p-12 text-center">
             <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">No complaints found</h3>
             <p className="text-muted-foreground mt-1">Try adjusting your search or filters</p>

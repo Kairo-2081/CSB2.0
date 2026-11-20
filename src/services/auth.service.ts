@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}`;
 
 export interface User {
   id: string;
@@ -292,6 +292,7 @@ class AuthService {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
         },
         body: JSON.stringify(updates),
       });

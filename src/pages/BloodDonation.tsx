@@ -45,7 +45,6 @@ interface BloodRequest {
   created_at: string;
 }
 
-const mockRequests: BloodRequest[] = [];
 
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -123,17 +122,7 @@ export default function BloodDonation() {
     if (window.confirm("Are you sure you want to delete this request?")) {
       try {
         // Pass user info for authorization
-        const user_data = JSON.parse(localStorage.getItem('user') || '{}');
-        const response = await fetch(`http://localhost:3001/api/blood-donation/${id}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user_data.id,
-            userRole: user_data.role
-          }),
-        });
-        
-        if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+        await bloodDonationService.deleteDonor(id);
         
         toast.success("Request deleted successfully!");
         await loadRequests();
@@ -154,7 +143,7 @@ export default function BloodDonation() {
             <p className="text-muted-foreground mt-1">Request or donate blood to save lives</p>
           </div>
           <Button 
-            variant="glow" 
+             
             className="gap-2"
             onClick={() => setIsDialogOpen(true)}
           >
@@ -190,8 +179,7 @@ export default function BloodDonation() {
           {filteredRequests.map((request, index) => (
             <Card 
               key={request.id} 
-              variant="interactive"
-              className="animate-slide-up"
+              className=""
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <CardContent className="p-6">
@@ -249,7 +237,7 @@ export default function BloodDonation() {
         </div>
 
         {filteredRequests.length === 0 && (
-          <Card variant="glass" className="p-12 text-center">
+          <Card className="p-12 text-center">
             <Droplets className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">No donations available</h3>
             <p className="text-muted-foreground mt-1">Be the first to register as a donor</p>

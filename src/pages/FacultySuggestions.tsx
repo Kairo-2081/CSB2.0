@@ -30,7 +30,6 @@ interface Suggestion {
   created_at: string;
 }
 
-const mockFaculty: Suggestion[] = [];
 
 export default function FacultySuggestions() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -123,7 +122,7 @@ export default function FacultySuggestions() {
             <h1 className="text-3xl font-bold text-foreground">Faculty Suggestions</h1>
             <p className="text-muted-foreground mt-1">Provide constructive feedback to faculty members</p>
           </div>
-          <Button variant="glow" className="gap-2" onClick={() => setIsDialogOpen(true)}>
+          <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             Add Suggestion
           </Button>
@@ -237,7 +236,7 @@ export default function FacultySuggestions() {
               />
             </div>
 
-            <Card variant="glass">
+            <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm text-muted-foreground">Filters</CardTitle>
               </CardHeader>
@@ -257,7 +256,7 @@ export default function FacultySuggestions() {
             </h2>
 
             {filteredSuggestions.length === 0 ? (
-              <Card variant="glass" className="p-12 text-center">
+              <Card className="p-12 text-center">
                 <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium">No suggestions yet</h3>
                 <p className="text-muted-foreground mt-1">Be the first to add a suggestion!</p>
@@ -266,8 +265,7 @@ export default function FacultySuggestions() {
               filteredSuggestions.map((suggestion, index) => (
                 <Card 
                   key={suggestion.id} 
-                  variant="interactive"
-                  className="animate-slide-up"
+                  className=""
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <CardContent className="p-6">

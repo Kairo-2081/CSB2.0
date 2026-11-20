@@ -530,6 +530,67 @@ app.get('/api/auth/verify', async (req, res) => {
   }
 });
 
+app.put('/api/auth/profile/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (!authenticatedUserId) {
+      return res.status(401).json({ success: false, error: 'A valid session is required' });
+    }
+
+    const authenticatedUser = await db.get('SELECT role FROM users WHERE id = ?', [authenticatedUserId]);
+    if (authenticatedUserId !== id && authenticatedUser?.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'You can only update your own profile' });
+    }
+
+    const allowedFields = ['name', 'phone', 'department'];
+    const updates = Object.fromEntries(
+      Object.entries(req.body || {}).filter(([key, value]) =>
+        allowedFields.includes(key) && typeof value === 'string'
+      )
+    );
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, error: 'No supported profile fields were provided' });
+    }
+
+    const assignments = Object.keys(updates).map((key) => `${key} = ?`).join(', ');
+    await db.run(`UPDATE users SET ${assignments}, updated_at = ? WHERE id = ?`, [
+      ...Object.values(updates),
+      new Date().toISOString(),
+      id,
+    ]);
+
+    const user = await db.get(
+      `SELECT users.*, universities.name AS university_name
+       FROM users LEFT JOIN universities ON universities.id = users.university_id
+       WHERE users.id = ?`,
+      [id]
+    );
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+        department: user.department,
+        universityId: user.university_id,
+        universityName: user.university_name,
+        homeDistrict: user.home_district,
+        currentResidence: user.current_residence,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to update profile' });
+  }
+});
+
 app.get('/api/universities', async (req, res) => {
   try {
     const universities = await db.all(

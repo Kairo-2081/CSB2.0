@@ -39,7 +39,7 @@ const quickActions = [
 
 export function QuickActions() {
   return (
-    <Card variant="glass">
+    <Card>
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Quick Actions</CardTitle>
       </CardHeader>
@@ -48,7 +48,7 @@ export function QuickActions() {
           <Link key={action.href} to={action.href}>
             <Button
               variant="secondary"
-              className="w-full justify-between h-auto py-4 px-5 group animate-slide-up min-h-[80px]"
+              className="w-full justify-between h-auto py-4 px-5 group min-h-[80px]"
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex items-center gap-4">
