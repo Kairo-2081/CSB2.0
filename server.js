@@ -159,6 +159,39 @@ async function initializeDatabase() {
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS lending_items (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      category TEXT NOT NULL,
+      item_condition TEXT NOT NULL,
+      handoff_location TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'borrowed')),
+      owner_id TEXT NOT NULL,
+      university_id TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (owner_id) REFERENCES users(id),
+      FOREIGN KEY (university_id) REFERENCES universities(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS lending_requests (
+      id TEXT PRIMARY KEY,
+      item_id TEXT NOT NULL,
+      requester_id TEXT NOT NULL,
+      message TEXT,
+      status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'approved', 'declined', 'returned')),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (item_id) REFERENCES lending_items(id),
+      FOREIGN KEY (requester_id) REFERENCES users(id)
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_lending_active_request
+      ON lending_requests(item_id, requester_id)
+      WHERE status IN ('pending', 'approved');
+
     CREATE TABLE IF NOT EXISTS lost_found (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -1045,6 +1078,232 @@ app.delete('/api/bicycles/:id', async (req, res) => {
     res.json({ success: true, message: 'Report deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== UNIVERSITY LENDING ==========
+app.get('/api/lend-borrow/items', async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'A valid session is required' });
+    }
+
+    const user = await db.get('SELECT university_id FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'User not found' });
+    }
+
+    const items = await db.all(
+      `SELECT items.*, owner.name AS owner_name,
+              EXISTS (
+                SELECT 1 FROM lending_requests requests
+                WHERE requests.item_id = items.id
+                  AND requests.requester_id = ?
+                  AND requests.status IN ('pending', 'approved')
+              ) AS has_active_request
+       FROM lending_items items
+       JOIN users owner ON owner.id = items.owner_id
+       WHERE items.university_id IS ?
+         AND (items.status = 'available' OR items.owner_id = ?)
+       ORDER BY items.created_at DESC`,
+      [userId, user.university_id, userId]
+    );
+
+    res.json(items);
+  } catch (error) {
+    console.error('Lend and borrow items error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load lending listings' });
+  }
+});
+
+app.post('/api/lend-borrow/items', async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'A valid session is required' });
+    }
+
+    const { title, description, category, itemCondition, handoffLocation } = req.body || {};
+    const fields = [title, description, category, itemCondition, handoffLocation];
+    if (fields.some((value) => typeof value !== 'string' || !value.trim())) {
+      return res.status(400).json({ success: false, error: 'Complete all listing fields before posting' });
+    }
+    if (title.trim().length > 100 || description.trim().length > 1200 || handoffLocation.trim().length > 120) {
+      return res.status(400).json({ success: false, error: 'One or more fields exceed the allowed length' });
+    }
+
+    const user = await db.get('SELECT university_id FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'User not found' });
+    }
+
+    const id = generateId();
+    const now = new Date().toISOString();
+    await db.run(
+      `INSERT INTO lending_items (
+        id, title, description, category, item_condition, handoff_location,
+        owner_id, university_id, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id, title.trim(), description.trim(), category.trim(), itemCondition.trim(),
+        handoffLocation.trim(), userId, user.university_id, now, now,
+      ]
+    );
+
+    const item = await db.get(
+      `SELECT items.*, owner.name AS owner_name, 0 AS has_active_request
+       FROM lending_items items JOIN users owner ON owner.id = items.owner_id
+       WHERE items.id = ?`,
+      [id]
+    );
+    res.status(201).json(item);
+  } catch (error) {
+    console.error('Create lending listing error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create lending listing' });
+  }
+});
+
+app.get('/api/lend-borrow/requests', async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'A valid session is required' });
+    }
+
+    const user = await db.get('SELECT university_id FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'User not found' });
+    }
+
+    const requests = await db.all(
+      `SELECT requests.*, items.title AS item_title, items.owner_id,
+              items.status AS item_status, owner.name AS owner_name,
+              requester.name AS requester_name
+       FROM lending_requests requests
+       JOIN lending_items items ON items.id = requests.item_id
+       JOIN users owner ON owner.id = items.owner_id
+       JOIN users requester ON requester.id = requests.requester_id
+       WHERE items.university_id IS ?
+         AND (requests.requester_id = ? OR items.owner_id = ?)
+       ORDER BY requests.created_at DESC`,
+      [user.university_id, userId, userId]
+    );
+    res.json(requests);
+  } catch (error) {
+    console.error('Lend and borrow requests error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load borrow requests' });
+  }
+});
+
+app.post('/api/lend-borrow/items/:id/requests', async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'A valid session is required' });
+    }
+
+    const user = await db.get('SELECT university_id FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'User not found' });
+    }
+    const item = await db.get(
+      'SELECT id, owner_id FROM lending_items WHERE id = ? AND university_id IS ? AND status = ?',
+      [req.params.id, user.university_id, 'available']
+    );
+    if (!item) {
+      return res.status(404).json({ success: false, error: 'This item is no longer available' });
+    }
+    if (item.owner_id === userId) {
+      return res.status(400).json({ success: false, error: 'You cannot request to borrow your own item' });
+    }
+
+    const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+    if (message.length > 500) {
+      return res.status(400).json({ success: false, error: 'Request message must be 500 characters or fewer' });
+    }
+
+    const id = generateId();
+    const now = new Date().toISOString();
+    await db.run(
+      `INSERT INTO lending_requests (id, item_id, requester_id, message, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, item.id, userId, message || null, now, now]
+    );
+    res.status(201).json({ success: true, id, status: 'pending' });
+  } catch (error) {
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ success: false, error: 'You already have an active request for this item' });
+    }
+    console.error('Create borrow request error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send borrow request' });
+  }
+});
+
+app.patch('/api/lend-borrow/requests/:id', async (req, res) => {
+  const action = req.body?.action;
+  if (!['approve', 'decline', 'return'].includes(action)) {
+    return res.status(400).json({ success: false, error: 'Choose approve, decline, or return' });
+  }
+
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) {
+    return res.status(401).json({ success: false, error: 'A valid session is required' });
+  }
+
+  try {
+    await db.exec('BEGIN IMMEDIATE');
+    const request = await db.get(
+      `SELECT requests.id, requests.item_id, requests.status, items.owner_id, items.status AS item_status
+       FROM lending_requests requests
+       JOIN lending_items items ON items.id = requests.item_id
+       WHERE requests.id = ?`,
+      [req.params.id]
+    );
+
+    if (!request) {
+      await db.exec('ROLLBACK');
+      return res.status(404).json({ success: false, error: 'Borrow request not found' });
+    }
+    if (request.owner_id !== userId) {
+      await db.exec('ROLLBACK');
+      return res.status(403).json({ success: false, error: 'Only the lender can update this request' });
+    }
+
+    const now = new Date().toISOString();
+    if (action === 'approve') {
+      if (request.status !== 'pending' || request.item_status !== 'available') {
+        await db.exec('ROLLBACK');
+        return res.status(409).json({ success: false, error: 'This request can no longer be approved' });
+      }
+      await db.run('UPDATE lending_items SET status = ?, updated_at = ? WHERE id = ?', ['borrowed', now, request.item_id]);
+      await db.run('UPDATE lending_requests SET status = ?, updated_at = ? WHERE id = ?', ['approved', now, request.id]);
+      await db.run(
+        `UPDATE lending_requests SET status = 'declined', updated_at = ?
+         WHERE item_id = ? AND id != ? AND status = 'pending'`,
+        [now, request.item_id, request.id]
+      );
+    } else if (action === 'decline') {
+      if (request.status !== 'pending') {
+        await db.exec('ROLLBACK');
+        return res.status(409).json({ success: false, error: 'Only pending requests can be declined' });
+      }
+      await db.run('UPDATE lending_requests SET status = ?, updated_at = ? WHERE id = ?', ['declined', now, request.id]);
+    } else {
+      if (request.status !== 'approved' || request.item_status !== 'borrowed') {
+        await db.exec('ROLLBACK');
+        return res.status(409).json({ success: false, error: 'This item is not currently lent through this request' });
+      }
+      await db.run('UPDATE lending_items SET status = ?, updated_at = ? WHERE id = ?', ['available', now, request.item_id]);
+      await db.run('UPDATE lending_requests SET status = ?, updated_at = ? WHERE id = ?', ['returned', now, request.id]);
+    }
+
+    await db.exec('COMMIT');
+    res.json({ success: true, status: action === 'approve' ? 'approved' : action === 'decline' ? 'declined' : 'returned' });
+  } catch (error) {
+    await db.exec('ROLLBACK');
+    console.error('Update borrow request error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update borrow request' });
   }
 });
 
