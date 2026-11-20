@@ -8,7 +8,7 @@ web
 
 ## Users
 
-University students and administrators using campus services for notices, complaints, lost-and-found items, marketplace listings, bicycle sharing, animal welfare, blood donation, and faculty suggestions.
+University students and administrators using campus services for notices, complaints, lost-and-found items, marketplace listings, bicycle sharing, university-scoped lending and borrowing, animal welfare, blood donation, and faculty suggestions.
 
 ## Product Purpose
 
@@ -26,6 +26,7 @@ Users access the app through desktop and mobile browsers. Administrators also ma
 
 - The app uses React, Vite, and an Express/SQLite backend.
 - Real module records come from local API endpoints.
+- Lending listings and borrow requests are restricted to the signed-in user's university.
 - Profile data may include name, email, phone, department, and role.
 - User-facing claims and counts must come from the database rather than fabricated copy.
 - The existing route structure and module functions must remain intact.
