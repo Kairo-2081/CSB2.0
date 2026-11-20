@@ -186,12 +186,12 @@ export default function Auth() {
   const isPasswordValid = Object.values(passwordValidation).every(v => v);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="relative min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-4xl relative">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-xl">
+            <div className="glass-control flex h-12 w-12 items-center justify-center rounded-xl text-primary font-bold text-xl">
               C
             </div>
             <div className="text-left">
@@ -203,7 +203,7 @@ export default function Auth() {
 
         <div className="mx-auto max-w-2xl">
           <div>
-            <Card className="border-primary/20">
+            <Card className="glass-shell">
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 mb-6">

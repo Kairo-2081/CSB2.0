@@ -59,9 +59,9 @@ export default function Dashboard() {
 
         <section aria-labelledby="work-queue">
           <h2 id="work-queue" className="mb-3 text-lg font-semibold">Work queue</h2>
-          <div className="divide-y divide-border rounded-md border border-border">
+          <div className="glass-panel divide-y divide-white/8 overflow-hidden rounded-2xl">
             {queue.map((item) => (
-              <Link key={item.href} to={item.href} className="flex items-center justify-between px-4 py-3 hover:bg-muted/40">
+              <Link key={item.href} to={item.href} className="flex items-center justify-between px-5 py-4 transition-colors duration-150 hover:bg-white/[0.055]">
                 <span className="font-medium">{item.title}</span>
                 <span className="text-sm text-muted-foreground">
                   {item.count === undefined ? "Loading" : `${item.count}`}

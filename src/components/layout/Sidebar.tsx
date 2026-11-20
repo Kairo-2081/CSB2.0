@@ -12,11 +12,11 @@ import {
   Heart,
   Droplets,
   User,
-  GraduationCap,
   Menu,
   X,
   LogOut,
   Building2,
+  GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -27,151 +27,87 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Lost & Found",
-    href: "/lost-found",
-    icon: Search,
-  },
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Lost and found", href: "/lost-found", icon: Search },
   { title: "Complaints", href: "/complaints", icon: MessageSquare },
   { title: "Notices", href: "/notices", icon: Bell },
-  {
-    title: "Marketplace",
-    href: "/marketplace",
-    icon: ShoppingBag,
-  },
+  { title: "Marketplace", href: "/marketplace", icon: ShoppingBag },
   { title: "Bicycles", href: "/bicycles", icon: Bike },
-  { title: "Animal Welfare", href: "/animal-welfare", icon: Heart },
-  { title: "Blood Donation", href: "/blood-donation", icon: Droplets },
-  { title: "Student Directory", href: "/students", icon: User },
-  { title: "Faculty Suggestions", href: "/faculty-suggestions", icon: GraduationCap },
-  {
-    title: "Profile",
-    href: "/profile",
-    icon: User,
-  },
+  { title: "Animal welfare", href: "/animal-welfare", icon: Heart },
+  { title: "Blood donation", href: "/blood-donation", icon: Droplets },
+  { title: "Student directory", href: "/students", icon: User },
+  { title: "Faculty suggestions", href: "/faculty-suggestions", icon: GraduationCap },
+  { title: "Profile", href: "/profile", icon: User },
 ];
 
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const visibleNavItems: NavItem[] = user?.role === "admin"
-    ? [{ title: "University network", href: "/central-admin", icon: Building2 }, ...navItems]
-    : navItems;
-  const [expandedItems, setExpandedItems] = useState<string[]>(["Queries", "Health", "Database"]);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const visibleNavItems: NavItem[] =
+    user?.role === "admin"
+      ? [{ title: "University network", href: "/central-admin", icon: Building2 }, ...navItems]
+      : navItems;
 
   const handleLogout = () => {
     logout();
-    navigate('/auth');
+    navigate("/auth");
   };
-
-  const toggleExpanded = (title: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
-    );
-  };
-
-  const isActive = (href: string) => location.pathname === href;
-  const isChildActive = (children?: { href: string }[]) =>
-    children?.some((child) => location.pathname === child.href);
 
   const NavContent = () => (
     <div className="flex h-full flex-col">
-      {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
+      <div className="flex h-20 items-center gap-3 px-5">
+        <div className="glass-control flex h-11 w-11 items-center justify-center rounded-xl text-lg font-bold text-primary">
           C
         </div>
         <div>
-          <h1 className="text-lg font-bold text-foreground">CSB 2.0</h1>
-          <p className="text-xs text-muted-foreground">University Management</p>
+          <h1 className="text-base font-semibold text-foreground">CSB 2.0</h1>
+          <p className="text-xs text-muted-foreground">Campus services</p>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        <div className="mx-2 mb-3 h-px bg-white/8" />
         <ul className="space-y-1">
-          {visibleNavItems.map((item) => (
-            <li key={item.title}>
-              {item.href ? (
+          {visibleNavItems.map((item) => {
+            const active = location.pathname === item.href;
+            return (
+              <li key={item.href}>
                 <Link
                   to={item.href}
                   onClick={() => setIsMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    isActive(item.href)
-                      ? "bg-primary/10 text-primary shadow-sm"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground"
+                    "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                    active
+                      ? "glass-control text-foreground"
+                      : "text-sidebar-foreground hover:bg-white/[0.055] hover:text-foreground",
                   )}
                 >
-                  <item.icon className={cn("h-5 w-5", isActive(item.href) && "text-primary")} />
+                  <item.icon
+                    className={cn(
+                      "h-[18px] w-[18px] transition-colors",
+                      active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                    )}
+                  />
                   {item.title}
                 </Link>
-              ) : (
-                <div>
-                  <button
-                    onClick={() => toggleExpanded(item.title)}
-                    className={cn(
-                      "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                      isChildActive(item.children)
-                        ? "bg-primary/10 text-primary"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon className={cn("h-5 w-5", isChildActive(item.children) && "text-primary")} />
-                      {item.title}
-                    </div>
-                    {expandedItems.includes(item.title) ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </button>
-                  {expandedItems.includes(item.title) && item.children && (
-                    <ul className="ml-6 mt-1 space-y-1 border-l border-sidebar-border pl-3">
-                      {item.children.map((child) => (
-                        <li key={child.href}>
-                          <Link
-                            to={child.href}
-                            onClick={() => setIsMobileOpen(false)}
-                            className={cn(
-                              "flex items-center rounded-lg px-3 py-2 text-sm transition-all duration-200",
-                              isActive(child.href)
-                                ? "bg-primary/10 text-primary font-medium"
-                                : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-                            )}
-                          >
-                            {child.title}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-sidebar-border p-4">
+      <div className="m-3 rounded-xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-sm font-medium">
-            {user?.name?.charAt(0).toUpperCase() || 'U'}
+          <div className="glass-control flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-primary">
+            {user?.name?.charAt(0).toUpperCase() || "U"}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user?.name || 'Guest User'}</p>
-            <p className="text-xs text-muted-foreground">{user?.role || 'Sign in to continue'}</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-foreground">{user?.name || "Guest user"}</p>
+            <p className="text-xs text-muted-foreground">{user?.role || "Sign in to continue"}</p>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label="Sign out">
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
@@ -181,40 +117,39 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-card border border-border shadow-lg lg:hidden"
+        className="glass-control fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl lg:hidden"
+        aria-label="Open navigation"
       >
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div
-          className=          "fixed inset-0 z-40 bg-foreground/20 lg:hidden"
+        <button
+          aria-label="Close navigation"
+          className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
-      {/* Mobile Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 lg:hidden",
-          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+          "glass-shell fixed inset-y-3 left-3 z-50 w-64 rounded-2xl transition-transform duration-200 lg:hidden",
+          isMobileOpen ? "translate-x-0" : "-translate-x-[110%]",
         )}
       >
         <button
           onClick={() => setIsMobileOpen(false)}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg hover:bg-sidebar-accent"
+          className="absolute right-3 top-5 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-white/10 hover:text-foreground"
+          aria-label="Close navigation"
         >
           <X className="h-4 w-4" />
         </button>
         <NavContent />
       </aside>
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col bg-sidebar border-r border-sidebar-border">
+      <aside className="glass-shell fixed inset-y-3 left-3 z-40 hidden w-64 flex-col rounded-2xl lg:flex">
         <NavContent />
       </aside>
     </>

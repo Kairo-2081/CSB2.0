@@ -15,8 +15,8 @@ const modules = [
 export default function Index() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <header className="sticky top-0 z-30 px-3 pt-3">
+        <div className="glass-shell mx-auto flex max-w-6xl items-center justify-between rounded-2xl px-5 py-3">
           <Link to="/" className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">C</div>
             <div>
@@ -31,23 +31,27 @@ export default function Index() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6">
-        <section className="border-b border-border py-16">
-          <p className="mb-3 text-sm font-medium text-primary">Campus services</p>
-          <h1 className="max-w-3xl text-4xl font-bold leading-tight sm:text-5xl">Find campus information and get everyday requests handled.</h1>
-          <p className="mt-5 max-w-2xl text-lg text-muted-foreground">CSB 2.0 brings the university's notices and student services into one place.</p>
-          <div className="mt-8 flex gap-3">
+      <main className="mx-auto max-w-6xl px-6 pb-16">
+        <section className="py-16 sm:py-24">
+          <div className="glass-panel relative overflow-hidden rounded-[28px] px-7 py-12 sm:px-12 sm:py-16">
+            <div className="absolute right-[-8rem] top-[-8rem] h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+            <h1 className="relative max-w-4xl text-4xl font-bold leading-[1.04] sm:text-6xl lg:text-7xl">Campus services, in one clear workspace.</h1>
+          <p className="relative mt-6 max-w-2xl text-lg text-muted-foreground">Find notices, report issues, post items, and use campus resources without switching between separate tools.</p>
+          <div className="relative mt-8 flex flex-wrap gap-3">
             <Button asChild><Link to="/dashboard">Open dashboard</Link></Button>
             <Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button>
+          </div>
           </div>
         </section>
 
         <section className="py-12" aria-labelledby="modules-heading">
           <h2 id="modules-heading" className="mb-6 text-2xl font-semibold">Campus modules</h2>
-          <div className="divide-y divide-border rounded-md border border-border">
+          <div className="glass-panel divide-y divide-white/8 overflow-hidden rounded-2xl">
             {modules.map((module) => (
-              <Link key={module.href} to={module.href} className="flex items-center gap-4 px-5 py-4 hover:bg-muted/40">
-                <module.icon className="h-5 w-5 shrink-0 text-primary" />
+              <Link key={module.href} to={module.href} className="group flex items-center gap-4 px-5 py-4 transition-colors duration-150 hover:bg-white/[0.055]">
+                <div className="glass-control flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                  <module.icon className="h-5 w-5 text-primary" />
+                </div>
                 <div className="min-w-0">
                   <h3 className="font-medium">{module.title}</h3>
                   <p className="text-sm text-muted-foreground">{module.description}</p>
