@@ -162,7 +162,7 @@ export default function Auth() {
         homeDistrict: registerHomeDistrict,
         currentResidence: registerCurrentResidence,
       });
-      toast.success("Account created successfully! 🎉");
+      toast.success("Account created");
       setRegisterName("");
       setRegisterEmail("");
       setRegisterPassword("");
@@ -186,23 +186,31 @@ export default function Auth() {
   const isPasswordValid = Object.values(passwordValidation).every(v => v);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
-      <div className="relative w-full max-w-4xl">
-        <Link to="/" className="mb-8 flex items-center justify-center gap-3">
-          <span className="brand-mark flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-bold">C</span>
-          <span>
-            <span className="block text-left text-xl font-semibold text-foreground">CSB 2.0</span>
-            <span className="block text-left text-sm text-muted-foreground">Campus services</span>
-          </span>
-        </Link>
+    <div className="min-h-screen px-4 py-8 sm:px-8">
+      <Link to="/" className="inline-flex items-center gap-3">
+        <span className="brand-mark flex h-8 w-8 items-center justify-center rounded-lg text-sm font-semibold" aria-hidden="true">C</span>
+        <span className="text-base font-medium text-foreground">CSB 2.0</span>
+      </Link>
 
-        <div className="mx-auto max-w-2xl">
-          <Card className="overflow-hidden rounded-[26px]">
-              <CardContent className="p-5 sm:p-8">
+      <div className="mx-auto w-full max-w-xl py-12 sm:py-16">
+        <div className="mb-8">
+          <h1 className="text-3xl font-medium leading-tight text-foreground">
+            {activeTab === "login" ? "Sign in to your campus" : "Create your campus account"}
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            {activeTab === "login"
+              ? "Use the email you registered with your university"
+              : "Accounts are tied to one public university, so listings stay within your community"}
+          </p>
+        </div>
+
+        <div>
+          <Card className="overflow-hidden">
+              <CardContent className="p-6 sm:p-8">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="login">Login</TabsTrigger>
-                    <TabsTrigger value="register">Register</TabsTrigger>
+                  <TabsList className="mb-8 grid w-full grid-cols-2">
+                    <TabsTrigger value="login">Sign in</TabsTrigger>
+                    <TabsTrigger value="register">Create account</TabsTrigger>
                   </TabsList>
 
                   {/* Login Tab */}
@@ -216,7 +224,7 @@ export default function Auth() {
 
                     <form onSubmit={handleLogin} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="login-email">Email Address</Label>
+                        <Label htmlFor="login-email">Email</Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
@@ -262,11 +270,11 @@ export default function Auth() {
                       >
                         {isLoading ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Logging in...
+                            <Loader2 className="animate-spin" aria-hidden="true" />
+                            Signing in
                           </>
                         ) : (
-                          "Sign In"
+                          "Sign in"
                         )}
                       </Button>
                     </form>
@@ -283,10 +291,10 @@ export default function Auth() {
 
                     <form onSubmit={handleRegister} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Full Name *</Label>
+                        <Label htmlFor="name">Full name</Label>
                         <Input
                           id="name"
-                          placeholder="John Doe"
+                          placeholder="Full name"
                           value={registerName}
                           onChange={(e) => setRegisterName(e.target.value)}
                           disabled={isLoading}
@@ -294,7 +302,7 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email Address *</Label>
+                        <Label htmlFor="email">Email</Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
@@ -310,7 +318,7 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="university-name">University *</Label>
+                        <Label htmlFor="university-name">University</Label>
                         <Input
                           id="university-name"
                           list="public-universities"
@@ -334,12 +342,12 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="department">Department *</Label>
+                        <Label htmlFor="department">Department</Label>
                         <select
                           id="department"
                           value={registerDepartment}
                           onChange={(e) => setRegisterDepartment(e.target.value)}
-                          className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground disabled:opacity-50"
+                          className="h-10 w-full rounded-lg border border-input bg-secondary px-3 text-sm text-foreground transition-colors duration-150 hover:border-foreground/20 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50"
                           disabled={isLoading}
                         >
                           <option value="">Select a department</option>
@@ -354,7 +362,7 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Contact number *</Label>
+                        <Label htmlFor="phone">Contact number</Label>
                         <Input
                           id="phone"
                           type="tel"
@@ -367,7 +375,7 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="home-district">Home district *</Label>
+                        <Label htmlFor="home-district">Home district</Label>
                         <Input
                           id="home-district"
                           placeholder="Your home district"
@@ -379,7 +387,7 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="current-residence">Current residence *</Label>
+                        <Label htmlFor="current-residence">Current residence</Label>
                         <Input
                           id="current-residence"
                           placeholder="Hall, area, or current address"
@@ -391,7 +399,7 @@ export default function Auth() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="reg-password">Password *</Label>
+                        <Label htmlFor="reg-password">Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
@@ -414,36 +422,36 @@ export default function Auth() {
                       </div>
 
                       {registerPassword && (
-                        <div className="space-y-2 text-xs">
-                          <p className="font-medium text-foreground mb-2">Password Strength:</p>
+                        <div className="rounded-lg border border-border px-4 py-3 text-xs">
+                          <p className="mb-2 text-muted-foreground">Your password needs</p>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasMinLength ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
-                              <span className={passwordValidation.hasMinLength ? "text-success" : "text-destructive"}>
+                              {passwordValidation.hasMinLength ? <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" /> : <span className="flex h-3.5 w-3.5 items-center justify-center" aria-hidden="true"><span className="h-1 w-1 rounded-full bg-subtle" /></span>}
+                              <span className={passwordValidation.hasMinLength ? "text-foreground" : "text-muted-foreground"}>
                                 At least 8 characters
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasUpperCase ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
-                              <span className={passwordValidation.hasUpperCase ? "text-success" : "text-destructive"}>
+                              {passwordValidation.hasUpperCase ? <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" /> : <span className="flex h-3.5 w-3.5 items-center justify-center" aria-hidden="true"><span className="h-1 w-1 rounded-full bg-subtle" /></span>}
+                              <span className={passwordValidation.hasUpperCase ? "text-foreground" : "text-muted-foreground"}>
                                 One uppercase letter
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasLowerCase ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
-                              <span className={passwordValidation.hasLowerCase ? "text-success" : "text-destructive"}>
+                              {passwordValidation.hasLowerCase ? <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" /> : <span className="flex h-3.5 w-3.5 items-center justify-center" aria-hidden="true"><span className="h-1 w-1 rounded-full bg-subtle" /></span>}
+                              <span className={passwordValidation.hasLowerCase ? "text-foreground" : "text-muted-foreground"}>
                                 One lowercase letter
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasNumber ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
-                              <span className={passwordValidation.hasNumber ? "text-success" : "text-destructive"}>
+                              {passwordValidation.hasNumber ? <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" /> : <span className="flex h-3.5 w-3.5 items-center justify-center" aria-hidden="true"><span className="h-1 w-1 rounded-full bg-subtle" /></span>}
+                              <span className={passwordValidation.hasNumber ? "text-foreground" : "text-muted-foreground"}>
                                 One number
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              {passwordValidation.hasSpecialChar ? <Check className="h-3 w-3 text-success" /> : <X className="h-3 w-3 text-destructive" />}
-                              <span className={passwordValidation.hasSpecialChar ? "text-success" : "text-destructive"}>
+                              {passwordValidation.hasSpecialChar ? <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" /> : <span className="flex h-3.5 w-3.5 items-center justify-center" aria-hidden="true"><span className="h-1 w-1 rounded-full bg-subtle" /></span>}
+                              <span className={passwordValidation.hasSpecialChar ? "text-foreground" : "text-muted-foreground"}>
                                 One special character (@$!%*?&)
                               </span>
                             </div>
@@ -452,7 +460,7 @@ export default function Auth() {
                       )}
 
                       <div className="space-y-2">
-                        <Label htmlFor="confirm-password">Confirm Password *</Label>
+                        <Label htmlFor="confirm-password">Confirm password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
@@ -489,15 +497,15 @@ export default function Auth() {
                       >
                         {isLoading ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="animate-spin" aria-hidden="true" />
                             Creating Account...
                           </>
                         ) : (
-                          "Create Account"
+                          "Create account"
                         )}
                       </Button>
 
-                      <p className="text-xs text-muted-foreground text-center">
+                      <p className="text-center text-xs text-subtle">
                         By registering, you agree to our Terms of Service
                       </p>
                     </form>

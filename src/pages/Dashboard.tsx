@@ -55,8 +55,8 @@ export default function Dashboard() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-[1440px] space-y-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <header className="flex flex-col gap-6 border-b border-border pb-8 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mx-auto max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <header className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-3xl font-medium text-foreground">Dashboard</h1>
             <p className="mt-2 text-sm text-muted-foreground">

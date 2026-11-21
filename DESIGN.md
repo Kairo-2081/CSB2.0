@@ -24,13 +24,16 @@ No gradients, glows, radial washes, starfields, colored shadows or backdrop blur
 
 ## Type
 
-System sans stack (Segoe UI on Windows maps 500 to Semibold, so use 400 for list titles). Weights 400 and 500. Page title 30px, panel titles 18px, body 14px, meta 12px mono. Sentence case, no tracked uppercase labels, `tabular-nums` on every figure.
+IBM Plex Sans for the interface and IBM Plex Mono for stamps, emails, phone numbers and IDs. Both are self-hosted through `@fontsource`. Plex suits a registrar's office: institutional and exact, with enough warmth in its curves. Weights are 400 and 500, with 600 only for the logo mark. Page titles are 30px, the landing headline 64px (40px on phones), panel titles 18px, body 14px and stamps 12px. Large figures use the sans with `tabular-nums`, not the mono. Sentence case everywhere, no tracked uppercase labels, and no trailing periods on labels or buttons.
 
 ## Layout
 
 - Flush sidebar rail, 256px, with 36px nav rows and 2px gaps. Content is fluid and capped at 1440px, with page padding of 16, 24 or 32px depending on width.
 - Panels: 16px radius, 24px padding, rows separated by hairlines. Controls: 8px radius.
 - Operational pages put queues, lists and clear form actions ahead of metric cards. Never show invented counts.
+- Every signed-in page uses `Page` and `PageHeader` (title, one-line description, a mono count stamp, and actions on the right), then a `Toolbar` with `SearchField` and `FilterGroup`, then the records.
+- Lists of records are one panel with hairline rows. Items people browse visually (lost and found, marketplace, bicycles, donors) are a grid of cards with 20px padding.
+- Filters use `FilterGroup`, where the selected option is a raised step, not the accent. Empty states use `EmptyState`. Statuses use `Badge` variants `success`, `warning`, `destructive` and `info` with a small dot.
 
 ## Motion and accessibility
 

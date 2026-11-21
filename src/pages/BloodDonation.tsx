@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Page, PageHeader, Toolbar } from "@/components/layout/Page";
+import { EmptyState } from "@/components/layout/EmptyState";
+import { FilterGroup } from "@/components/layout/FilterGroup";
+import { SearchField } from "@/components/layout/SearchField";
+import { formatCount, formatDate } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +101,7 @@ export default function BloodDonation() {
         available_date: new Date().toISOString().split('T')[0],
         user_id: user?.id || "anonymous",
       });
-      toast.success("Donation registered successfully!");
+      toast.success("Donation registered");
       setFormData({
         blood_type: "O+",
         donor_name: "Anonymous",
@@ -119,12 +124,12 @@ export default function BloodDonation() {
   );
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this request?")) {
+    if (window.confirm("Delete this request?")) {
       try {
         // Pass user info for authorization
         await bloodDonationService.deleteDonor(id);
         
-        toast.success("Request deleted successfully!");
+        toast.success("Request deleted");
         await loadRequests();
       } catch (error) {
         console.error("Error deleting request:", error);
@@ -135,124 +140,75 @@ export default function BloodDonation() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Blood Donation</h1>
-            <p className="text-muted-foreground mt-1">Request or donate blood to save lives</p>
-          </div>
-          <Button 
-             
-            className="gap-2"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            New Request
-          </Button>
-        </div>
-
-        {/* Blood Group Filter */}
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant={bloodGroupFilter === "all" ? "default" : "secondary"}
-            size="sm"
-            onClick={() => setBloodGroupFilter("all")}
-          >
-            All Groups
-          </Button>
-          {bloodGroups.map((group) => (
-            <Button
-              key={group}
-              variant={bloodGroupFilter === group ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setBloodGroupFilter(group)}
-              className="min-w-[60px]"
-            >
-              {group}
+      <Page>
+        <PageHeader
+          title="Blood donation"
+          description="Donors on campus, their blood group and when they can give"
+          meta={`${formatCount(requests.length, "donor")} registered`}
+          actions={
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus aria-hidden="true" />
+              Register as donor
             </Button>
-          ))}
-        </div>
+          }
+        />
 
-        {/* Requests Grid */}
-        <div className="grid gap-4 md:grid-cols-2">
-          {filteredRequests.map((request, index) => (
-            <Card 
-              key={request.id} 
-              className=""
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                    <Droplets className="h-6 w-6" />
-                    <span className="text-lg font-bold mt-1">{request.blood_type}</span>
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(request.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-foreground font-medium">
-                        <Heart className="h-4 w-4 text-destructive" />
-                        {request.name}
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        {request.location}
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-4 w-4" />
-                        {request.contact_number}
-                      </div>
-                      <div className="text-muted-foreground">
-                        Available Date: <span className="font-semibold">{new Date(request.available_date).toLocaleDateString()}</span>
-                      </div>
-                    </div>
+        <FilterGroup
+          label="Blood group"
+          value={bloodGroupFilter}
+          onChange={setBloodGroupFilter}
+          options={[{ value: "all", label: "All groups" }, ...bloodGroups.map((group) => ({ value: group, label: group }))]}
+        />
 
-                    <div className="pt-2 border-t border-border flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        Contact Donor
+        {filteredRequests.length === 0 ? (
+          <EmptyState icon={Droplets} title="No donors in this group" description="Registered donors will appear here" />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredRequests.map((request) => (
+              <article key={request.id} className="glass-panel flex gap-5 rounded-2xl p-5">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-destructive/25 bg-destructive/10">
+                  <span className="font-mono text-xl font-medium text-[hsl(358_85%_74%)]">{request.blood_type}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-base font-medium text-foreground">{request.name}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Available from <span className="text-foreground">{formatDate(request.available_date)}</span>
+                  </p>
+                  <dl className="mt-4 space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
+                      <dt className="sr-only">Location</dt>
+                      <dd className="truncate">{request.location}</dd>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
+                      <dt className="sr-only">Phone</dt>
+                      <dd className="truncate font-mono text-[13px] tabular-nums">{request.contact_number}</dd>
+                    </div>
+                  </dl>
+                  <div className="mt-4 flex gap-2 border-t border-border pt-4">
+                    <Button variant="outline" size="sm" className="flex-1">Contact donor</Button>
+                    {request.user_id === user?.id && (
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(request.id)} aria-label="Delete entry">
+                        <Trash2 aria-hidden="true" />
                       </Button>
-                      {request.user_id === user?.id && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDelete(request.id)}
-                          className="gap-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredRequests.length === 0 && (
-          <Card className="p-12 text-center">
-            <Droplets className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No donations available</h3>
-            <p className="text-muted-foreground mt-1">Be the first to register as a donor</p>
-          </Card>
+              </article>
+            ))}
+          </div>
         )}
 
         {/* New Request Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Register Blood Donation</DialogTitle>
+              <DialogTitle>Register as a donor</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Blood Type *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Blood type</label>
                 <Select 
                   value={formData.blood_type}
                   onValueChange={(value) => setFormData({...formData, blood_type: value})}
@@ -270,7 +226,7 @@ export default function BloodDonation() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Patient Name *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Patient name</label>
                 <Input
                   placeholder="Your name"
                   value={formData.donor_name}
@@ -280,7 +236,7 @@ export default function BloodDonation() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Location *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Location</label>
                 <Input
                   placeholder="Your location"
                   value={formData.location}
@@ -290,7 +246,7 @@ export default function BloodDonation() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Phone Number *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Phone number</label>
                 <Input
                   placeholder="Contact number"
                   value={formData.phone}
@@ -300,7 +256,7 @@ export default function BloodDonation() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Available Units</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Available units</label>
                 <Input
                   type="number"
                   min="1"
@@ -310,7 +266,7 @@ export default function BloodDonation() {
                 />
               </div>
 
-              <DialogFooter className="gap-2 pt-4">
+              <DialogFooter>
                 <Button 
                   type="button"
                   variant="outline"
@@ -324,14 +280,14 @@ export default function BloodDonation() {
                   disabled={isLoading}
                   className="gap-2"
                 >
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {isLoading && <Loader2 className="animate-spin" aria-hidden="true" />}
                   Register
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </Page>
     </MainLayout>
   );
 }

@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Page, PageHeader, Toolbar } from "@/components/layout/Page";
+import { EmptyState } from "@/components/layout/EmptyState";
+import { FilterGroup } from "@/components/layout/FilterGroup";
+import { SearchField } from "@/components/layout/SearchField";
+import { formatDate } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +63,7 @@ const categoryConfig = {
 
 const statusConfig = {
   pending: { label: "Pending", variant: "warning" as const, icon: AlertCircle },
-  in_progress: { label: "In Progress", variant: "info" as const, icon: Clock },
+  in_progress: { label: "In progress", variant: "info" as const, icon: Clock },
   resolved: { label: "Resolved", variant: "success" as const, icon: CheckCircle },
 };
 
@@ -106,7 +111,7 @@ export default function Complaints() {
         ...formData,
         user_id: user?.id || "anonymous",
       });
-      toast.success("Complaint posted successfully!");
+      toast.success("Complaint posted");
       setFormData({
         title: "",
         description: "",
@@ -131,10 +136,10 @@ export default function Complaints() {
   });
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this complaint?")) {
+    if (window.confirm("Delete this complaint?")) {
       try {
         await complaintService.deleteComplaint(id);
-        toast.success("Complaint deleted successfully!");
+        toast.success("Complaint deleted");
         await loadComplaints();
       } catch (error) {
         console.error("Error deleting complaint:", error);
@@ -145,139 +150,71 @@ export default function Complaints() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Complaints</h1>
-            <p className="text-muted-foreground mt-1">Submit and track your complaints</p>
-          </div>
-          <Button 
-             
-            className="gap-2"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            New Complaint
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search complaints..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={categoryFilter === "all" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setCategoryFilter("all")}
-            >
-              All
+      <Page>
+        <PageHeader
+          title="Complaints"
+          description="Report hall, dining, lab, academic and administration issues and follow them to resolution"
+          meta={`${complaints.length} filed · ${complaints.filter((item) => item.status !== "resolved").length} open`}
+          actions={
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus aria-hidden="true" />
+              New complaint
             </Button>
-            {Object.entries(categoryConfig).map(([key, config]) => (
-              <Button
-                key={key}
-                variant={categoryFilter === key ? "default" : "secondary"}
-                size="sm"
-                onClick={() => setCategoryFilter(key)}
-                className="gap-1.5"
-              >
-                <config.icon className="h-3.5 w-3.5" />
-                {config.label}
-              </Button>
-            ))}
-          </div>
-        </div>
+          }
+        />
 
-        {/* Complaints List */}
-        <div className="space-y-4">
-          {filteredComplaints.map((complaint, index) => {
-            const category = categoryConfig[complaint.category];
-            const status = statusConfig[complaint.status];
-            const StatusIcon = status.icon;
-            
-            return (
-              <Card 
-                key={complaint.id} 
-                className=""
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex gap-4">
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary ${category.color}`}>
-                        <category.icon className="h-6 w-6" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold text-foreground">{complaint.title}</h3>
-                          <Badge variant={status.variant} className="gap-1">
-                            <StatusIcon className="h-3 w-3" />
-                            {status.label}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{complaint.description}</p>
-                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-xs">
-                              {category.label}
-                            </Badge>
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(complaint.created_at).toLocaleDateString()}
-                          </span>
-                          <span>By {complaint.posted_by}</span>
-                        </div>
-                      </div>
+        <Toolbar>
+          <SearchField label="Search complaints" value={searchQuery} onChange={setSearchQuery} />
+          <FilterGroup
+            label="Category"
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            options={[{ value: "all", label: "All" }, ...Object.entries(categoryConfig).map(([value, config]) => ({ value, label: config.label }))]}
+          />
+        </Toolbar>
+
+        {filteredComplaints.length === 0 ? (
+          <EmptyState icon={Search} title="No complaints found" description="Try another search or category" />
+        ) : (
+          <ul className="glass-panel divide-y divide-border overflow-hidden rounded-2xl">
+            {filteredComplaints.map((complaint) => {
+              const category = categoryConfig[complaint.category];
+              const status = statusConfig[complaint.status];
+              return (
+                <li key={complaint.id} className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-start">
+                  <category.icon className="mt-1 hidden h-4 w-4 shrink-0 text-subtle sm:block" aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-medium text-foreground">{complaint.title}</h3>
+                      <Badge variant={status.variant}><span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />{status.label}</Badge>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                      {complaint.user_id === user?.id && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDelete(complaint.id)}
-                          className="gap-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </Button>
-                      )}
-                    </div>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{complaint.description}</p>
+                    <p className="stamp mt-3">{[category.label, formatDate(complaint.created_at), complaint.posted_by].filter(Boolean).join(" · ")}</p>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {filteredComplaints.length === 0 && (
-          <Card className="p-12 text-center">
-            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No complaints found</h3>
-            <p className="text-muted-foreground mt-1">Try adjusting your search or filters</p>
-          </Card>
+                  <div className="flex shrink-0 gap-2">
+                    <Button variant="outline" size="sm">View details</Button>
+                    {complaint.user_id === user?.id && (
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(complaint.id)}>
+                        <Trash2 aria-hidden="true" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
 
         {/* New Complaint Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Submit New Complaint</DialogTitle>
+              <DialogTitle>New complaint</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Title *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Title</label>
                 <Input
                   placeholder="Brief title of your complaint"
                   value={formData.title}
@@ -287,7 +224,7 @@ export default function Complaints() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Category *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Category</label>
                 <Select 
                   value={formData.category}
                   onValueChange={(value) => setFormData({...formData, category: value as any})}
@@ -307,27 +244,27 @@ export default function Complaints() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Description</label>
                 <Textarea
-                  placeholder="Describe your complaint in detail..."
+                  placeholder="Describe your complaint in detail"
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   disabled={isLoading}
-                  className="min-h-[120px]"
+                  className="min-h-32"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Your Name</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Your name</label>
                 <Input
-                  placeholder="Your name (optional)"
+                  placeholder="Optional"
                   value={formData.posted_by}
                   onChange={(e) => setFormData({...formData, posted_by: e.target.value})}
                   disabled={isLoading}
                 />
               </div>
 
-              <DialogFooter className="gap-2 pt-4">
+              <DialogFooter>
                 <Button 
                   type="button"
                   variant="outline"
@@ -341,14 +278,14 @@ export default function Complaints() {
                   disabled={isLoading}
                   className="gap-2"
                 >
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Submit Complaint
+                  {isLoading && <Loader2 className="animate-spin" aria-hidden="true" />}
+                  Submit complaint
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </Page>
     </MainLayout>
   );
 }

@@ -24,8 +24,8 @@ const emptyListing = {
 };
 
 const requestStatus = {
-  pending: { label: "Waiting for a response", variant: "outline" as const, className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
-  approved: { label: "Approved", variant: "outline" as const, className: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" },
+  pending: { label: "Waiting for a response", variant: "warning" as const, className: "" },
+  approved: { label: "Approved", variant: "success" as const, className: "" },
   declined: { label: "Declined", variant: "destructive" as const, className: "" },
   returned: { label: "Returned", variant: "secondary" as const, className: "" },
 };
@@ -135,22 +135,21 @@ export default function LendBorrow() {
     const isOwner = item.owner_id === user?.id;
     const hasRequested = Boolean(item.has_active_request);
     return (
-      <div key={item.id} className="grid gap-4 p-5 transition-colors hover:bg-white/[0.035] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+      <div key={item.id} className="grid gap-4 px-6 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
+            <h3 className="text-base font-medium text-foreground">{item.title}</h3>
             <Badge
-              variant={item.status === "available" ? "outline" : "secondary"}
-              className={item.status === "available" ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : ""}
+              variant={item.status === "available" ? "success" : "outline"}
             >
               {item.status === "available" ? "Available" : "On loan"}
             </Badge>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">{item.category} · {item.item_condition}</p>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground/80">{item.description}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          <p className="stamp mt-1">{item.category} · {item.item_condition}</p>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{item.description}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-subtle">
             <span className="inline-flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 text-primary" />
+              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
               {item.handoff_location}
             </span>
             <span>Listed by {isOwner ? "you" : item.owner_name}</span>
@@ -161,7 +160,7 @@ export default function LendBorrow() {
             <p className="text-sm text-muted-foreground">Your listing</p>
           ) : hasRequested ? (
             <Button variant="outline" size="sm" disabled>
-              <Clock3 className="h-4 w-4" /> Request sent
+              <Clock3 aria-hidden="true" /> Request sent
             </Button>
           ) : item.status === "available" ? (
             <Button size="sm" onClick={() => setSelectedItem(item)}>Request to borrow</Button>
@@ -175,21 +174,21 @@ export default function LendBorrow() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-6xl space-y-7 p-6 lg:p-8">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mx-auto max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Lend and borrow</h1>
+            <h1 className="text-3xl font-medium leading-tight text-foreground">Lend and borrow</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               Share useful items with people at your university. Listings are visible only to your university community.
             </p>
           </div>
           <Button onClick={() => setIsListingOpen(true)}>
-            <Plus className="h-4 w-4" /> Lend an item
+            <Plus aria-hidden="true" /> Lend an item
           </Button>
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="borrow">Borrow items</TabsTrigger>
             <TabsTrigger value="lend">Your listings</TabsTrigger>
             <TabsTrigger value="activity">Requests{activeRequests.length > 0 ? ` (${activeRequests.length})` : ""}</TabsTrigger>
@@ -209,7 +208,7 @@ export default function LendBorrow() {
               </div>
               <select
                 aria-label="Filter by category"
-                className="glass-control h-10 rounded-lg px-3 text-sm text-foreground"
+                className="h-10 rounded-lg border border-input bg-secondary px-3 text-sm text-foreground transition-colors duration-150 hover:border-foreground/20 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
               >
@@ -222,7 +221,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : filteredItems.length ? (
-              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-2xl">{filteredItems.map(itemCard)}</div>
+              <div className="glass-panel divide-y divide-border overflow-hidden rounded-2xl">{filteredItems.map(itemCard)}</div>
             ) : !error ? (
               <EmptyState
                 title={search || category !== "all" ? "No matching items" : "Nothing listed to borrow yet"}
@@ -236,42 +235,42 @@ export default function LendBorrow() {
           <TabsContent value="lend" className="mt-6 space-y-5">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold">Items you have listed</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Manage lending offers you have shared.</p>
+                <h2 className="text-lg font-medium leading-tight">Items you have listed</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Lending offers you have shared</p>
               </div>
               <Button variant="outline" onClick={() => setIsListingOpen(true)}>
-                <Plus className="h-4 w-4" /> Add listing
+                <Plus aria-hidden="true" /> Add listing
               </Button>
             </div>
             {error && <ErrorState message={error} onRetry={() => void loadData()} />}
             {isLoading ? (
               <LoadingState />
             ) : myListings.length ? (
-              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-2xl">{myListings.map(itemCard)}</div>
+              <div className="glass-panel divide-y divide-border overflow-hidden rounded-2xl">{myListings.map(itemCard)}</div>
             ) : !error ? (
               <EmptyState
                 title="You have not listed anything"
                 description="Offer a book, calculator, or other useful item to your university community."
-                action={<Button onClick={() => setIsListingOpen(true)}><Plus className="h-4 w-4" /> Lend an item</Button>}
+                action={<Button onClick={() => setIsListingOpen(true)}><Plus aria-hidden="true" /> Lend an item</Button>}
               />
             ) : null}
           </TabsContent>
 
           <TabsContent value="activity" className="mt-6 space-y-5">
             <div>
-              <h2 className="text-lg font-semibold">Borrow requests</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Requests you have received and sent.</p>
+              <h2 className="text-lg font-medium leading-tight">Borrow requests</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Requests you have received and sent</p>
             </div>
             {error && <ErrorState message={error} onRetry={() => void loadData()} />}
             {isLoading ? (
               <LoadingState />
             ) : requests.length ? (
-              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-2xl">
+              <div className="glass-panel divide-y divide-border overflow-hidden rounded-2xl">
                 {requests.map((request) => {
                   const incoming = request.owner_id === user?.id;
                   const status = requestStatus[request.status];
                   return (
-                    <div key={request.id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div key={request.id} className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-medium">{request.item_title}</h3>
@@ -280,15 +279,15 @@ export default function LendBorrow() {
                         <p className="mt-1 text-sm text-muted-foreground">
                           {incoming ? `Requested by ${request.requester_name}` : `Lender: ${request.owner_name}`}
                         </p>
-                        {request.message && <p className="mt-2 text-sm text-foreground/80">{request.message}</p>}
+                        {request.message && <p className="mt-2 text-sm leading-6 text-muted-foreground">{request.message}</p>}
                       </div>
                       {incoming && request.status === "pending" && (
                         <div className="flex shrink-0 gap-2">
                           <Button size="sm" disabled={isSaving} onClick={() => void handleRequestAction(request, "approve")}>
-                            <Check className="h-4 w-4" /> Approve
+                            <Check aria-hidden="true" /> Approve
                           </Button>
                           <Button size="sm" variant="outline" disabled={isSaving} onClick={() => void handleRequestAction(request, "decline")}>
-                            <X className="h-4 w-4" /> Decline
+                            <X aria-hidden="true" /> Decline
                           </Button>
                         </div>
                       )}
@@ -322,13 +321,13 @@ export default function LendBorrow() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="listing-category">Category</Label>
-                <select id="listing-category" className="glass-control h-10 w-full rounded-lg px-3 text-sm" value={listing.category} onChange={(event) => setListing({ ...listing, category: event.target.value })}>
+                <select id="listing-category" className="h-10 w-full rounded-lg border border-input bg-secondary px-3 text-sm text-foreground transition-colors duration-150 hover:border-foreground/20 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30" value={listing.category} onChange={(event) => setListing({ ...listing, category: event.target.value })}>
                   {categories.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="listing-condition">Condition</Label>
-                <select id="listing-condition" className="glass-control h-10 w-full rounded-lg px-3 text-sm" value={listing.itemCondition} onChange={(event) => setListing({ ...listing, itemCondition: event.target.value })}>
+                <select id="listing-condition" className="h-10 w-full rounded-lg border border-input bg-secondary px-3 text-sm text-foreground transition-colors duration-150 hover:border-foreground/20 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30" value={listing.itemCondition} onChange={(event) => setListing({ ...listing, itemCondition: event.target.value })}>
                   {conditions.map((option) => <option key={option} value={option}>{option}</option>)}
                 </select>
               </div>
@@ -381,7 +380,7 @@ export default function LendBorrow() {
 
 function LoadingState() {
   return (
-    <div className="glass-panel rounded-2xl px-6 py-12 text-center text-sm text-muted-foreground" role="status">
+    <div className="rounded-2xl border border-dashed border-border px-6 py-16 text-center text-sm text-muted-foreground" role="status">
       Loading university listings…
     </div>
   );
@@ -397,11 +396,11 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="glass-panel rounded-2xl px-6 py-12 text-center">
-      <BookOpen className="mx-auto h-8 w-8 text-primary" aria-hidden="true" />
-      <h3 className="mt-3 font-medium text-foreground">{title}</h3>
+    <div className="rounded-2xl border border-dashed border-border px-6 py-16 text-center">
+      <BookOpen className="mx-auto h-5 w-5 text-subtle" aria-hidden="true" />
+      <h3 className="mt-4 text-base font-medium text-foreground">{title}</h3>
       <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
-      {action && <div className="mt-5">{action}</div>}
+      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 }
