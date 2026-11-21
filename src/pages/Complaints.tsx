@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -145,22 +146,25 @@ export default function Complaints() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Complaints</h1>
-            <p className="text-muted-foreground mt-1">Submit and track your complaints</p>
-          </div>
-          <Button 
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader
+          eyebrow="Campus issues"
+          title="Complaints,"
+          accent="heard and tracked."
+          description="Submit an issue and follow its status until it is resolved."
+          actions={
+            <>
+              <Button 
              
-            className="gap-2"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            New Complaint
-          </Button>
-        </div>
+                className="gap-2"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                New Complaint
+              </Button>
+            </>
+          }
+        />
 
         {/* Filters */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
