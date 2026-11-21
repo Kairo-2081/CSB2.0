@@ -639,6 +639,44 @@ app.get('/api/universities', async (req, res) => {
   }
 });
 
+// Public, aggregate-only counts for the landing page. CSB 2.0 launches at BUET
+// first, so members and lending are scoped to BUET. Notices and lost-and-found
+// rows carry no university yet; while BUET is the only campus they are BUET's.
+app.get('/api/public/campus-stats', async (req, res) => {
+  try {
+    const campus = await db.get(
+      `SELECT id, name, short_name AS shortName FROM universities WHERE slug = 'buet'`
+    );
+    if (!campus) {
+      return res.status(404).json({ success: false, error: 'Campus not found' });
+    }
+
+    const [members, notices, lostFound, lendingItems] = await Promise.all([
+      db.get('SELECT COUNT(*) AS count FROM users WHERE university_id = ?', [campus.id]),
+      db.get('SELECT COUNT(*) AS count FROM notices'),
+      db.get("SELECT COUNT(*) AS count FROM lost_found WHERE status = 'lost'"),
+      db.get(
+        "SELECT COUNT(*) AS count FROM lending_items WHERE university_id = ? AND status = 'available'",
+        [campus.id]
+      ),
+    ]);
+
+    res.json({
+      success: true,
+      campus,
+      stats: {
+        members: members.count,
+        notices: notices.count,
+        openLostItems: lostFound.count,
+        itemsToBorrow: lendingItems.count,
+      },
+    });
+  } catch (error) {
+    console.error('Campus stats error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load campus stats' });
+  }
+});
+
 app.get('/api/admin/metrics', async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
