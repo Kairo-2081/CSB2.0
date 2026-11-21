@@ -1,6 +1,7 @@
 """Grade CSB 2.0 campus photos to the obsidian / ivory / sand palette.
 
 Usage: python3 scripts/grade-photos.py SRC DST [--max-width N]
+       python3 scripts/grade-photos.py SRC DST --band 1100x520 [--focus-y 0.5] --grain
 (needs Pillow and NumPy: pip install pillow numpy)
 
 The grade:
@@ -88,11 +89,43 @@ def grade(img: Image.Image) -> Image.Image:
     return res.filter(ImageFilter.GaussianBlur(0.35))
 
 
+def band(img: Image.Image, width: int, height: int, focus_y: float) -> Image.Image:
+    """Crop to the band's aspect around a vertical focus point, then resize."""
+    target = width / height
+    w, h = img.size
+    if w / h > target:
+        cw = round(h * target)
+        left = (w - cw) // 2
+        img = img.crop((left, 0, left + cw, h))
+    else:
+        ch = round(w / target)
+        top = int(np.clip(focus_y * h - ch / 2, 0, h - ch))
+        img = img.crop((0, top, w, top + ch))
+    return img.resize((width, height), Image.LANCZOS)
+
+
+def add_grain(img: Image.Image, amount: float = 0.035, seed: int = 7) -> Image.Image:
+    """Monochrome film grain. It reads as texture and hides upscaling softness."""
+    a = np.asarray(img).astype(np.float64) / 255
+    rng = np.random.default_rng(seed)
+    noise = rng.normal(0, amount, a.shape[:2])[..., None]
+    return Image.fromarray((np.clip(a + noise, 0, 1) * 255).round().astype(np.uint8))
+
+
 if __name__ == "__main__":
-    src, dst = sys.argv[1], sys.argv[2]
-    max_w = int(sys.argv[sys.argv.index("--max-width") + 1]) if "--max-width" in sys.argv else None
-    im = Image.open(src)
-    if max_w and im.width > max_w:
-        im = im.resize((max_w, round(im.height * max_w / im.width)), Image.LANCZOS)
-    grade(im).save(dst, "WEBP", quality=86, method=6)
-    print(dst, im.size)
+    args = sys.argv[1:]
+    src, dst = args[0], args[1]
+    opt = lambda name, default=None: args[args.index(name) + 1] if name in args else default
+    im = Image.open(src).convert("RGB")
+    if "--band" in args:
+        bw, bh = (int(v) for v in opt("--band").split("x"))
+        im = band(im, bw, bh, float(opt("--focus-y", "0.5")))
+        im = im.filter(ImageFilter.GaussianBlur(0.6))
+    elif opt("--max-width") and im.width > int(opt("--max-width")):
+        mw = int(opt("--max-width"))
+        im = im.resize((mw, round(im.height * mw / im.width)), Image.LANCZOS)
+    out = grade(im)
+    if "--grain" in args:
+        out = add_grain(out)
+    out.save(dst, "WEBP", quality=84, method=6)
+    print(dst, out.size)
