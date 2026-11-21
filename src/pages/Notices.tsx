@@ -147,7 +147,7 @@ export default function Notices() {
               >
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-white/10 text-accent transition-colors group-hover:border-primary/50">
                       <Bell className="h-5 w-5" />
                     </div>
                     <div className="flex-1 space-y-2">
