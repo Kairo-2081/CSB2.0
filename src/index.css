@@ -4,38 +4,49 @@
 
 @layer base {
   :root {
-    --background: 240 24% 4%;
-    --foreground: 245 18% 97%;
-    --card: 245 22% 9%;
-    --card-foreground: 245 18% 97%;
-    --popover: 245 24% 8%;
-    --popover-foreground: 245 18% 97%;
-    --primary: 248 100% 68%;
+    /* Graphite ramp: sidebar 6%, page 8%, card 10%, raised 14% */
+    --background: 240 2% 8%;
+    --foreground: 0 0% 93%;
+    --card: 240 4% 10%;
+    --card-foreground: 0 0% 93%;
+    --popover: 240 4% 10%;
+    --popover-foreground: 0 0% 93%;
+
+    /* One accent, flat violet. White on it passes 4.5:1 */
+    --primary: 248 100% 67%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 244 21% 14%;
-    --secondary-foreground: 245 18% 95%;
-    --muted: 244 18% 12%;
-    --muted-foreground: 244 13% 74%;
-    --accent: 262 88% 77%;
-    --accent-foreground: 245 28% 8%;
-    --destructive: 0 78% 66%;
+
+    --secondary: 240 3% 14%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 240 3% 12%;
+    /* Text roles: foreground (primary), muted-foreground (secondary), subtle (meta and icons) */
+    --muted-foreground: 240 3% 64%;
+    --subtle: 240 3% 53%;
+    --accent: 240 3% 16%;
+    --accent-foreground: 0 0% 93%;
+
+    --destructive: 358 75% 59%;
     --destructive-foreground: 0 0% 100%;
-    --success: 151 52% 64%;
+    --success: 151 50% 53%;
     --success-foreground: 155 45% 8%;
-    --warning: 39 88% 68%;
+    --warning: 39 80% 62%;
     --warning-foreground: 38 55% 9%;
-    --border: 246 22% 22%;
-    --input: 246 20% 17%;
-    --ring: 249 100% 74%;
-    --radius: 0.875rem;
-    --sidebar-background: 241 29% 6%;
-    --sidebar-foreground: 245 18% 89%;
-    --sidebar-primary: 248 100% 72%;
+
+    --border: 240 3% 16%;
+    --input: 240 3% 18%;
+    --ring: 248 100% 74%;
+    --radius: 0.625rem;
+
+    --sidebar-background: 240 3% 6%;
+    --sidebar-foreground: 240 3% 64%;
+    --sidebar-primary: 248 100% 67%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 246 24% 15%;
-    --sidebar-accent-foreground: 245 18% 97%;
-    --sidebar-border: 247 22% 20%;
-    --sidebar-ring: 249 100% 74%;
+    --sidebar-accent: 240 3% 14%;
+    --sidebar-accent-foreground: 0 0% 93%;
+    --sidebar-border: 240 3% 14%;
+    --sidebar-ring: 248 100% 74%;
+
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   * {
@@ -49,50 +60,26 @@
   body {
     @apply antialiased;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background:
-      radial-gradient(ellipse at 5% 2%, rgba(76, 69, 184, 0.22), transparent 40rem),
-      radial-gradient(ellipse at 96% 28%, rgba(61, 81, 172, 0.14), transparent 38rem),
-      radial-gradient(ellipse at 72% 100%, rgba(91, 48, 151, 0.12), transparent 42rem),
-      hsl(var(--background));
+    background: hsl(var(--background));
     color: hsl(var(--foreground));
   }
 
   #root {
-    position: relative;
-    z-index: 1;
     min-height: 100vh;
   }
 
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(1px 1px at 8% 13%, rgba(231, 228, 255, 0.62) 45%, transparent 100%),
-      radial-gradient(1px 1px at 16% 76%, rgba(186, 193, 255, 0.48) 45%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 28% 34%, rgba(245, 240, 255, 0.56) 45%, transparent 100%),
-      radial-gradient(1px 1px at 39% 88%, rgba(184, 184, 255, 0.42) 45%, transparent 100%),
-      radial-gradient(1px 1px at 54% 17%, rgba(240, 236, 255, 0.5) 45%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 67% 63%, rgba(202, 196, 255, 0.48) 45%, transparent 100%),
-      radial-gradient(1px 1px at 78% 28%, rgba(240, 237, 255, 0.52) 45%, transparent 100%),
-      radial-gradient(1px 1px at 91% 81%, rgba(192, 200, 255, 0.48) 45%, transparent 100%);
-    opacity: 0.62;
-  }
-
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-medium;
   }
 
   ::selection {
-    background: rgba(147, 130, 255, 0.38);
-    color: white;
+    background: hsl(var(--primary) / 0.35);
+    color: hsl(var(--foreground));
   }
 
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
-    outline-offset: 3px;
+    outline-offset: 2px;
   }
 
   code, pre {
@@ -101,149 +88,59 @@
 }
 
 @layer components {
+  /* Main column. Depth comes from surface steps, not from a framed canvas */
   .app-stage {
-    position: relative;
-    isolation: isolate;
-    min-height: calc(100vh - 24px);
-    margin: 12px 12px 12px 0;
-    border: 1px solid rgba(196, 187, 255, 0.12);
-    border-radius: 28px;
-    background:
-      radial-gradient(ellipse at 82% 0%, rgba(91, 74, 218, 0.18), transparent 38rem),
-      radial-gradient(ellipse at 4% 92%, rgba(61, 81, 172, 0.09), transparent 36rem),
-      linear-gradient(155deg, rgba(10, 10, 19, 0.91), rgba(6, 6, 12, 0.94));
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      0 28px 80px rgba(0, 0, 0, 0.46),
-      0 0 56px rgba(83, 65, 213, 0.12);
+    min-height: 100vh;
   }
 
-  .app-stage::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background:
-      radial-gradient(1.5px 1.5px at 11% 12%, rgba(231, 228, 255, 0.42) 45%, transparent 100%),
-      radial-gradient(1px 1px at 24% 71%, rgba(186, 193, 255, 0.34) 45%, transparent 100%),
-      radial-gradient(1px 1px at 57% 19%, rgba(240, 236, 255, 0.32) 45%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 83% 63%, rgba(202, 196, 255, 0.34) 45%, transparent 100%),
-      radial-gradient(1px 1px at 92% 31%, rgba(240, 237, 255, 0.3) 45%, transparent 100%);
-  }
-
-  .app-stage > * {
-    position: relative;
-    z-index: 1;
-  }
-
+  /* Kept as names so existing pages keep working; they are plain surfaces now */
   .landing-hero {
-    background:
-      radial-gradient(ellipse at 50% 48%, rgba(86, 73, 220, 0.14), transparent 35rem),
-      radial-gradient(ellipse at 50% 100%, rgba(85, 57, 178, 0.07), transparent 32rem);
+    background: none;
   }
 
   .glass-shell {
-    background:
-      radial-gradient(140% 180% at 0% 0%, rgba(180, 164, 255, 0.12), transparent 48%),
-      linear-gradient(135deg, rgba(30, 28, 51, 0.78), rgba(12, 11, 22, 0.68));
-    border: 1px solid rgba(207, 198, 255, 0.2);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      0 24px 64px rgba(0, 0, 0, 0.42);
-    backdrop-filter: blur(28px) saturate(155%);
-    -webkit-backdrop-filter: blur(28px) saturate(155%);
+    background: hsl(var(--sidebar-background));
+    border: 1px solid hsl(var(--border));
   }
 
   .glass-panel {
-    background:
-      radial-gradient(120% 90% at 0% 0%, rgba(167, 152, 255, 0.1), transparent 46%),
-      linear-gradient(145deg, rgba(26, 24, 46, 0.7), rgba(10, 10, 19, 0.72));
-    border: 1px solid rgba(196, 187, 255, 0.18);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.085),
-      0 20px 52px rgba(0, 0, 0, 0.34);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
   }
 
   .glass-control {
-    background: linear-gradient(145deg, rgba(50, 45, 79, 0.72), rgba(17, 16, 30, 0.62));
-    border: 1px solid rgba(203, 195, 255, 0.2);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.13),
-      0 8px 26px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
-  }
-
-  .dashboard-hero {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    border: 1px solid rgba(207, 198, 255, 0.22);
-    background:
-      radial-gradient(ellipse at 84% 12%, rgba(125, 102, 255, 0.3), transparent 24rem),
-      radial-gradient(ellipse at 100% 100%, rgba(65, 88, 206, 0.17), transparent 28rem),
-      linear-gradient(122deg, rgba(27, 24, 49, 0.94), rgba(11, 10, 19, 0.78) 58%, rgba(25, 20, 45, 0.88));
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.11),
-      0 28px 76px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(28px) saturate(150%);
-    -webkit-backdrop-filter: blur(28px) saturate(150%);
-  }
-
-  .dashboard-hero::before {
-    content: "";
-    position: absolute;
-    inset: 1px;
-    z-index: -1;
-    border-radius: inherit;
-    pointer-events: none;
-    background:
-      linear-gradient(118deg, rgba(255, 255, 255, 0.08), transparent 28% 72%, rgba(177, 161, 255, 0.1));
+    background: hsl(var(--secondary));
+    border: 1px solid hsl(var(--border));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .brand-mark {
-    background: linear-gradient(145deg, #7060eb, #604bfa 56%, #4934d8);
-    border: 1px solid rgba(224, 218, 255, 0.3);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 8px 24px rgba(88, 70, 235, 0.34);
-    color: white;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
   }
 
   .button-primary {
-    border: 1px solid rgba(224, 218, 255, 0.24);
-    background: linear-gradient(135deg, #7060eb, #604bfa 54%, #4934d8);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.34),
-      0 8px 24px rgba(83, 67, 231, 0.32);
-    transition: filter 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    background: hsl(var(--primary));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
   }
 
   .button-primary:hover {
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.38),
-      0 10px 30px rgba(91, 74, 255, 0.48);
+    background: hsl(248 100% 71%);
   }
 
-  .button-primary:active {
-    transform: translateY(1px);
+  /* Signature: mono stamps for record counts and filed times */
+  .stamp {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    line-height: 16px;
+    font-variant-numeric: tabular-nums;
+    color: hsl(var(--subtle));
   }
 }
 
 @media (max-width: 1023px) {
   .app-stage {
-    min-height: calc(100vh - 16px);
-    margin: 8px;
     padding-top: 56px;
-    border-radius: 24px;
-  }
-
-  .app-stage-authenticated {
-    padding-top: 72px;
   }
 }
 
@@ -253,16 +150,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(165, 151, 255, 0.32);
-  border-radius: 999px;
+  background: hsl(var(--foreground) / 0.12);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(184, 171, 255, 0.5);
+  background: hsl(var(--foreground) / 0.2);
 }
 
 @media (prefers-reduced-motion: reduce) {
