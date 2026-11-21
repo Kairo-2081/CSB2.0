@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "button-primary text-primary-foreground",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        destructive: "border border-destructive/25 bg-destructive/10 text-[hsl(358_85%_74%)] hover:bg-destructive/15",
         outline: "glass-control text-foreground hover:bg-accent",
         secondary: "glass-control text-secondary-foreground hover:bg-accent",
         ghost: "text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -18,7 +18,7 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 px-3",
+        sm: "h-8 px-3",
         lg: "h-11 px-5",
         icon: "h-10 w-10",
       },
