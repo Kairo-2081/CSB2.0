@@ -116,6 +116,7 @@ export default function Notices() {
     <MainLayout>
       <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
         <PageHeader
+          photo={{ src: "/campus/buet-gate.webp", alt: "The BUET main gate, with the university name in Bangla and English", position: "50% 45%" }}
           eyebrow="Announcements"
           title="Notices"
           accent="from across campus."
