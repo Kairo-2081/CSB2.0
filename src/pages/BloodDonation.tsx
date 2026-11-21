@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -135,22 +136,25 @@ export default function BloodDonation() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Blood Donation</h1>
-            <p className="text-muted-foreground mt-1">Request or donate blood to save lives</p>
-          </div>
-          <Button 
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader
+          eyebrow="Health"
+          title="Blood donation."
+          accent={"Give where it's needed."}
+          description="Request or donate blood to save lives."
+          actions={
+            <>
+              <Button 
              
-            className="gap-2"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            New Request
-          </Button>
-        </div>
+                className="gap-2"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                New Request
+              </Button>
+            </>
+          }
+        />
 
         {/* Blood Group Filter */}
         <div className="flex gap-2 flex-wrap">
@@ -239,7 +243,7 @@ export default function BloodDonation() {
         {filteredRequests.length === 0 && (
           <Card className="p-12 text-center">
             <Droplets className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No donations available</h3>
+            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No donations available</h3>
             <p className="text-muted-foreground mt-1">Be the first to register as a donor</p>
           </Card>
         )}

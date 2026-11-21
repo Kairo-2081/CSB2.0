@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,18 +116,21 @@ export default function FacultySuggestions() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Faculty Suggestions</h1>
-            <p className="text-muted-foreground mt-1">Provide constructive feedback to faculty members</p>
-          </div>
-          <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add Suggestion
-          </Button>
-        </div>
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader
+          eyebrow="Teaching"
+          title="Faculty suggestions."
+          accent="Help teaching improve."
+          description="Provide constructive feedback to faculty members."
+          actions={
+            <>
+              <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add Suggestion
+              </Button>
+            </>
+          }
+        />
 
         {/* Dialog Form */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -258,7 +262,7 @@ export default function FacultySuggestions() {
             {filteredSuggestions.length === 0 ? (
               <Card className="p-12 text-center">
                 <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No suggestions yet</h3>
+                <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No suggestions yet</h3>
                 <p className="text-muted-foreground mt-1">Be the first to add a suggestion!</p>
               </Card>
             ) : (

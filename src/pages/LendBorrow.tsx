@@ -2,6 +2,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BookOpen, Check, Clock3, MapPin, Plus, Search, X } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { lendingService, LendingItem, LendingRequest } from "@/services/database.service";
 import { Badge } from "@/components/ui/badge";
@@ -175,18 +176,18 @@ export default function LendBorrow() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-6xl space-y-7 p-6 lg:p-8">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Lend and borrow</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Share useful items with people at your university. Listings are visible only to your university community.
-            </p>
-          </div>
-          <Button onClick={() => setIsListingOpen(true)}>
-            <Plus className="h-4 w-4" /> Lend an item
-          </Button>
-        </header>
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader
+          eyebrow="Sharing"
+          title="Lend and borrow,"
+          accent="within BUET."
+          description="Share useful items with people at your university. Listings are visible only to your university community."
+          actions={
+            <Button onClick={() => setIsListingOpen(true)}>
+              <Plus className="h-4 w-4" /> Lend an item
+            </Button>
+          }
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full max-w-lg grid-cols-3">
@@ -222,7 +223,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : filteredItems.length ? (
-              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-2xl">{filteredItems.map(itemCard)}</div>
+              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-xl">{filteredItems.map(itemCard)}</div>
             ) : !error ? (
               <EmptyState
                 title={search || category !== "all" ? "No matching items" : "Nothing listed to borrow yet"}
@@ -247,7 +248,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : myListings.length ? (
-              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-2xl">{myListings.map(itemCard)}</div>
+              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-xl">{myListings.map(itemCard)}</div>
             ) : !error ? (
               <EmptyState
                 title="You have not listed anything"
@@ -266,7 +267,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : requests.length ? (
-              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-2xl">
+              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-xl">
                 {requests.map((request) => {
                   const incoming = request.owner_id === user?.id;
                   const status = requestStatus[request.status];
@@ -381,7 +382,7 @@ export default function LendBorrow() {
 
 function LoadingState() {
   return (
-    <div className="glass-panel rounded-2xl px-6 py-12 text-center text-sm text-muted-foreground" role="status">
+    <div className="glass-panel rounded-xl px-6 py-12 text-center text-sm text-muted-foreground" role="status">
       Loading university listings…
     </div>
   );
@@ -397,7 +398,7 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="glass-panel rounded-2xl px-6 py-12 text-center">
+    <div className="glass-panel rounded-xl px-6 py-12 text-center">
       <BookOpen className="mx-auto h-8 w-8 text-primary" aria-hidden="true" />
       <h3 className="mt-3 font-medium text-foreground">{title}</h3>
       <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
@@ -408,7 +409,7 @@ function EmptyState({
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="glass-panel flex flex-col gap-3 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between" role="alert">
+    <div className="glass-panel flex flex-col gap-3 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between" role="alert">
       <p className="text-sm text-destructive">{message}</p>
       <Button variant="outline" size="sm" onClick={onRetry}>Try again</Button>
     </div>

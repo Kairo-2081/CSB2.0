@@ -57,7 +57,7 @@ export function ActivityFeed() {
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-lg">Latest activity</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="font-display text-2xl font-normal tracking-[-0.01em]">Latest activity</CardTitle></CardHeader>
       <CardContent>
         {error && <p className="text-sm text-destructive">{error}</p>}
         {items.length === 0 && !error && <p className="text-sm text-muted-foreground">No recent activity</p>}
@@ -66,7 +66,7 @@ export function ActivityFeed() {
             const Icon = iconFor(item.kind);
             return (
               <div key={item.id} className="flex gap-3 py-3">
-                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={1.5} />
                 <div className="min-w-0">
                   <p className="font-medium">{item.title}</p>
                   <p className="text-sm text-muted-foreground">{item.description}</p>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -162,34 +163,37 @@ export default function Bicycles() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Bicycle Sharing</h1>
-            <p className="text-muted-foreground mt-1">Book and manage campus bicycles</p>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="gap-2"
-              onClick={() => setIsDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Add Bicycle
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <History className="h-4 w-4" />
-              Booking History
-            </Button>
-          </div>
-        </div>
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader
+          eyebrow="Getting around"
+          title="Bicycles"
+          accent="on campus."
+          description="Book and manage campus bicycles."
+          actions={
+            <>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="gap-2"
+                  onClick={() => setIsDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Bicycle
+                </Button>
+                <Button variant="outline" className="gap-2">
+                  <History className="h-4 w-4" />
+                  Booking History
+                </Button>
+              </div>
+            </>
+          }
+        />
 
         {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-4">
           <Card className="p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-accent">
                 <Bike className="h-5 w-5" />
               </div>
               <div>
@@ -326,7 +330,7 @@ export default function Bicycles() {
         {filteredBicycles.length === 0 && (
           <Card className="p-12 text-center">
             <Bike className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No bicycles found</h3>
+            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No bicycles found</h3>
             <p className="text-muted-foreground mt-1">Try adjusting your filters</p>
           </Card>
         )}

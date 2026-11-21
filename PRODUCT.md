@@ -8,7 +8,7 @@ web
 
 ## Users
 
-University students and administrators using campus services for notices, complaints, lost-and-found items, marketplace listings, bicycle sharing, university-scoped lending and borrowing, animal welfare, blood donation, and faculty suggestions.
+BUET students and administrators first; other Bangladeshi public universities later. Users rely on campus services for notices, complaints, lost-and-found items, marketplace listings, bicycle sharing, university-scoped lending and borrowing, animal welfare, blood donation, and faculty suggestions.
 
 ## Product Purpose
 
@@ -34,6 +34,7 @@ Users access the app through desktop and mobile browsers. Administrators also ma
 ## Brand Commitments
 
 - Preserve the CSB 2.0 name.
+- Launch at BUET only. Registration is limited by `OPEN_UNIVERSITIES` (default `buet`).
 - Keep campus services and university administration accurate and factual.
 - Use a system font unless an approved asset is supplied.
 

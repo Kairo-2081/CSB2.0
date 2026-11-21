@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Building2, Loader2, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService, CentralAdminMetrics } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
@@ -40,44 +41,32 @@ export default function CentralAdmin() {
     <MainLayout>
       <div className="min-h-screen px-5 py-8 text-foreground sm:px-8 lg:px-10">
         <div className="mx-auto max-w-7xl space-y-8">
-          <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-3xl">
-              <div className="glass-control mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm text-primary">
-                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                Central administration
-              </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                The university network
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                A shared view of student registrations across Bangladesh’s public universities.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void loadMetrics()}
-              disabled={isLoading}
-              className="glass-control w-fit text-foreground hover:bg-white/15"
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
-              Refresh figures
-            </Button>
-          </header>
+          <PageHeader
+            eyebrow="Central administration"
+            title="The university network."
+            accent="BUET first."
+            description="Student registrations by university. CSB 2.0 opens at BUET first; other public universities follow later."
+            actions={
+              <Button type="button" variant="outline" onClick={() => void loadMetrics()} disabled={isLoading}>
+                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
+                Refresh figures
+              </Button>
+            }
+          />
 
           <section
             aria-label="Network totals"
-            className="glass-panel grid gap-px overflow-hidden rounded-2xl sm:grid-cols-3"
+            className="glass-panel grid gap-px overflow-hidden rounded-xl sm:grid-cols-3"
           >
             <div className="p-5 sm:p-6">
               <p className="text-sm text-muted-foreground">Universities in the registry</p>
-              <p className="mt-3 text-4xl font-semibold tracking-tight text-foreground">
+              <p className="mt-3 font-display text-5xl font-normal tracking-[-0.02em] text-foreground">
                 {isLoading ? "—" : numberFormat.format(metrics?.universityCount ?? 0)}
               </p>
             </div>
             <div className="p-5 sm:p-6">
               <p className="text-sm text-muted-foreground">Student accounts linked to a university</p>
-              <p className="mt-3 text-4xl font-semibold tracking-tight text-foreground">
+              <p className="mt-3 font-display text-5xl font-normal tracking-[-0.02em] text-foreground">
                 {isLoading ? "—" : numberFormat.format(metrics?.studentCount ?? 0)}
               </p>
             </div>
@@ -89,7 +78,7 @@ export default function CentralAdmin() {
             </div>
           </section>
 
-          <section className="glass-panel overflow-hidden rounded-2xl">
+          <section className="glass-panel overflow-hidden rounded-xl">
             <div className="flex flex-col gap-2 border-b border-white/10 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Student registrations by university</h2>

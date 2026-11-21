@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,11 +41,8 @@ export default function Students() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Student directory</h1>
-          <p className="mt-1 text-muted-foreground">People registered in the system</p>
-        </div>
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader eyebrow="People" title="Student directory." description="People registered on CSB 2.0." />
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-64 flex-1">
@@ -60,7 +58,7 @@ export default function Students() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <div className="glass-panel overflow-hidden rounded-2xl">
+        <div className="glass-panel overflow-hidden rounded-xl">
           <table className="w-full text-sm">
             <thead className="bg-white/[0.035] text-left">
               <tr>
