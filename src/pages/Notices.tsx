@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,22 +114,25 @@ export default function Notices() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Notices</h1>
-            <p className="text-muted-foreground mt-1">Official announcements and updates</p>
-          </div>
-          <Button 
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader
+          eyebrow="Announcements"
+          title="Notices"
+          accent="from across campus."
+          description="Official announcements and updates."
+          actions={
+            <>
+              <Button 
              
-            className="gap-2"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Post Notice
-          </Button>
-        </div>
+                className="gap-2"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Post Notice
+              </Button>
+            </>
+          }
+        />
 
         {/* Notices List */}
         <div className="space-y-4">
