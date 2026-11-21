@@ -26,8 +26,9 @@ incident-response content, sample metrics, or copy.
 ## Type
 
 Use the existing system sans stack. Set large, clean headings with compact
-line-height; keep interface copy readable and direct. Do not add a display
-font or monospace face without an approved asset or a code/data use case.
+line-height; keep interface copy readable and direct. The landing page may use
+the system serif stack (`font-display`) for headlines; do not load a web font
+without an approved asset.
 
 ## Surfaces
 
@@ -43,8 +44,15 @@ font or monospace face without an approved asset or a code/data use case.
 
 - Keep the floating navigation rail and give the main workspace a generous
   black canvas.
-- Landing content is centered around a plain statement and real service links;
-  never use invented counts or demo content.
+- The landing page is the one cinematic surface: a full-bleed BUET campus
+  photograph graded to dusk (`public/campus/buet-hero*.webp`), warm sand accent
+  `#A88D76`, ivory text `#F4EFE8`, and a system serif display stack
+  (`font-display`, Iowan / Palatino / Georgia) for headlines only. The
+  application behind sign-in keeps the violet glass system.
+- The landing stats strip shows live BUET counts from
+  `/api/public/campus-stats` only once at least two are non-zero; until then it
+  shows facts that are true from the code. Never use invented counts or demo
+  content.
 - Operational pages prioritize useful queues, lists, and clear form actions
   over decorative metric cards.
 - On mobile, preserve the same hierarchy without horizontal scrolling and
