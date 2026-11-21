@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Page, PageHeader, Toolbar } from "@/components/layout/Page";
+import { EmptyState } from "@/components/layout/EmptyState";
+import { FilterGroup } from "@/components/layout/FilterGroup";
+import { SearchField } from "@/components/layout/SearchField";
+import { formatDate } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +97,7 @@ export default function LostFound() {
         status: formData.type,
         user_id: "current-user-id",
       });
-      toast.success("Item posted successfully!");
+      toast.success("Item posted");
       setFormData({
         title: "",
         description: "",
@@ -112,10 +117,10 @@ export default function LostFound() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this item?")) {
+    if (window.confirm("Delete this item?")) {
       try {
         await lostFoundService.deleteItem(id);
-        toast.success("Item deleted successfully!");
+        toast.success("Item deleted");
         await loadItems();
       } catch (error) {
         console.error("Error deleting item:", error);
@@ -133,133 +138,75 @@ export default function LostFound() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Lost & Found</h1>
-            <p className="text-muted-foreground mt-1">Report lost items or help others find theirs</p>
-          </div>
-          <Button 
-             
-            className="gap-2"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Post Item
-          </Button>
-        </div>
+      <Page>
+        <PageHeader
+          title="Lost and found"
+          description="Report something you lost or found on campus and help it get back to its owner"
+          meta={`${items.filter((item) => item.item_type === "lost").length} lost · ${items.filter((item) => item.item_type === "found").length} found`}
+          actions={
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus aria-hidden="true" />
+              Post item
+            </Button>
+          }
+        />
 
-        {/* Search and Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={filter === "all" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setFilter("all")}
-            >
-              All
-            </Button>
-            <Button
-              variant={filter === "lost" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setFilter("lost")}
-            >
-              Lost
-            </Button>
-            <Button
-              variant={filter === "found" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setFilter("found")}
-            >
-              Found
-            </Button>
-          </div>
-        </div>
+        <Toolbar>
+          <SearchField label="Search items" value={searchQuery} onChange={setSearchQuery} />
+          <FilterGroup
+            label="Type"
+            value={filter}
+            onChange={(value) => setFilter(value as "all" | "lost" | "found")}
+            options={[{ value: "all", label: "All" }, { value: "lost", label: "Lost" }, { value: "found", label: "Found" }]}
+          />
+        </Toolbar>
 
-        {/* Items Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((item, index) => (
-            <Card 
-              key={item.id}
-              className=""
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <Badge variant={item.item_type === "lost" ? "destructive" : "success"}>
-                      {item.item_type === "lost" ? "Lost" : "Found"}
-                    </Badge>
-                    <CardTitle className="text-lg mt-2">{item.title}</CardTitle>
-                  </div>
+        {filteredItems.length === 0 ? (
+          <EmptyState icon={Search} title="No items found" description="Try another search or type" />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredItems.map((item) => (
+              <article key={item.id} className="glass-panel flex flex-col rounded-2xl p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <Badge variant={item.item_type === "lost" ? "warning" : "success"}><span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />{item.item_type === "lost" ? "Lost" : "Found"}</Badge>
+                  <time dateTime={item.created_at} className="stamp">{formatDate(item.created_at)}</time>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">{item.description}</p>
-                
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4" />
-                    {item.location}
+                <h3 className="mt-4 text-base font-medium text-foreground">{item.title}</h3>
+                <p className="mt-1 line-clamp-3 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                <dl className="mb-4 mt-4 space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
+                    <dt className="sr-only">Location</dt>
+                    <dd className="truncate">{item.location}</dd>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" />
-                    {new Date(item.created_at).toLocaleDateString()}
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <User className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
+                    <dt className="sr-only">Posted by</dt>
+                    <dd className="truncate">{item.posted_by}</dd>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <User className="h-4 w-4" />
-                    {item.posted_by}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-border gap-2">
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
+                </dl>
+                <div className="mt-auto flex gap-2 border-t border-border pt-4">
+                  <Button variant="outline" size="sm" className="flex-1">View details</Button>
                   {item.user_id === "current-user-id" && (
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => handleDelete(item.id)}
-                      className="gap-2"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)} aria-label="Delete item">
+                      <Trash2 aria-hidden="true" />
                     </Button>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredItems.length === 0 && (
-          <Card className="p-12 text-center">
-            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No items found</h3>
-            <p className="text-muted-foreground mt-1">Try adjusting your search or filters</p>
-          </Card>
+              </article>
+            ))}
+          </div>
         )}
 
         {/* New Item Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Report Lost/Found Item</DialogTitle>
+              <DialogTitle>Report a lost or found item</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Type *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Type</label>
                 <Select 
                   value={formData.type}
                   onValueChange={(value) => setFormData({...formData, type: value as any})}
@@ -269,14 +216,14 @@ export default function LostFound() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lost">Lost Item</SelectItem>
-                    <SelectItem value="found">Found Item</SelectItem>
+                    <SelectItem value="lost">Lost item</SelectItem>
+                    <SelectItem value="found">Found item</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Title *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Title</label>
                 <Input
                   placeholder="Item name or brief description"
                   value={formData.title}
@@ -286,9 +233,9 @@ export default function LostFound() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Location *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Location</label>
                 <Input
-                  placeholder="Where was it lost/found?"
+                  placeholder="Where it was lost or found"
                   value={formData.location}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
                   disabled={isLoading}
@@ -296,20 +243,20 @@ export default function LostFound() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Description</label>
                 <Textarea
-                  placeholder="Describe the item in detail..."
+                  placeholder="Describe the item in detail"
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   disabled={isLoading}
-                  className="min-h-[120px]"
+                  className="min-h-32"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Your Name</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Your name</label>
                 <Input
-                  placeholder="Your name (optional)"
+                  placeholder="Optional"
                   value={formData.posted_by}
                   onChange={(e) => setFormData({...formData, posted_by: e.target.value})}
                   disabled={isLoading}
@@ -317,7 +264,7 @@ export default function LostFound() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Contact Number *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Contact number</label>
                 <Input
                   placeholder="Your contact number"
                   value={formData.contact_number}
@@ -326,7 +273,7 @@ export default function LostFound() {
                 />
               </div>
 
-              <DialogFooter className="gap-2 pt-4">
+              <DialogFooter>
                 <Button 
                   type="button"
                   variant="outline"
@@ -340,14 +287,14 @@ export default function LostFound() {
                   disabled={isLoading}
                   className="gap-2"
                 >
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Post Item
+                  {isLoading && <Loader2 className="animate-spin" aria-hidden="true" />}
+                  Post item
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </Page>
     </MainLayout>
   );
 }
