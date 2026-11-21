@@ -2,6 +2,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BookOpen, Check, Clock3, MapPin, Plus, Search, X } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { lendingService, LendingItem, LendingRequest } from "@/services/database.service";
 import { Badge } from "@/components/ui/badge";
@@ -175,18 +176,18 @@ export default function LendBorrow() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-6xl space-y-7 p-6 lg:p-8">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Lend and borrow</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Share useful items with people at your university. Listings are visible only to your university community.
-            </p>
-          </div>
-          <Button onClick={() => setIsListingOpen(true)}>
-            <Plus className="h-4 w-4" /> Lend an item
-          </Button>
-        </header>
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader
+          eyebrow="Sharing"
+          title="Lend and borrow,"
+          accent="within BUET."
+          description="Share useful items with people at your university. Listings are visible only to your university community."
+          actions={
+            <Button onClick={() => setIsListingOpen(true)}>
+              <Plus className="h-4 w-4" /> Lend an item
+            </Button>
+          }
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full max-w-lg grid-cols-3">
