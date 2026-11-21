@@ -102,17 +102,40 @@
 
 @layer components {
   .app-stage {
+    position: relative;
+    isolation: isolate;
     min-height: calc(100vh - 24px);
     margin: 12px 12px 12px 0;
     border: 1px solid rgba(196, 187, 255, 0.12);
     border-radius: 28px;
     background:
-      radial-gradient(ellipse at 78% 0%, rgba(91, 74, 218, 0.12), transparent 38rem),
-      linear-gradient(155deg, rgba(10, 10, 19, 0.98), rgba(6, 6, 12, 0.985));
+      radial-gradient(ellipse at 82% 0%, rgba(91, 74, 218, 0.18), transparent 38rem),
+      radial-gradient(ellipse at 4% 92%, rgba(61, 81, 172, 0.09), transparent 36rem),
+      linear-gradient(155deg, rgba(10, 10, 19, 0.91), rgba(6, 6, 12, 0.94));
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.055),
-      0 24px 70px rgba(0, 0, 0, 0.42),
-      0 0 44px rgba(83, 65, 213, 0.08);
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      0 28px 80px rgba(0, 0, 0, 0.46),
+      0 0 56px rgba(83, 65, 213, 0.12);
+  }
+
+  .app-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(1.5px 1.5px at 11% 12%, rgba(231, 228, 255, 0.42) 45%, transparent 100%),
+      radial-gradient(1px 1px at 24% 71%, rgba(186, 193, 255, 0.34) 45%, transparent 100%),
+      radial-gradient(1px 1px at 57% 19%, rgba(240, 236, 255, 0.32) 45%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 83% 63%, rgba(202, 196, 255, 0.34) 45%, transparent 100%),
+      radial-gradient(1px 1px at 92% 31%, rgba(240, 237, 255, 0.3) 45%, transparent 100%);
+  }
+
+  .app-stage > * {
+    position: relative;
+    z-index: 1;
   }
 
   .landing-hero {
@@ -122,32 +145,64 @@
   }
 
   .glass-shell {
-    background: linear-gradient(145deg, rgba(22, 21, 40, 0.94), rgba(10, 10, 19, 0.9));
-    border: 1px solid rgba(196, 187, 255, 0.16);
+    background:
+      radial-gradient(140% 180% at 0% 0%, rgba(180, 164, 255, 0.12), transparent 48%),
+      linear-gradient(135deg, rgba(30, 28, 51, 0.78), rgba(12, 11, 22, 0.68));
+    border: 1px solid rgba(207, 198, 255, 0.2);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.085),
-      0 22px 60px rgba(0, 0, 0, 0.38),
-      0 0 34px rgba(94, 72, 225, 0.08);
-    backdrop-filter: blur(22px) saturate(138%);
-    -webkit-backdrop-filter: blur(22px) saturate(138%);
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 24px 64px rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(28px) saturate(155%);
+    -webkit-backdrop-filter: blur(28px) saturate(155%);
   }
 
   .glass-panel {
-    background: linear-gradient(145deg, rgba(25, 23, 45, 0.78), rgba(11, 11, 20, 0.88));
-    border: 1px solid rgba(196, 187, 255, 0.13);
+    background:
+      radial-gradient(120% 90% at 0% 0%, rgba(167, 152, 255, 0.1), transparent 46%),
+      linear-gradient(145deg, rgba(26, 24, 46, 0.7), rgba(10, 10, 19, 0.72));
+    border: 1px solid rgba(196, 187, 255, 0.18);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.065),
-      0 16px 42px rgba(0, 0, 0, 0.28);
-    backdrop-filter: blur(18px) saturate(135%);
-    -webkit-backdrop-filter: blur(18px) saturate(135%);
+      inset 0 1px 0 rgba(255, 255, 255, 0.085),
+      0 20px 52px rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
   }
 
   .glass-control {
-    background: linear-gradient(145deg, rgba(40, 37, 68, 0.72), rgba(19, 18, 33, 0.76));
-    border: 1px solid rgba(203, 195, 255, 0.16);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
-    backdrop-filter: blur(12px) saturate(138%);
-    -webkit-backdrop-filter: blur(12px) saturate(138%);
+    background: linear-gradient(145deg, rgba(50, 45, 79, 0.72), rgba(17, 16, 30, 0.62));
+    border: 1px solid rgba(203, 195, 255, 0.2);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.13),
+      0 8px 26px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+  }
+
+  .dashboard-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid rgba(207, 198, 255, 0.22);
+    background:
+      radial-gradient(ellipse at 84% 12%, rgba(125, 102, 255, 0.3), transparent 24rem),
+      radial-gradient(ellipse at 100% 100%, rgba(65, 88, 206, 0.17), transparent 28rem),
+      linear-gradient(122deg, rgba(27, 24, 49, 0.94), rgba(11, 10, 19, 0.78) 58%, rgba(25, 20, 45, 0.88));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.11),
+      0 28px 76px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(28px) saturate(150%);
+    -webkit-backdrop-filter: blur(28px) saturate(150%);
+  }
+
+  .dashboard-hero::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      linear-gradient(118deg, rgba(255, 255, 255, 0.08), transparent 28% 72%, rgba(177, 161, 255, 0.1));
   }
 
   .brand-mark {
@@ -185,6 +240,10 @@
     margin: 8px;
     padding-top: 56px;
     border-radius: 24px;
+  }
+
+  .app-stage-authenticated {
+    padding-top: 72px;
   }
 }
 

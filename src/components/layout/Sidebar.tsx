@@ -51,6 +51,7 @@ export function Sidebar() {
     user?.role === "admin"
       ? [{ title: "University network", href: "/central-admin", icon: Building2 }, ...navItems]
       : navItems;
+  const activeTitle = visibleNavItems.find((item) => item.href === location.pathname)?.title ?? "Campus services";
 
   const handleLogout = () => {
     logout();
@@ -121,13 +122,24 @@ export function Sidebar() {
 
   return (
     <>
-      <button
-        onClick={() => setIsMobileOpen(true)}
-        className="glass-control fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl lg:hidden"
-        aria-label="Open navigation"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
+      <header className="glass-shell fixed inset-x-3 top-3 z-30 flex h-14 items-center gap-3 rounded-2xl px-3 lg:hidden">
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="glass-control flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+          aria-label="Open navigation"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="min-w-0">
+          <p className="text-[11px] leading-none text-muted-foreground">CSB 2.0</p>
+          <p className="mt-1 truncate text-sm font-semibold text-foreground">{activeTitle}</p>
+        </div>
+        {user?.name && (
+          <span className="glass-control ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-primary" aria-hidden="true">
+            {user.name.charAt(0).toUpperCase()}
+          </span>
+        )}
+      </header>
 
       {isMobileOpen && (
         <button

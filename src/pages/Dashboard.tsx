@@ -54,16 +54,30 @@ export default function Dashboard() {
   return (
     <MainLayout>
       <div className="mx-auto max-w-7xl space-y-8 p-5 sm:p-8 lg:p-10">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-4xl font-semibold tracking-tight text-foreground">Dashboard</h1>
-            <p className="mt-2 text-muted-foreground">Campus activity and open work</p>
+        <header className="dashboard-hero rounded-[28px] p-5 sm:p-7 lg:p-9">
+          <div className="relative z-10 space-y-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Dashboard</h1>
+                <p className="mt-2 text-muted-foreground">Campus activity and open work</p>
+              </div>
+              {user && (
+                <Badge variant="secondary" className="glass-control w-fit rounded-full px-3 py-1.5">
+                  {user.role === "admin" ? "Admin" : "Student"}
+                </Badge>
+              )}
+            </div>
+
+            <section aria-labelledby="quick-actions" className="border-t border-white/[0.12] pt-5">
+              <h2 id="quick-actions" className="mb-3 text-sm font-medium text-secondary-foreground">Quick actions</h2>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild><Link to="/complaints">File a complaint</Link></Button>
+                <Button asChild variant="outline"><Link to="/lost-found">Post a lost or found item</Link></Button>
+                <Button asChild variant="outline"><Link to="/marketplace"><ShoppingBag aria-hidden="true" /> Add a listing</Link></Button>
+                <Button asChild variant="outline"><Link to="/lend-borrow"><BookOpen aria-hidden="true" /> Lend and borrow</Link></Button>
+              </div>
+            </section>
           </div>
-          {user && (
-            <Badge variant="secondary" className="w-fit rounded-full px-3 py-1.5">
-              {user.role === "admin" ? "Admin" : "Student"}
-            </Badge>
-          )}
         </header>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
@@ -100,19 +114,6 @@ export default function Dashboard() {
 
           <ActivityFeed />
         </div>
-
-        <section aria-labelledby="quick-actions" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 id="quick-actions" className="text-lg font-semibold">Quick actions</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Start a new campus request or listing.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button asChild><Link to="/complaints">File a complaint</Link></Button>
-            <Button asChild variant="outline"><Link to="/lost-found">Post a lost or found item</Link></Button>
-            <Button asChild variant="outline"><Link to="/marketplace"><ShoppingBag aria-hidden="true" /> Add a listing</Link></Button>
-            <Button asChild variant="outline"><Link to="/lend-borrow"><BookOpen aria-hidden="true" /> Lend and borrow</Link></Button>
-          </div>
-        </section>
       </div>
     </MainLayout>
   );
