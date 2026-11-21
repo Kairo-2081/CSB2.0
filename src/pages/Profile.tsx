@@ -1,4 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,16 +14,13 @@ export default function Profile() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Profile</h1>
-          <p className="mt-1 text-muted-foreground">Account information</p>
-        </div>
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader eyebrow="Account" title="Your profile." description="Account information" />
 
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-1">
             <CardContent className="p-6 text-center">
-              <div className="glass-control mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold text-primary">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-primary/40 font-display text-3xl text-accent">
                 {user.name?.charAt(0).toUpperCase() || "U"}
               </div>
               <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
