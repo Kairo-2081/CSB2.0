@@ -165,6 +165,7 @@ export default function Bicycles() {
     <MainLayout>
       <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
         <PageHeader
+          photo={{ src: "/campus/buet-avenue.webp", alt: "A tree-lined road through the BUET campus in morning light", position: "50% 62%" }}
           eyebrow="Getting around"
           title="Bicycles"
           accent="on campus."
