@@ -148,6 +148,7 @@ export default function Complaints() {
     <MainLayout>
       <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
         <PageHeader
+          photo={{ src: "/campus/buet-hall-night.webp", alt: "A red-brick BUET building lit in red and gold at night", position: "50% 50%" }}
           eyebrow="Campus issues"
           title="Complaints,"
           accent="heard and tracked."
