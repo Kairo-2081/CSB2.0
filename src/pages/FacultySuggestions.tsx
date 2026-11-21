@@ -262,7 +262,7 @@ export default function FacultySuggestions() {
             {filteredSuggestions.length === 0 ? (
               <Card className="p-12 text-center">
                 <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">No suggestions yet</h3>
+                <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No suggestions yet</h3>
                 <p className="text-muted-foreground mt-1">Be the first to add a suggestion!</p>
               </Card>
             ) : (

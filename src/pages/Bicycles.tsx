@@ -330,7 +330,7 @@ export default function Bicycles() {
         {filteredBicycles.length === 0 && (
           <Card className="p-12 text-center">
             <Bike className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No bicycles found</h3>
+            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No bicycles found</h3>
             <p className="text-muted-foreground mt-1">Try adjusting your filters</p>
           </Card>
         )}

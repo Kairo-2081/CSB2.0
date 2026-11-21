@@ -243,7 +243,7 @@ export default function BloodDonation() {
         {filteredRequests.length === 0 && (
           <Card className="p-12 text-center">
             <Droplets className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No donations available</h3>
+            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No donations available</h3>
             <p className="text-muted-foreground mt-1">Be the first to register as a donor</p>
           </Card>
         )}
