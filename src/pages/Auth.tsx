@@ -64,7 +64,11 @@ export default function Auth() {
 
   useEffect(() => {
     authService.getUniversities()
-      .then(setUniversities)
+      .then((list) => {
+        setUniversities(list);
+        // While CSB 2.0 is BUET-only the list has one entry, so fill it in.
+        if (list.length === 1) setRegisterUniversityName(list[0].name);
+      })
       .catch((err: unknown) => {
         setUniversityLoadError(err instanceof Error ? err.message : "Could not load the university list.");
       });
@@ -351,7 +355,8 @@ export default function Auth() {
                         <Input
                           id="university-name"
                           list="public-universities"
-                          placeholder="Start typing your public university"
+                          placeholder="Bangladesh University of Engineering and Technology"
+                          readOnly={universities.length === 1}
                           value={registerUniversityName}
                           onChange={(e) => setRegisterUniversityName(e.target.value)}
                           disabled={isLoading}
@@ -363,7 +368,7 @@ export default function Auth() {
                           ))}
                         </datalist>
                         <p className="text-xs text-muted-foreground">
-                          If your university is not listed, enter its official name.
+                          CSB 2.0 is open to BUET students first. More universities are coming later.
                         </p>
                         {universityLoadError && (
                           <p role="alert" className="text-xs text-destructive">{universityLoadError}</p>
