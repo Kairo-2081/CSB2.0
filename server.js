@@ -10,6 +10,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+// CSB 2.0 opens at BUET first. Add slugs here (comma-separated) to open more campuses.
+const OPEN_UNIVERSITY_SLUGS = (process.env.OPEN_UNIVERSITIES || 'buet')
+  .split(',')
+  .map((slug) => slug.trim().toLowerCase())
+  .filter(Boolean);
 const PORT = 3001;
 const authSessions = new Map();
 const UNIVERSITY_CATALOG = [
@@ -424,6 +429,19 @@ app.post('/api/auth/register', async (req, res) => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || `university-${Date.now()}`;
 
+    const openUniversity = await db.get(
+      `SELECT id FROM universities
+       WHERE is_active = 1 AND (name = ? COLLATE NOCASE OR short_name = ? COLLATE NOCASE)
+         AND slug IN (${OPEN_UNIVERSITY_SLUGS.map(() => '?').join(', ')})`,
+      [normalizedUniversityName, normalizedUniversityName, ...OPEN_UNIVERSITY_SLUGS]
+    );
+    if (!openUniversity) {
+      return res.status(403).json({
+        success: false,
+        error: 'CSB 2.0 is open to BUET students only for now. More universities are coming later.'
+      });
+    }
+
     await db.exec('BEGIN IMMEDIATE');
     let university;
     try {
@@ -629,13 +647,52 @@ app.get('/api/universities', async (req, res) => {
     const universities = await db.all(
       `SELECT id, name, short_name AS shortName, division
        FROM universities
-       WHERE is_active = 1
-       ORDER BY name COLLATE NOCASE`
+       WHERE is_active = 1 AND slug IN (${OPEN_UNIVERSITY_SLUGS.map(() => '?').join(', ')})
+       ORDER BY name COLLATE NOCASE`,
+      OPEN_UNIVERSITY_SLUGS
     );
     res.json({ success: true, universities });
   } catch (error) {
     console.error('University list error:', error);
     res.status(500).json({ success: false, error: 'Failed to load universities' });
+  }
+});
+
+// Public, aggregate-only counts for the landing page. CSB 2.0 launches at BUET
+// first, so members and lending are scoped to BUET. Notices and lost-and-found
+// rows carry no university yet; while BUET is the only campus they are BUET's.
+app.get('/api/public/campus-stats', async (req, res) => {
+  try {
+    const campus = await db.get(
+      `SELECT id, name, short_name AS shortName FROM universities WHERE slug = 'buet'`
+    );
+    if (!campus) {
+      return res.status(404).json({ success: false, error: 'Campus not found' });
+    }
+
+    const [members, notices, lostFound, lendingItems] = await Promise.all([
+      db.get('SELECT COUNT(*) AS count FROM users WHERE university_id = ?', [campus.id]),
+      db.get('SELECT COUNT(*) AS count FROM notices'),
+      db.get("SELECT COUNT(*) AS count FROM lost_found WHERE status = 'lost'"),
+      db.get(
+        "SELECT COUNT(*) AS count FROM lending_items WHERE university_id = ? AND status = 'available'",
+        [campus.id]
+      ),
+    ]);
+
+    res.json({
+      success: true,
+      campus,
+      stats: {
+        members: members.count,
+        notices: notices.count,
+        openLostItems: lostFound.count,
+        itemsToBorrow: lendingItems.count,
+      },
+    });
+  } catch (error) {
+    console.error('Campus stats error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load campus stats' });
   }
 });
 

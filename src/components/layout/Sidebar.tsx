@@ -51,6 +51,7 @@ export function Sidebar() {
     user?.role === "admin"
       ? [{ title: "University network", href: "/central-admin", icon: Building2 }, ...navItems]
       : navItems;
+  const activeTitle = visibleNavItems.find((item) => item.href === location.pathname)?.title ?? "Campus services";
 
   const handleLogout = () => {
     logout();
@@ -59,18 +60,17 @@ export function Sidebar() {
 
   const NavContent = () => (
     <div className="flex h-full flex-col">
-      <div className="flex h-20 items-center gap-3 px-5">
-        <div className="brand-mark flex h-11 w-11 items-center justify-center rounded-xl text-lg font-bold">
-          C
-        </div>
-        <div>
-          <h1 className="text-base font-semibold text-foreground">CSB 2.0</h1>
-          <p className="text-xs text-muted-foreground">Campus services</p>
-        </div>
-      </div>
+      <Link to="/" className="flex h-20 items-center gap-3 px-5" onClick={() => setIsMobileOpen(false)}>
+        <span className="brand-mark flex h-9 w-9 items-center justify-center text-lg leading-none">C</span>
+        <span>
+          <span className="block text-sm font-medium uppercase tracking-[0.22em] text-foreground">CSB 2.0</span>
+          <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-muted-foreground">BUET campus</span>
+        </span>
+      </Link>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
-        <div className="mx-2 mb-3 h-px bg-white/8" />
+        <div className="mx-2 mb-4 h-px bg-white/[0.07]" />
+        <p className="mb-2 px-3 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground/80">Services</p>
         <ul className="space-y-1">
           {visibleNavItems.map((item) => {
             const active = location.pathname === item.href;
@@ -80,18 +80,16 @@ export function Sidebar() {
                   to={item.href}
                   onClick={() => setIsMobileOpen(false)}
                   className={cn(
-                    "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                    "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-150",
                     active
-                      ? "border border-primary/25 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.11),0_0_24px_rgba(97,75,255,0.12)]"
-                      : "border border-transparent text-sidebar-foreground hover:bg-white/[0.045] hover:text-foreground",
+                      ? "bg-white/[0.05] text-foreground before:absolute before:inset-y-2 before:left-0 before:w-px before:bg-primary"
+                      : "text-sidebar-foreground hover:bg-white/[0.035] hover:text-foreground",
                   )}
                 >
                   <item.icon
                     className={cn(
                       "h-[18px] w-[18px] transition-colors",
-                      active
-                        ? "text-primary drop-shadow-[0_0_10px_rgba(143,124,255,0.7)]"
-                        : "text-muted-foreground group-hover:text-foreground",
+                      active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
                     )}
                   />
                   {item.title}
@@ -102,14 +100,14 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="m-3 rounded-xl border border-white/[0.08] bg-black/20 p-3 backdrop-blur-xl">
+      <div className="m-3 rounded-md border border-white/[0.07] bg-black/20 p-3">
         <div className="flex items-center gap-3">
-          <div className="glass-control flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-primary">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/40 font-display text-base text-accent">
             {user?.name?.charAt(0).toUpperCase() || "U"}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground">{user?.name || "Guest user"}</p>
-            <p className="text-xs text-muted-foreground">{user?.role || "Sign in to continue"}</p>
+            <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{user?.role || "Sign in to continue"}</p>
           </div>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label="Sign out">
             <LogOut className="h-4 w-4" />
@@ -121,13 +119,24 @@ export function Sidebar() {
 
   return (
     <>
-      <button
-        onClick={() => setIsMobileOpen(true)}
-        className="glass-control fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl lg:hidden"
-        aria-label="Open navigation"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
+      <header className="glass-shell fixed inset-x-3 top-3 z-30 flex h-14 items-center gap-3 rounded-lg px-3 lg:hidden">
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="glass-control flex h-10 w-10 shrink-0 items-center justify-center rounded-md"
+          aria-label="Open navigation"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase leading-none tracking-[0.2em] text-muted-foreground">CSB 2.0 · BUET</p>
+          <p className="mt-1 truncate text-sm font-semibold text-foreground">{activeTitle}</p>
+        </div>
+        {user?.name && (
+          <span className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/40 font-display text-base text-accent" aria-hidden="true">
+            {user.name.charAt(0).toUpperCase()}
+          </span>
+        )}
+      </header>
 
       {isMobileOpen && (
         <button
@@ -139,7 +148,7 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "glass-shell fixed inset-y-3 left-3 z-50 w-64 rounded-2xl transition-transform duration-200 lg:hidden",
+          "glass-shell fixed inset-y-3 left-3 z-50 w-64 rounded-lg transition-transform duration-200 lg:hidden",
           isMobileOpen ? "translate-x-0" : "-translate-x-[110%]",
         )}
       >
@@ -153,7 +162,7 @@ export function Sidebar() {
         <NavContent />
       </aside>
 
-      <aside className="glass-shell fixed inset-y-3 left-3 z-40 hidden w-64 flex-col rounded-2xl lg:flex">
+      <aside className="glass-shell fixed inset-y-3 left-3 z-40 hidden w-64 flex-col rounded-lg lg:flex">
         <NavContent />
       </aside>
     </>

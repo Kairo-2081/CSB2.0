@@ -64,7 +64,11 @@ export default function Auth() {
 
   useEffect(() => {
     authService.getUniversities()
-      .then(setUniversities)
+      .then((list) => {
+        setUniversities(list);
+        // While CSB 2.0 is BUET-only the list has one entry, so fill it in.
+        if (list.length === 1) setRegisterUniversityName(list[0].name);
+      })
       .catch((err: unknown) => {
         setUniversityLoadError(err instanceof Error ? err.message : "Could not load the university list.");
       });
@@ -186,19 +190,56 @@ export default function Auth() {
   const isPasswordValid = Object.values(passwordValidation).every(v => v);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
-      <div className="relative w-full max-w-4xl">
-        <Link to="/" className="mb-8 flex items-center justify-center gap-3">
-          <span className="brand-mark flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-bold">C</span>
-          <span>
-            <span className="block text-left text-xl font-semibold text-foreground">CSB 2.0</span>
-            <span className="block text-left text-sm text-muted-foreground">Campus services</span>
-          </span>
+    <div className="grid min-h-screen bg-[#07070d] lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)]">
+      <aside className="relative isolate hidden overflow-hidden lg:flex lg:flex-col lg:justify-between">
+        <img
+          src="/campus/buet-hero.webp"
+          alt=""
+          className="auth-photo absolute inset-0 -z-20 h-full w-full object-cover object-[30%_center]"
+        />
+        <div aria-hidden="true" className="auth-photo-shade absolute inset-0 -z-10" />
+        <Link to="/" className="flex items-center gap-3 p-10">
+          <span className="brand-mark flex h-9 w-9 items-center justify-center text-lg leading-none">C</span>
+          <span className="text-sm font-medium uppercase tracking-[0.22em] text-foreground">CSB 2.0</span>
+        </Link>
+        <div className="max-w-lg p-10 pb-14">
+          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#cfc5ba]">
+            BUET <span aria-hidden="true" className="mx-2 opacity-50">•</span> Campus services
+          </p>
+          <p className="mt-5 font-display text-5xl leading-[1.02] tracking-[-0.02em] text-foreground">
+            One sign-in.
+            <br />
+            <span className="text-accent/80">Every corner of campus.</span>
+          </p>
+          <div aria-hidden="true" className="mt-7 h-px w-10 bg-foreground/50" />
+          <p className="mt-5 max-w-sm text-[15px] leading-7 text-[#d6cec5]">
+            Notices, lost and found, lending and the marketplace, shared by BUET students.
+          </p>
+        </div>
+      </aside>
+
+      <main className="flex min-h-screen flex-col px-5 py-8 sm:px-10 lg:px-16">
+        <Link to="/" className="flex items-center gap-3 lg:hidden">
+          <span className="brand-mark flex h-9 w-9 items-center justify-center text-lg leading-none">C</span>
+          <span className="text-sm font-medium uppercase tracking-[0.22em] text-foreground">CSB 2.0</span>
         </Link>
 
-        <div className="mx-auto max-w-2xl">
-          <Card className="overflow-hidden rounded-[26px]">
-              <CardContent className="p-5 sm:p-8">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">
+          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            {activeTab === "login" ? "Sign in" : "Create account"}
+          </p>
+          <h1 className="mt-4 font-display text-4xl font-normal leading-[1.05] tracking-[-0.02em] text-foreground sm:text-5xl">
+            {activeTab === "login" ? (
+              <>Welcome back.</>
+            ) : (
+              <>
+                Join CSB 2.0 <span className="text-accent/80">at BUET.</span>
+              </>
+            )}
+          </h1>
+          <div aria-hidden="true" className="mb-8 mt-6 h-px w-10 bg-foreground/40" />
+          <Card className="overflow-visible border-0 bg-transparent shadow-none backdrop-blur-0">
+              <CardContent className="p-0">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="login">Login</TabsTrigger>
@@ -314,7 +355,8 @@ export default function Auth() {
                         <Input
                           id="university-name"
                           list="public-universities"
-                          placeholder="Start typing your public university"
+                          placeholder="Bangladesh University of Engineering and Technology"
+                          readOnly={universities.length === 1}
                           value={registerUniversityName}
                           onChange={(e) => setRegisterUniversityName(e.target.value)}
                           disabled={isLoading}
@@ -326,7 +368,7 @@ export default function Auth() {
                           ))}
                         </datalist>
                         <p className="text-xs text-muted-foreground">
-                          If your university is not listed, enter its official name.
+                          CSB 2.0 is open to BUET students first. More universities are coming later.
                         </p>
                         {universityLoadError && (
                           <p role="alert" className="text-xs text-destructive">{universityLoadError}</p>
@@ -506,7 +548,7 @@ export default function Auth() {
               </CardContent>
             </Card>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

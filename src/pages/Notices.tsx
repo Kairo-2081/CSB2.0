@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,22 +114,25 @@ export default function Notices() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Notices</h1>
-            <p className="text-muted-foreground mt-1">Official announcements and updates</p>
-          </div>
-          <Button 
+      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+        <PageHeader
+          eyebrow="Announcements"
+          title="Notices"
+          accent="from across campus."
+          description="Official announcements and updates."
+          actions={
+            <>
+              <Button 
              
-            className="gap-2"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Post Notice
-          </Button>
-        </div>
+                className="gap-2"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Post Notice
+              </Button>
+            </>
+          }
+        />
 
         {/* Notices List */}
         <div className="space-y-4">
@@ -143,7 +147,7 @@ export default function Notices() {
               >
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-white/10 text-accent transition-colors group-hover:border-primary/50">
                       <Bell className="h-5 w-5" />
                     </div>
                     <div className="flex-1 space-y-2">
@@ -186,7 +190,7 @@ export default function Notices() {
         {notices.length === 0 && (
           <Card className="p-12 text-center">
             <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No notices yet</h3>
+            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No notices yet</h3>
             <p className="text-muted-foreground mt-1">Check back later for announcements</p>
           </Card>
         )}
