@@ -35,7 +35,7 @@ Users access the app through desktop and mobile browsers. Administrators also ma
 
 - Preserve the CSB 2.0 name.
 - Keep campus services and university administration accurate and factual.
-- Use a system font unless an approved asset is supplied.
+- Use IBM Plex Sans and IBM Plex Mono, self-hosted (approved 2026-11-21).
 
 ## Evidence on Hand
 
