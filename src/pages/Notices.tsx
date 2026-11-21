@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Page, PageHeader, Toolbar } from "@/components/layout/Page";
+import { EmptyState } from "@/components/layout/EmptyState";
+import { FilterGroup } from "@/components/layout/FilterGroup";
+import { SearchField } from "@/components/layout/SearchField";
+import { formatCount, formatDate } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,9 +39,9 @@ interface Notice {
 }
 
 const categoryConfig = {
-  general: { label: "General", variant: "secondary" as const },
+  general: { label: "General", variant: "outline" as const },
   academic: { label: "Academic", variant: "info" as const },
-  event: { label: "Event", variant: "success" as const },
+  event: { label: "Event", variant: "secondary" as const },
   urgent: { label: "Urgent", variant: "destructive" as const },
 };
 
@@ -81,7 +86,7 @@ export default function Notices() {
         ...formData,
         user_id: "current-user-id",
       });
-      toast.success("Notice posted successfully!");
+      toast.success("Notice posted");
       setFormData({
         title: "",
         description: "",
@@ -99,10 +104,10 @@ export default function Notices() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this notice?")) {
+    if (window.confirm("Delete this notice?")) {
       try {
         await noticeService.deleteNotice(id);
-        toast.success("Notice deleted successfully!");
+        toast.success("Notice deleted");
         await loadNotices();
       } catch (error) {
         console.error("Error deleting notice:", error);
@@ -113,93 +118,56 @@ export default function Notices() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Notices</h1>
-            <p className="text-muted-foreground mt-1">Official announcements and updates</p>
-          </div>
-          <Button 
-             
-            className="gap-2"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Post Notice
-          </Button>
-        </div>
+      <Page>
+        <PageHeader
+          title="Notices"
+          description="Official announcements from departments, halls and the administration"
+          meta={`${formatCount(notices.length, "notice")} posted`}
+          actions={
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus aria-hidden="true" />
+              Post notice
+            </Button>
+          }
+        />
 
-        {/* Notices List */}
-        <div className="space-y-4">
-          {notices.map((notice, index) => {
-            const category = categoryConfig[notice.category];
-            
-            return (
-              <Card 
-                key={notice.id} 
-                className="group"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                      <Bell className="h-5 w-5" />
+        {notices.length === 0 ? (
+          <EmptyState icon={Bell} title="No notices yet" description="Announcements will appear here when they are posted" />
+        ) : (
+          <ol className="glass-panel divide-y divide-border overflow-hidden rounded-2xl">
+            {notices.map((notice) => {
+              const category = categoryConfig[notice.category];
+              return (
+                <li key={notice.id} className="grid gap-x-6 gap-y-2 px-6 py-5 md:grid-cols-[120px_minmax(0,1fr)_auto]">
+                  <time dateTime={notice.created_at} className="stamp pt-1">{formatDate(notice.created_at)}</time>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-medium text-foreground">{notice.title}</h3>
+                      <Badge variant={category.variant}>{category.label}</Badge>
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-foreground">{notice.title}</h3>
-                        <Badge variant={category.variant}>{category.label}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{notice.description}</p>
-                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-2">
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {notice.posted_by}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(notice.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
-                      {notice.user_id === "current-user-id" && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDelete(notice.id)}
-                          className="h-5 w-5 p-0 hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{notice.description}</p>
+                    <p className="mt-2 text-xs text-subtle">Posted by {notice.posted_by}</p>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {notices.length === 0 && (
-          <Card className="p-12 text-center">
-            <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No notices yet</h3>
-            <p className="text-muted-foreground mt-1">Check back later for announcements</p>
-          </Card>
+                  {notice.user_id === "current-user-id" && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(notice.id)} aria-label="Delete notice">
+                      <Trash2 aria-hidden="true" />
+                    </Button>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
         )}
 
-        {/* Post Notice Dialog */}
+        {/* Post notice Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Post New Notice</DialogTitle>
+              <DialogTitle>Post a notice</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Title *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Title</label>
                 <Input
                   placeholder="Notice title"
                   value={formData.title}
@@ -209,7 +177,7 @@ export default function Notices() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Category *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Category</label>
                 <Select 
                   value={formData.category}
                   onValueChange={(value) => setFormData({...formData, category: value as any})}
@@ -228,18 +196,18 @@ export default function Notices() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Description</label>
                 <Textarea
-                  placeholder="Write the notice details..."
+                  placeholder="Write the notice details"
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   disabled={isLoading}
-                  className="min-h-[120px]"
+                  className="min-h-32"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Posted By</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Posted by</label>
                 <Input
                   placeholder="Your name or department"
                   value={formData.posted_by}
@@ -248,7 +216,7 @@ export default function Notices() {
                 />
               </div>
 
-              <DialogFooter className="gap-2 pt-4">
+              <DialogFooter>
                 <Button 
                   type="button"
                   variant="outline"
@@ -262,14 +230,14 @@ export default function Notices() {
                   disabled={isLoading}
                   className="gap-2"
                 >
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Post Notice
+                  {isLoading && <Loader2 className="animate-spin" aria-hidden="true" />}
+                  Post notice
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </Page>
     </MainLayout>
   );
 }
