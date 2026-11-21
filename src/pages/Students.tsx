@@ -41,7 +41,7 @@ export default function Students() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+      <div className="page-container">
         <PageHeader eyebrow="People" title="Student directory." description="People registered on CSB 2.0." />
 
         <div className="flex flex-wrap items-center gap-3">

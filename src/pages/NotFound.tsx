@@ -12,7 +12,7 @@ const NotFound = () => {
   return (
     <div className="relative isolate flex min-h-screen flex-col overflow-hidden bg-[#07070d]">
       <img
-        src="/campus/graded/buet-day-reflection.webp"
+        src="/campus/bands/buet-day-reflection.webp"
         alt=""
         className="absolute inset-0 -z-20 h-full w-full object-cover opacity-70 blur-[2px]"
       />

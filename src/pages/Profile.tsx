@@ -14,7 +14,7 @@ export default function Profile() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+      <div className="page-container">
         <PageHeader eyebrow="Account" title="Your profile." description="Account information" />
 
         <div className="grid gap-6 lg:grid-cols-3">
