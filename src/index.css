@@ -149,12 +149,17 @@
       linear-gradient(90deg, rgba(7, 7, 13, 0) 60%, #07070d 100%);
   }
 
-  .dashboard-photo {
-    filter: brightness(0.62) saturate(0.7) contrast(1.08) sepia(0.15);
-  }
-
-  .page-photo {
-    filter: brightness(0.66) saturate(0.7) contrast(1.08) sepia(0.15);
+  /* Photos in public/campus/graded are already graded to the palette by
+     scripts/grade-photos.py; this only fades their edges into the page. */
+  .page-photo-frame {
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0%, #000 42%),
+      linear-gradient(0deg, transparent 0%, #000 30%, #000 85%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(90deg, transparent 0%, #000 42%),
+      linear-gradient(0deg, transparent 0%, #000 30%, #000 85%, transparent 100%);
+    mask-composite: intersect;
   }
 
   .landing-nav-link {

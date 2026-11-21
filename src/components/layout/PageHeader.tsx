@@ -62,21 +62,20 @@ export function PageHeader({ eyebrow, title, accent, description, actions, photo
   }
 
   return (
-    <header className={cn("grid gap-8 border-b border-white/[0.07] pb-7 lg:grid-cols-[minmax(0,1fr)_minmax(300px,400px)] lg:items-end", className)}>
+    <header className={cn("grid gap-8 border-b border-white/[0.07] pb-7 lg:grid-cols-[minmax(0,1fr)_minmax(340px,460px)] lg:items-center", className)}>
       <div className="flex min-w-0 flex-col gap-6">
         {text}
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
-      <figure className="relative hidden aspect-[16/10] overflow-hidden rounded-lg border border-white/[0.07] lg:block">
+      <figure className="page-photo-frame relative -my-4 hidden aspect-[16/10] lg:-mr-4 lg:block">
         <img
           src={photo.src}
           alt={photo.alt}
           loading="lazy"
           decoding="async"
-          className="page-photo absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover"
           style={photo.position ? { objectPosition: photo.position } : undefined}
         />
-        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#07070d]/70 via-transparent to-transparent" />
       </figure>
     </header>
   );
