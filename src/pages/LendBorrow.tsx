@@ -223,7 +223,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : filteredItems.length ? (
-              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-2xl">{filteredItems.map(itemCard)}</div>
+              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-xl">{filteredItems.map(itemCard)}</div>
             ) : !error ? (
               <EmptyState
                 title={search || category !== "all" ? "No matching items" : "Nothing listed to borrow yet"}
@@ -248,7 +248,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : myListings.length ? (
-              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-2xl">{myListings.map(itemCard)}</div>
+              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-xl">{myListings.map(itemCard)}</div>
             ) : !error ? (
               <EmptyState
                 title="You have not listed anything"
@@ -267,7 +267,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : requests.length ? (
-              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-2xl">
+              <div className="glass-panel divide-y divide-white/10 overflow-hidden rounded-xl">
                 {requests.map((request) => {
                   const incoming = request.owner_id === user?.id;
                   const status = requestStatus[request.status];
@@ -382,7 +382,7 @@ export default function LendBorrow() {
 
 function LoadingState() {
   return (
-    <div className="glass-panel rounded-2xl px-6 py-12 text-center text-sm text-muted-foreground" role="status">
+    <div className="glass-panel rounded-xl px-6 py-12 text-center text-sm text-muted-foreground" role="status">
       Loading university listings…
     </div>
   );
@@ -398,7 +398,7 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="glass-panel rounded-2xl px-6 py-12 text-center">
+    <div className="glass-panel rounded-xl px-6 py-12 text-center">
       <BookOpen className="mx-auto h-8 w-8 text-primary" aria-hidden="true" />
       <h3 className="mt-3 font-medium text-foreground">{title}</h3>
       <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
@@ -409,7 +409,7 @@ function EmptyState({
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="glass-panel flex flex-col gap-3 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between" role="alert">
+    <div className="glass-panel flex flex-col gap-3 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between" role="alert">
       <p className="text-sm text-destructive">{message}</p>
       <Button variant="outline" size="sm" onClick={onRetry}>Try again</Button>
     </div>

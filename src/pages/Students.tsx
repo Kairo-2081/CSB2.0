@@ -58,7 +58,7 @@ export default function Students() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <div className="glass-panel overflow-hidden rounded-2xl">
+        <div className="glass-panel overflow-hidden rounded-xl">
           <table className="w-full text-sm">
             <thead className="bg-white/[0.035] text-left">
               <tr>
