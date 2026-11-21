@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, MessageSquare, Search } from "lucide-react";
+import { formatStamp } from "@/lib/format";
 
 interface FeedItem {
   id: string;
@@ -11,7 +12,19 @@ interface FeedItem {
 
 const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
-export function ActivityFeed() {
+interface ActivityFeedProps {
+  limit?: number;
+  title?: string;
+  description?: string;
+  className?: string;
+}
+
+export function ActivityFeed({
+  limit = 10,
+  title = "Latest activity",
+  description = "Complaints, notices and lost and found",
+  className = "",
+}: ActivityFeedProps) {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [error, setError] = useState("");
 
@@ -47,30 +60,18 @@ export function ActivityFeed() {
       setItems(merged
         .filter((item) => item.createdAt)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 10));
+        .slice(0, limit));
     }).catch(() => setError("Could not load recent activity"));
-  }, []);
+  }, [limit]);
 
   const iconFor = (kind: FeedItem["kind"]) =>
     kind === "complaint" ? MessageSquare : kind === "notice" ? Bell : Search;
 
-  const currentYear = new Date().getFullYear();
-  const stamp = (value: string) => {
-    const date = new Date(value);
-    const day = date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      ...(date.getFullYear() !== currentYear && { year: "numeric" }),
-    });
-    const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
-    return `${day} · ${time}`;
-  };
-
   return (
-    <section aria-labelledby="latest-activity" className="glass-panel overflow-hidden rounded-2xl">
+    <section aria-labelledby="latest-activity" className={`glass-panel overflow-hidden rounded-2xl ${className}`}>
       <header className="px-6 pb-4 pt-6">
-        <h2 id="latest-activity" className="text-lg font-medium leading-tight">Latest activity</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Complaints, notices and lost and found</p>
+        <h2 id="latest-activity" className="text-lg font-medium leading-tight">{title}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </header>
 
       <div className="border-t border-border">
@@ -86,7 +87,7 @@ export function ActivityFeed() {
                   <p className="truncate text-sm text-foreground">{item.title}</p>
                   <p className="mt-0.5 truncate text-sm text-muted-foreground first-letter:uppercase">{item.description}</p>
                 </div>
-                <time dateTime={item.createdAt} className="stamp mt-0.5 whitespace-nowrap">{stamp(item.createdAt)}</time>
+                <time dateTime={item.createdAt} className="stamp mt-0.5 whitespace-nowrap">{formatStamp(item.createdAt)}</time>
               </li>
             );
           })}
