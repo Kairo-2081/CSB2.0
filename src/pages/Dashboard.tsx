@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Bell, BookOpen, Droplets, MessageSquare, Search, ShoppingBag } from "lucide-react";
+import { Bell, ChevronRight, Droplets, MessageSquare, Search, ShoppingBag } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { useAuth } from "@/contexts/AuthContext";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface QueueCounts {
   complaints: number;
@@ -44,72 +44,76 @@ export default function Dashboard() {
   }, []);
 
   const queue = [
-    { title: "Open complaints", count: counts?.complaints, href: "/complaints", icon: MessageSquare },
+    { title: "Open complaints", count: counts?.complaints, href: "/complaints", icon: MessageSquare, lead: true },
     { title: "Latest notices", count: counts?.notices, href: "/notices", icon: Bell },
     { title: "Lost and found posts", count: counts?.lostFound, href: "/lost-found", icon: Search },
     { title: "Marketplace listings", count: counts?.marketplace, href: "/marketplace", icon: ShoppingBag },
     { title: "Blood donation entries", count: counts?.blood, href: "/blood-donation", icon: Droplets },
   ];
+  const total = counts ? queue.reduce((sum, item) => sum + (item.count ?? 0), 0) : undefined;
+  const format = (value: number) => value.toLocaleString("en-US");
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-5 sm:p-8 lg:p-10">
-        <header className="dashboard-hero rounded-[28px] p-5 sm:p-7 lg:p-9">
-          <div className="relative z-10 space-y-7">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Dashboard</h1>
-                <p className="mt-2 text-muted-foreground">Campus activity and open work</p>
-              </div>
-              {user && (
-                <Badge variant="secondary" className="glass-control w-fit rounded-full px-3 py-1.5">
-                  {user.role === "admin" ? "Admin" : "Student"}
-                </Badge>
-              )}
-            </div>
-
-            <section aria-labelledby="quick-actions" className="border-t border-white/[0.12] pt-5">
-              <h2 id="quick-actions" className="mb-3 text-sm font-medium text-secondary-foreground">Quick actions</h2>
-              <div className="flex flex-wrap gap-2">
-                <Button asChild><Link to="/complaints">File a complaint</Link></Button>
-                <Button asChild variant="outline"><Link to="/lost-found">Post a lost or found item</Link></Button>
-                <Button asChild variant="outline"><Link to="/marketplace"><ShoppingBag aria-hidden="true" /> Add a listing</Link></Button>
-                <Button asChild variant="outline"><Link to="/lend-borrow"><BookOpen aria-hidden="true" /> Lend and borrow</Link></Button>
-              </div>
-            </section>
+      <div className="mx-auto max-w-[1440px] space-y-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <header className="flex flex-col gap-6 border-b border-border pb-8 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-medium text-foreground">Dashboard</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Campus activity and open work
+              {user?.universityName && <span className="text-subtle"> · {user.universityName}</span>}
+            </p>
           </div>
+
+          <nav aria-label="Quick actions" className="flex flex-wrap gap-2">
+            <Button asChild><Link to="/complaints">File a complaint</Link></Button>
+            <Button asChild variant="outline"><Link to="/lost-found">Post a lost or found item</Link></Button>
+            <Button asChild variant="outline"><Link to="/marketplace">Add a listing</Link></Button>
+            <Button asChild variant="outline"><Link to="/lend-borrow">Lend and borrow</Link></Button>
+          </nav>
         </header>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
           <section aria-labelledby="work-queue" className="glass-panel overflow-hidden rounded-2xl">
-            <header className="flex items-end justify-between gap-4 border-b border-white/[0.08] px-5 py-5 sm:px-6">
+            <header className="flex items-baseline justify-between gap-4 px-6 pb-4 pt-6">
               <div>
-                <h2 id="work-queue" className="text-xl font-semibold">Work queue</h2>
+                <h2 id="work-queue" className="text-lg font-medium leading-tight">Work queue</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Live counts from campus services</p>
               </div>
-              <span className="hidden text-xs text-muted-foreground sm:inline">Updated from current records</span>
+              <span className="stamp shrink-0">{total === undefined ? "— records" : `${format(total)} records`}</span>
             </header>
-            <div className="divide-y divide-white/[0.07]">
-              {queue.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className="group flex items-center gap-4 px-5 py-4 transition-colors duration-200 hover:bg-white/[0.035] sm:px-6"
-                >
-                  <span className="glass-control flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-primary transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
-                    <item.icon className="h-[18px] w-[18px]" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium text-foreground">{item.title}</span>
-                    <span className="mt-0.5 block text-sm text-muted-foreground">View current records</span>
-                  </span>
-                  <span className="glass-control min-w-10 rounded-full px-3 py-1 text-center text-sm font-medium tabular-nums text-foreground">
-                    {item.count === undefined ? "—" : item.count}
-                  </span>
-                  <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden="true" />
-                </Link>
-              ))}
-            </div>
+
+            <ul className="border-t border-border">
+              {queue.map((item) => {
+                const share = total && item.count ? (item.count / total) * 100 : 0;
+                return (
+                  <li key={item.href} className="border-b border-border last:border-b-0">
+                    <Link
+                      to={item.href}
+                      className="group grid h-16 grid-cols-[16px_minmax(0,1fr)_auto_16px] items-center gap-3 px-6 transition-colors duration-150 hover:bg-white/[0.03] sm:grid-cols-[16px_minmax(0,1fr)_160px_64px_16px] sm:gap-4"
+                    >
+                      <item.icon className="h-4 w-4 text-subtle transition-colors duration-150 group-hover:text-foreground" aria-hidden="true" />
+                      <span className="truncate text-sm text-foreground">{item.title}</span>
+                      <span className="hidden h-1 overflow-hidden rounded-full bg-secondary sm:block" aria-hidden="true">
+                        <span
+                          className={cn("block h-full rounded-full", item.lead ? "bg-primary" : "bg-muted-foreground/40")}
+                          style={{ width: `${share}%` }}
+                        />
+                      </span>
+                      <span
+                        className={cn(
+                          "text-right text-2xl font-medium leading-none tabular-nums",
+                          item.lead ? "text-foreground" : "text-muted-foreground",
+                        )}
+                      >
+                        {item.count === undefined ? "—" : format(item.count)}
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-subtle transition-colors duration-150 group-hover:text-foreground" aria-hidden="true" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
 
           <ActivityFeed />

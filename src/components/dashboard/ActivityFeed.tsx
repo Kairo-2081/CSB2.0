@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell, MessageSquare, Search } from "lucide-react";
 
 interface FeedItem {
@@ -55,30 +54,44 @@ export function ActivityFeed() {
   const iconFor = (kind: FeedItem["kind"]) =>
     kind === "complaint" ? MessageSquare : kind === "notice" ? Bell : Search;
 
+  const currentYear = new Date().getFullYear();
+  const stamp = (value: string) => {
+    const date = new Date(value);
+    const day = date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      ...(date.getFullYear() !== currentYear && { year: "numeric" }),
+    });
+    const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+    return `${day} · ${time}`;
+  };
+
   return (
-    <Card>
-      <CardHeader><CardTitle className="text-lg">Latest activity</CardTitle></CardHeader>
-      <CardContent>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {items.length === 0 && !error && <p className="text-sm text-muted-foreground">No recent activity</p>}
-        <div className="divide-y divide-border">
+    <section aria-labelledby="latest-activity" className="glass-panel overflow-hidden rounded-2xl">
+      <header className="px-6 pb-4 pt-6">
+        <h2 id="latest-activity" className="text-lg font-medium leading-tight">Latest activity</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Complaints, notices and lost and found</p>
+      </header>
+
+      <div className="border-t border-border">
+        {error && <p className="px-6 py-4 text-sm text-destructive">{error}</p>}
+        {items.length === 0 && !error && <p className="px-6 py-4 text-sm text-muted-foreground">No recent activity</p>}
+        <ol>
           {items.map((item) => {
             const Icon = iconFor(item.kind);
             return (
-              <div key={item.id} className="flex gap-3 py-3">
-                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <li key={item.id} className="grid grid-cols-[16px_minmax(0,1fr)_auto] gap-3 border-b border-border px-6 py-3 last:border-b-0">
+                <Icon className="mt-0.5 h-4 w-4 text-subtle" aria-hidden="true" />
                 <div className="min-w-0">
-                  <p className="font-medium">{item.title}</p>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {new Date(item.createdAt).toLocaleString()}
-                  </p>
+                  <p className="truncate text-sm text-foreground">{item.title}</p>
+                  <p className="mt-0.5 truncate text-sm text-muted-foreground first-letter:uppercase">{item.description}</p>
                 </div>
-              </div>
+                <time dateTime={item.createdAt} className="stamp mt-0.5 whitespace-nowrap">{stamp(item.createdAt)}</time>
+              </li>
             );
           })}
-        </div>
-      </CardContent>
-    </Card>
+        </ol>
+      </div>
+    </section>
   );
 }
