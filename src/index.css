@@ -92,31 +92,18 @@
     isolation: isolate;
     min-height: calc(100vh - 24px);
     margin: 12px 12px 12px 0;
-    border: 1px solid rgba(196, 187, 255, 0.12);
-    border-radius: 28px;
+    border: 1px solid rgba(244, 239, 232, 0.07);
+    border-radius: 18px;
     background:
-      radial-gradient(ellipse at 82% 0%, rgba(91, 74, 218, 0.18), transparent 38rem),
-      radial-gradient(ellipse at 4% 92%, rgba(61, 81, 172, 0.09), transparent 36rem),
-      linear-gradient(155deg, rgba(10, 10, 19, 0.91), rgba(6, 6, 12, 0.94));
+      radial-gradient(ellipse at 100% 0%, rgba(168, 141, 118, 0.07), transparent 36rem),
+      linear-gradient(180deg, rgba(14, 13, 12, 0.94), rgba(8, 8, 11, 0.97));
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      0 28px 80px rgba(0, 0, 0, 0.46),
-      0 0 56px rgba(83, 65, 213, 0.12);
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 28px 80px rgba(0, 0, 0, 0.5);
   }
 
   .app-stage::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background:
-      radial-gradient(1.5px 1.5px at 11% 12%, rgba(231, 228, 255, 0.42) 45%, transparent 100%),
-      radial-gradient(1px 1px at 24% 71%, rgba(186, 193, 255, 0.34) 45%, transparent 100%),
-      radial-gradient(1px 1px at 57% 19%, rgba(240, 236, 255, 0.32) 45%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 83% 63%, rgba(202, 196, 255, 0.34) 45%, transparent 100%),
-      radial-gradient(1px 1px at 92% 31%, rgba(240, 237, 255, 0.3) 45%, transparent 100%);
+    content: none;
   }
 
   .app-stage > * {
@@ -166,88 +153,70 @@
   }
 
   .glass-shell {
-    background:
-      radial-gradient(140% 180% at 0% 0%, rgba(180, 164, 255, 0.12), transparent 48%),
-      linear-gradient(135deg, rgba(30, 28, 51, 0.78), rgba(12, 11, 22, 0.68));
-    border: 1px solid rgba(207, 198, 255, 0.2);
+    background: linear-gradient(180deg, rgba(20, 18, 16, 0.86), rgba(11, 10, 10, 0.86));
+    border: 1px solid rgba(244, 239, 232, 0.09);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      0 24px 64px rgba(0, 0, 0, 0.42);
-    backdrop-filter: blur(28px) saturate(155%);
-    -webkit-backdrop-filter: blur(28px) saturate(155%);
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 24px 64px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(24px) saturate(120%);
+    -webkit-backdrop-filter: blur(24px) saturate(120%);
   }
 
   .glass-panel {
-    background:
-      radial-gradient(120% 90% at 0% 0%, rgba(167, 152, 255, 0.1), transparent 46%),
-      linear-gradient(145deg, rgba(26, 24, 46, 0.7), rgba(10, 10, 19, 0.72));
-    border: 1px solid rgba(196, 187, 255, 0.18);
+    background: linear-gradient(180deg, rgba(22, 20, 18, 0.72), rgba(12, 11, 11, 0.78));
+    border: 1px solid rgba(244, 239, 232, 0.08);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.085),
-      0 20px 52px rgba(0, 0, 0, 0.34);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 18px 48px rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(20px) saturate(115%);
+    -webkit-backdrop-filter: blur(20px) saturate(115%);
   }
 
   .glass-control {
-    background: linear-gradient(145deg, rgba(50, 45, 79, 0.72), rgba(17, 16, 30, 0.62));
-    border: 1px solid rgba(203, 195, 255, 0.2);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.13),
-      0 8px 26px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    background: rgba(244, 239, 232, 0.04);
+    border: 1px solid rgba(244, 239, 232, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .dashboard-hero {
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    border: 1px solid rgba(207, 198, 255, 0.22);
+    border: 1px solid rgba(244, 239, 232, 0.09);
     background:
-      radial-gradient(ellipse at 84% 12%, rgba(125, 102, 255, 0.3), transparent 24rem),
-      radial-gradient(ellipse at 100% 100%, rgba(65, 88, 206, 0.17), transparent 28rem),
-      linear-gradient(122deg, rgba(27, 24, 49, 0.94), rgba(11, 10, 19, 0.78) 58%, rgba(25, 20, 45, 0.88));
+      radial-gradient(ellipse at 100% 0%, rgba(168, 141, 118, 0.14), transparent 30rem),
+      linear-gradient(180deg, rgba(24, 21, 19, 0.9), rgba(11, 10, 10, 0.92));
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.11),
-      0 28px 76px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(28px) saturate(150%);
-    -webkit-backdrop-filter: blur(28px) saturate(150%);
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 28px 76px rgba(0, 0, 0, 0.42);
   }
 
   .dashboard-hero::before {
-    content: "";
-    position: absolute;
-    inset: 1px;
-    z-index: -1;
-    border-radius: inherit;
-    pointer-events: none;
-    background:
-      linear-gradient(118deg, rgba(255, 255, 255, 0.08), transparent 28% 72%, rgba(177, 161, 255, 0.1));
+    content: none;
   }
 
   .brand-mark {
-    background: linear-gradient(145deg, #7060eb, #604bfa 56%, #4934d8);
-    border: 1px solid rgba(224, 218, 255, 0.3);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 8px 24px rgba(88, 70, 235, 0.34);
-    color: white;
+    background: transparent;
+    border: 1px solid rgba(244, 239, 232, 0.7);
+    border-radius: 0;
+    color: #f4efe8;
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+    font-weight: 400;
   }
 
   .button-primary {
-    border: 1px solid rgba(224, 218, 255, 0.24);
-    background: linear-gradient(135deg, #7060eb, #604bfa 54%, #4934d8);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.34),
-      0 8px 24px rgba(83, 67, 231, 0.32);
-    transition: filter 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    border: 1px solid rgba(244, 239, 232, 0.12);
+    background: #a88d76;
+    color: #14110e;
+    box-shadow: 0 10px 30px rgba(168, 141, 118, 0.18);
+    transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
   }
 
   .button-primary:hover {
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.38),
-      0 10px 30px rgba(91, 74, 255, 0.48);
+    background: #bca08a;
+    box-shadow: 0 12px 34px rgba(168, 141, 118, 0.26);
   }
 
   .button-primary:active {
