@@ -10,6 +10,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+// CSB 2.0 opens at BUET first. Add slugs here (comma-separated) to open more campuses.
+const OPEN_UNIVERSITY_SLUGS = (process.env.OPEN_UNIVERSITIES || 'buet')
+  .split(',')
+  .map((slug) => slug.trim().toLowerCase())
+  .filter(Boolean);
 const PORT = 3001;
 const authSessions = new Map();
 const UNIVERSITY_CATALOG = [
@@ -424,6 +429,19 @@ app.post('/api/auth/register', async (req, res) => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || `university-${Date.now()}`;
 
+    const openUniversity = await db.get(
+      `SELECT id FROM universities
+       WHERE is_active = 1 AND (name = ? COLLATE NOCASE OR short_name = ? COLLATE NOCASE)
+         AND slug IN (${OPEN_UNIVERSITY_SLUGS.map(() => '?').join(', ')})`,
+      [normalizedUniversityName, normalizedUniversityName, ...OPEN_UNIVERSITY_SLUGS]
+    );
+    if (!openUniversity) {
+      return res.status(403).json({
+        success: false,
+        error: 'CSB 2.0 is open to BUET students only for now. More universities are coming later.'
+      });
+    }
+
     await db.exec('BEGIN IMMEDIATE');
     let university;
     try {
@@ -629,8 +647,9 @@ app.get('/api/universities', async (req, res) => {
     const universities = await db.all(
       `SELECT id, name, short_name AS shortName, division
        FROM universities
-       WHERE is_active = 1
-       ORDER BY name COLLATE NOCASE`
+       WHERE is_active = 1 AND slug IN (${OPEN_UNIVERSITY_SLUGS.map(() => '?').join(', ')})
+       ORDER BY name COLLATE NOCASE`,
+      OPEN_UNIVERSITY_SLUGS
     );
     res.json({ success: true, universities });
   } catch (error) {
