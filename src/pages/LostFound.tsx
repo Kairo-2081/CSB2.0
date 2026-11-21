@@ -134,9 +134,9 @@ export default function LostFound() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+      <div className="page-container">
         <PageHeader
-          photo={{ src: "/campus/graded/buet-day-reflection.webp", alt: "BUET buildings on a clear day, reflected in standing water", position: "50% 50%" }}
+          photo={{ src: "/campus/bands/buet-day-reflection.webp", alt: "BUET buildings on a clear day, reflected in standing water" }}
           eyebrow={"Lost & found"}
           title="Lost something?"
           accent="Found something?"

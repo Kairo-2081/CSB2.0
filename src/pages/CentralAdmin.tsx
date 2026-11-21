@@ -39,10 +39,10 @@ export default function CentralAdmin() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen px-5 py-8 text-foreground sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl space-y-8">
+      <div className="text-foreground">
+        <div className="page-container">
           <PageHeader
-            photo={{ src: "/campus/graded/buet-hero-panel.webp", alt: "A BUET building with a concrete block cantilevered above red brick", position: "35% 50%" }}
+            photo={{ src: "/campus/bands/buet-hero.webp", alt: "A BUET building with a concrete block cantilevered above red brick" }}
             eyebrow="Central administration"
             title="The university network."
             accent="BUET first."

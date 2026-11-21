@@ -176,9 +176,9 @@ export default function LendBorrow() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+      <div className="page-container">
         <PageHeader
-          photo={{ src: "/campus/graded/buet-academic-building.webp", alt: "A BUET academic building behind a large tree", position: "60% 50%" }}
+          photo={{ src: "/campus/bands/buet-academic-building.webp", alt: "A BUET academic building behind a large tree" }}
           eyebrow="Sharing"
           title="Lend and borrow,"
           accent="within BUET."
