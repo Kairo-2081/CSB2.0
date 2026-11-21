@@ -27,7 +27,7 @@ function getTimeOfDay(date = new Date()) {
     greeting: hour >= 5 && hour < 12 ? "Good morning" : hour >= 12 && hour < 17 ? "Good afternoon" : "Good evening",
     label: hour >= 5 && hour < 12 ? "Morning" : hour >= 12 && hour < 17 ? "Afternoon" : "Evening",
     // A daytime or dusk view of campus, mirrored in a puddle, to match the hour.
-    photo: evening ? "/campus/buet-dusk-reflection.webp" : "/campus/buet-day-reflection.webp",
+    photo: evening ? "/campus/graded/buet-dusk-reflection.webp" : "/campus/graded/buet-day-reflection.webp",
     alt: evening
       ? "BUET buildings at dusk, reflected in standing water"
       : "BUET buildings on a clear day, reflected in standing water",
@@ -107,9 +107,8 @@ export default function Dashboard() {
               </section>
             </div>
 
-            <figure className="relative hidden min-h-[320px] overflow-hidden border-l border-white/[0.07] lg:block">
-              <img src={timeOfDay.photo} alt={timeOfDay.alt} className="dashboard-photo absolute inset-0 h-full w-full object-cover" />
-              <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#0b0a0a] via-transparent to-transparent" />
+            <figure className="page-photo-frame relative hidden min-h-[320px] lg:block">
+              <img src={timeOfDay.photo} alt={timeOfDay.alt} className="absolute inset-0 h-full w-full object-cover" />
             </figure>
           </div>
         </header>
