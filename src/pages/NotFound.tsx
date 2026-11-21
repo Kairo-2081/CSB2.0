@@ -12,9 +12,9 @@ const NotFound = () => {
   return (
     <div className="relative isolate flex min-h-screen flex-col overflow-hidden bg-[#07070d]">
       <img
-        src="/campus/buet-day-reflection.webp"
+        src="/campus/graded/buet-day-reflection.webp"
         alt=""
-        className="auth-photo absolute inset-0 -z-20 h-full w-full object-cover opacity-60 blur-[2px]"
+        className="absolute inset-0 -z-20 h-full w-full object-cover opacity-70 blur-[2px]"
       />
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-[#07070d] via-[#07070d]/80 to-[#07070d]/60" />
 
