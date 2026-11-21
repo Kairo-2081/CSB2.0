@@ -1,57 +1,37 @@
-# Obsidian Violet Glass
+# Graphite Ledger
 
-## Visual direction
+## Direction
 
-Build a campus workspace with the cinematic contrast of a dark observatory:
-near-black surfaces sit inside a quiet indigo atmosphere, with a few cool
-violet points of light and precise glass edges. The visual signature belongs
-to the surrounding field and the primary action, not to a glow on every card.
-
-Use the supplied clip as visual inspiration only. Keep CSB 2.0's identity,
-campus terminology, real records, and workflows; do not reuse its brand,
-incident-response content, sample metrics, or copy.
+- **Product.** A campus portal where students and admins at one university file complaints, read notices, and trade, lend or recover things.
+- **Character.** Orderly, civic, a little warm.
+- **World.** The department noticeboard and registrar's desk: printed notices, ledger columns, date stamps.
+- **Moments.** The dashboard work queue as a ledger: large tabular counts with a thin share bar per service, and the accent only on open complaints. The activity feed as a dated register.
+- **Signature.** Mono "filed" stamps (`.stamp`) for record counts and times, for example `21 Nov · 14:05`. Use them only where records are counted or dated.
 
 ## Palette
 
-- Obsidian: `#07070D`
-- Canvas: `#0B0B14`
-- Glass: `rgba(20, 19, 38, 0.78)`
-- Main text: `#F7F6FF`
-- Secondary text: `#B6B3CC`
-- Electric violet: `#6857FF`
-- Soft lilac: `#B5A1FF`
-- Cool blue: `#8EA4FF`
-- Border: `rgba(196, 187, 255, 0.14)`
+Neutral graphite ramp for every surface. The content carries the color, the chrome does not.
+
+- Sidebar: `hsl(240 3% 6%)`
+- Page: `hsl(240 2% 8%)`
+- Card: `hsl(240 4% 10%)`
+- Raised (inputs, active row, secondary button): `hsl(240 3% 14%)`
+- Hairline border: `hsl(240 3% 16%)`
+- Text: primary `hsl(0 0% 93%)`, secondary `muted-foreground` `hsl(240 3% 64%)`, meta and icons `subtle` `hsl(240 3% 53%)`
+- Accent, flat violet: `hsl(248 100% 67%)`, with white text. Use it for the primary action, the selected nav icon and the one figure that matters. Nowhere else.
+
+No gradients, glows, radial washes, starfields, colored shadows or backdrop blur. Depth comes from surface steps and hairlines. The `.glass-*` class names survive for compatibility but are plain surfaces now.
 
 ## Type
 
-Use the existing system sans stack. Set large, clean headings with compact
-line-height; keep interface copy readable and direct. Do not add a display
-font or monospace face without an approved asset or a code/data use case.
-
-## Surfaces
-
-- The page background carries a subtle indigo wash and sparse, static points
-  of light.
-- A near-black rounded canvas separates application content from that outer
-  atmosphere on desktop.
-- Glass panels use dark translucent fills, a fine cool edge, and soft depth.
-- Reserve brighter violet gradients and bloom for primary actions and selected
-  navigation. Keep forms, tables, and data surfaces restrained.
+System sans stack (Segoe UI on Windows maps 500 to Semibold, so use 400 for list titles). Weights 400 and 500. Page title 30px, panel titles 18px, body 14px, meta 12px mono. Sentence case, no tracked uppercase labels, `tabular-nums` on every figure.
 
 ## Layout
 
-- Keep the floating navigation rail and give the main workspace a generous
-  black canvas.
-- Landing content is centered around a plain statement and real service links;
-  never use invented counts or demo content.
-- Operational pages prioritize useful queues, lists, and clear form actions
-  over decorative metric cards.
-- On mobile, preserve the same hierarchy without horizontal scrolling and
-  keep the navigation control clear of page headings.
+- Flush sidebar rail, 256px, with 36px nav rows and 2px gaps. Content is fluid and capped at 1440px, with page padding of 16, 24 or 32px depending on width.
+- Panels: 16px radius, 24px padding, rows separated by hairlines. Controls: 8px radius.
+- Operational pages put queues, lists and clear form actions ahead of metric cards. Never show invented counts.
 
 ## Motion and accessibility
 
-Use short transitions for hover and user-triggered state changes. Keep the
-ambient background still, respect reduced motion, preserve visible keyboard
-focus, and maintain readable text contrast on translucent surfaces.
+Use color and background transitions of 150ms on `cubic-bezier(0.22, 1, 0.36, 1)` and a 0.98 press scale on buttons. Nothing loops. Respect reduced motion, keep a visible 2px focus ring and readable contrast.

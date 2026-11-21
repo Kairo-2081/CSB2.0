@@ -58,21 +58,22 @@ export function Sidebar() {
     navigate("/auth");
   };
 
+  const roleLabel = user?.role === "admin" ? "Admin" : user?.role ? "Student" : "Sign in to continue";
+
   const NavContent = () => (
     <div className="flex h-full flex-col">
-      <div className="flex h-20 items-center gap-3 px-5">
-        <div className="brand-mark flex h-11 w-11 items-center justify-center rounded-xl text-lg font-bold">
+      <div className="flex h-14 items-center gap-3 px-4">
+        <div className="brand-mark flex h-8 w-8 items-center justify-center rounded-lg text-sm font-semibold" aria-hidden="true">
           C
         </div>
-        <div>
-          <h1 className="text-base font-semibold text-foreground">CSB 2.0</h1>
-          <p className="text-xs text-muted-foreground">Campus services</p>
+        <div className="leading-tight">
+          <p className="text-sm font-medium text-foreground">CSB 2.0</p>
+          <p className="text-xs text-subtle">Campus services</p>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 pb-4">
-        <div className="mx-2 mb-3 h-px bg-white/8" />
-        <ul className="space-y-1">
+      <nav className="flex-1 overflow-y-auto px-2 pb-4 pt-2" aria-label="Main">
+        <ul className="space-y-0.5">
           {visibleNavItems.map((item) => {
             const active = location.pathname === item.href;
             return (
@@ -80,22 +81,21 @@ export function Sidebar() {
                 <Link
                   to={item.href}
                   onClick={() => setIsMobileOpen(false)}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                    "group flex h-9 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors duration-150",
                     active
-                      ? "border border-primary/25 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.11),0_0_24px_rgba(97,75,255,0.12)]"
-                      : "border border-transparent text-sidebar-foreground hover:bg-white/[0.045] hover:text-foreground",
+                      ? "bg-sidebar-accent text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                      : "text-sidebar-foreground hover:bg-white/[0.04] hover:text-foreground",
                   )}
                 >
                   <item.icon
                     className={cn(
-                      "h-[18px] w-[18px] transition-colors",
-                      active
-                        ? "text-primary drop-shadow-[0_0_10px_rgba(143,124,255,0.7)]"
-                        : "text-muted-foreground group-hover:text-foreground",
+                      "h-4 w-4 shrink-0 transition-colors duration-150",
+                      active ? "text-primary" : "text-subtle group-hover:text-foreground",
                     )}
                   />
-                  {item.title}
+                  <span className="truncate">{item.title}</span>
                 </Link>
               </li>
             );
@@ -103,39 +103,37 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="m-3 rounded-xl border border-white/[0.08] bg-black/20 p-3 backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <div className="glass-control flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-primary">
-            {user?.name?.charAt(0).toUpperCase() || "U"}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{user?.name || "Guest user"}</p>
-            <p className="text-xs text-muted-foreground">{user?.role || "Sign in to continue"}</p>
-          </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label="Sign out">
-            <LogOut className="h-4 w-4" />
-          </Button>
+      <div className="flex items-center gap-3 border-t border-border px-4 py-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-foreground" aria-hidden="true">
+          {user?.name?.charAt(0).toUpperCase() || "U"}
         </div>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-sm font-medium text-foreground">{user?.name || "Guest user"}</p>
+          <p className="truncate text-xs text-subtle">{roleLabel}</p>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout} aria-label="Sign out">
+          <LogOut className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
 
   return (
     <>
-      <header className="glass-shell fixed inset-x-3 top-3 z-30 flex h-14 items-center gap-3 rounded-2xl px-3 lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-sidebar px-4 lg:hidden">
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="glass-control flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+          className="-ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-foreground"
           aria-label="Open navigation"
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div className="min-w-0">
-          <p className="text-[11px] leading-none text-muted-foreground">CSB 2.0</p>
-          <p className="mt-1 truncate text-sm font-semibold text-foreground">{activeTitle}</p>
+        <div className="min-w-0 leading-tight">
+          <p className="text-xs text-subtle">CSB 2.0</p>
+          <p className="truncate text-sm font-medium text-foreground">{activeTitle}</p>
         </div>
         {user?.name && (
-          <span className="glass-control ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-primary" aria-hidden="true">
+          <span className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-foreground" aria-hidden="true">
             {user.name.charAt(0).toUpperCase()}
           </span>
         )}
@@ -144,20 +142,20 @@ export function Sidebar() {
       {isMobileOpen && (
         <button
           aria-label="Close navigation"
-          className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          "glass-shell fixed inset-y-3 left-3 z-50 w-64 rounded-2xl transition-transform duration-200 lg:hidden",
-          isMobileOpen ? "translate-x-0" : "-translate-x-[110%]",
+          "fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-sidebar transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] lg:hidden",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <button
           onClick={() => setIsMobileOpen(false)}
-          className="absolute right-3 top-5 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-white/10 hover:text-foreground"
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-foreground"
           aria-label="Close navigation"
         >
           <X className="h-4 w-4" />
@@ -165,7 +163,7 @@ export function Sidebar() {
         <NavContent />
       </aside>
 
-      <aside className="glass-shell fixed inset-y-3 left-3 z-40 hidden w-64 flex-col rounded-2xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-sidebar lg:flex">
         <NavContent />
       </aside>
     </>
