@@ -1,7 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Page, PageHeader } from "@/components/layout/Page";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { Shield } from "lucide-react";
@@ -11,56 +9,48 @@ export default function Profile() {
 
   if (!user) return null;
 
+  const fields = [
+    { label: "Name", value: user.name },
+    { label: "Email", value: user.email, mono: true },
+    { label: "Phone", value: user.phone, mono: true },
+    { label: "Department", value: user.department },
+    { label: "University", value: user.universityName },
+    { label: "Role", value: user.role === "admin" ? "Admin" : "Student" },
+  ];
+
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Profile</h1>
-          <p className="mt-1 text-muted-foreground">Account information</p>
-        </div>
+      <Page>
+        <PageHeader title="Profile" description="Your account details as the university sees them" />
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-1">
-            <CardContent className="p-6 text-center">
-              <div className="glass-control mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold text-primary">
-                {user.name?.charAt(0).toUpperCase() || "U"}
-              </div>
-              <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-              <Badge variant="secondary" className="mt-3">
-                <Shield className="mr-1 h-3 w-3" />
-                {user.role === "admin" ? "Admin" : "Student"}
-              </Badge>
-            </CardContent>
-          </Card>
+        <div className="grid items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <section className="glass-panel rounded-2xl p-6">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary text-2xl font-medium text-foreground" aria-hidden="true">
+              {user.name?.charAt(0).toUpperCase() || "U"}
+            </div>
+            <h2 className="mt-5 text-xl font-medium text-foreground">{user.name}</h2>
+            <p className="mt-1 truncate font-mono text-[13px] text-muted-foreground">{user.email}</p>
+            <Badge variant={user.role === "admin" ? "default" : "outline"} className="mt-4">
+              <Shield aria-hidden="true" />
+              {user.role === "admin" ? "Admin" : "Student"}
+            </Badge>
+          </section>
 
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Personal information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" value={user.name || ""} readOnly />
+          <section aria-labelledby="personal-information" className="glass-panel overflow-hidden rounded-2xl">
+            <h2 id="personal-information" className="px-6 pb-4 pt-6 text-lg font-medium leading-tight">Personal information</h2>
+            <dl className="divide-y divide-border border-t border-border">
+              {fields.map((field) => (
+                <div key={field.label} className="grid gap-1 px-6 py-4 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-6">
+                  <dt className="text-sm text-muted-foreground">{field.label}</dt>
+                  <dd className={`truncate text-sm ${field.value ? "text-foreground" : "text-subtle"} ${field.mono && field.value ? "font-mono text-[13px]" : ""}`}>
+                    {field.value || "Not provided"}
+                  </dd>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" value={user.email || ""} readOnly />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" value={user.phone || "Not provided"} readOnly />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <Input id="department" value={user.department || "Not provided"} readOnly />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              ))}
+            </dl>
+          </section>
         </div>
-      </div>
+      </Page>
     </MainLayout>
   );
 }
