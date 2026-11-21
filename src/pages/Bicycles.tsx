@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { Page, PageHeader, Toolbar } from "@/components/layout/Page";
+import { EmptyState } from "@/components/layout/EmptyState";
+import { FilterGroup } from "@/components/layout/FilterGroup";
+import { SearchField } from "@/components/layout/SearchField";
+import { formatDate } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +52,7 @@ const statusConfig = {
     color: "text-success"
   },
   rented: { 
-    label: "In Use", 
+    label: "In use", 
     variant: "warning" as const, 
     icon: Clock,
     color: "text-warning"
@@ -124,7 +129,7 @@ export default function Bicycles() {
         description: formData.registration_number,
         user_id: "current-user-id",
       });
-      toast.success("Bicycle added successfully!");
+      toast.success("Bicycle added");
       setFormData({ registration_number: "" });
       setIsDialogOpen(false);
       await loadBicycles();
@@ -145,10 +150,10 @@ export default function Bicycles() {
 
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this bicycle report?")) {
+    if (window.confirm("Delete this bicycle report?")) {
       try {
         await bicycleService.deleteReport(id);
-        toast.success("Report deleted successfully!");
+        toast.success("Report deleted");
         await loadBicycles();
       } catch (error) {
         console.error("Error deleting report:", error);
@@ -162,193 +167,106 @@ export default function Bicycles() {
 
   return (
     <MainLayout>
-      <div className="p-6 lg:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Bicycle Sharing</h1>
-            <p className="text-muted-foreground mt-1">Book and manage campus bicycles</p>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="gap-2"
-              onClick={() => setIsDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Add Bicycle
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <History className="h-4 w-4" />
-              Booking History
-            </Button>
-          </div>
-        </div>
+      <Page>
+        <PageHeader
+          title="Bicycles"
+          description="Campus bicycles, where they are and whether you can book one"
+          actions={
+            <>
+              <Button variant="outline">
+                <History aria-hidden="true" />
+                Booking history
+              </Button>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus aria-hidden="true" />
+                Add bicycle
+              </Button>
+            </>
+          }
+        />
 
-        {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-4">
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Bike className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">Total Bicycles</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
-                <CheckCircle className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.available}</p>
-                <p className="text-xs text-muted-foreground">Available</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.rented}</p>
-                <p className="text-xs text-muted-foreground">In Use</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
-                <XCircle className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.maintenance}</p>
-                <p className="text-xs text-muted-foreground">Maintenance</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Status Filter */}
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant={filter === "all" ? "default" : "secondary"}
-            size="sm"
-            onClick={() => setFilter("all")}
-          >
-            All
-          </Button>
-          {Object.entries(statusConfig).map(([key, config]) => (
-            <Button
-              key={key}
-              variant={filter === key ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setFilter(key)}
-              className="gap-1.5"
+        <section aria-label="Fleet status" className="glass-panel grid grid-cols-2 overflow-hidden rounded-2xl lg:grid-cols-4">
+          {[
+            { label: "Bicycles", value: stats.total },
+            { label: "Available now", value: stats.available, lead: true },
+            { label: "In use", value: stats.rented },
+            { label: "In maintenance", value: stats.maintenance },
+          ].map((stat, index) => (
+            <div
+              key={stat.label}
+              className={`px-6 py-5 ${index % 2 === 1 ? "border-l border-border" : ""} ${index >= 2 ? "border-t border-border lg:border-t-0" : ""} ${index === 2 ? "lg:border-l" : ""}`}
             >
-              <config.icon className="h-3.5 w-3.5" />
-              {config.label}
-            </Button>
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+              <p className={`mt-2 text-3xl font-medium leading-none tabular-nums ${stat.lead ? "text-primary" : "text-foreground"}`}>{stat.value}</p>
+            </div>
           ))}
-        </div>
+        </section>
 
-        {/* Bicycles Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredBicycles.map((bicycle, index) => {
-            const status = getBicycleStatus(bicycle.status);
-            const StatusIcon = status.icon;
-            
-            return (
-              <Card 
-                key={bicycle.id} 
-                className=""
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-foreground">{bicycle.brand} - {bicycle.color}</h3>
-                        <p className="text-sm text-muted-foreground">{bicycle.id}</p>
-                      </div>
-                      <Badge variant={status.variant} className="gap-1">
-                        <StatusIcon className="h-3 w-3" />
-                        {status.label}
-                      </Badge>
+        <FilterGroup
+          label="Status"
+          value={filter}
+          onChange={setFilter}
+          options={[{ value: "all", label: "All" }, ...Object.entries(statusConfig).map(([value, config]) => ({ value, label: config.label }))]}
+        />
+
+        {filteredBicycles.length === 0 ? (
+          <EmptyState icon={Bike} title="No bicycles found" description="Try another status" />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredBicycles.map((bicycle) => {
+              const status = getBicycleStatus(bicycle.status);
+              return (
+                <article key={bicycle.id} className="glass-panel flex flex-col rounded-2xl p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-base font-medium text-foreground">{bicycle.brand}</h3>
+                      <p className="stamp mt-1 truncate">{bicycle.id}</p>
                     </div>
-
-                    {bicycle.rented_by && (
-                      <div className="text-sm text-muted-foreground">
-                        Currently with: <span className="font-medium text-foreground">{bicycle.rented_by}</span>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 pt-2 border-t border-border">
-                      {bicycle.user_id === "current-user-id" && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDelete(bicycle.id)}
-                          className="gap-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {bicycle.status === "available" ? (
-                        <Button variant="default" size="sm" className="flex-1">
-                          Book Now
-                        </Button>
-                      ) : bicycle.status === "rented" ? (
-                        <Button variant="outline" size="sm" className="flex-1" disabled>
-                          In Use
-                        </Button>
-                      ) : bicycle.status === "maintenance" ? (
-                        <Button variant="destructive" size="sm" className="flex-1" disabled>
-                          Maintenance
-                        </Button>
-                      ) : (
-                        <Button variant="outline" size="sm" className="flex-1" disabled>
-                          Status unavailable
-                        </Button>
-                      )}
-                    </div>
+                    <Badge variant={status.variant}><span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />{status.label}</Badge>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {filteredBicycles.length === 0 && (
-          <Card className="p-12 text-center">
-            <Bike className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No bicycles found</h3>
-            <p className="text-muted-foreground mt-1">Try adjusting your filters</p>
-          </Card>
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    {bicycle.rented_by ? (
+                      <>With <span className="text-foreground">{bicycle.rented_by}</span></>
+                    ) : (
+                      bicycle.color
+                    )}
+                  </p>
+                  <div className="mt-4 flex gap-2 border-t border-border pt-4">
+                    {bicycle.status === "available" ? (
+                      <Button size="sm" className="flex-1">Book</Button>
+                    ) : (
+                      <Button variant="outline" size="sm" className="flex-1" disabled>{status.label}</Button>
+                    )}
+                    {bicycle.user_id === "current-user-id" && (
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(bicycle.id)} aria-label="Delete bicycle">
+                        <Trash2 aria-hidden="true" />
+                      </Button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         )}
 
-        {/* Add Bicycle Dialog */}
+        {/* Add bicycle Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[400px]">
             <DialogHeader>
-              <DialogTitle>Add New Bicycle</DialogTitle>
+              <DialogTitle>Add a bicycle</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Registration Number *</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Registration number</label>
                 <Input
-                  placeholder="e.g., BIKE-001"
+                  placeholder="BIKE-001"
                   value={formData.registration_number}
                   onChange={(e) => setFormData({...formData, registration_number: e.target.value})}
                   disabled={isLoading}
                 />
               </div>
 
-              <DialogFooter className="gap-2 pt-4">
+              <DialogFooter>
                 <Button 
                   type="button"
                   variant="outline"
@@ -362,14 +280,14 @@ export default function Bicycles() {
                   disabled={isLoading}
                   className="gap-2"
                 >
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Add Bicycle
+                  {isLoading && <Loader2 className="animate-spin" aria-hidden="true" />}
+                  Add bicycle
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+      </Page>
     </MainLayout>
   );
 }
