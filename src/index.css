@@ -139,6 +139,16 @@
     }
   }
 
+  .auth-photo {
+    filter: brightness(0.5) saturate(0.6) contrast(1.1) sepia(0.2);
+  }
+
+  .auth-photo-shade {
+    background:
+      linear-gradient(180deg, rgba(7, 7, 13, 0.7) 0%, rgba(7, 7, 13, 0.1) 30%, rgba(7, 7, 13, 0.25) 55%, #07070d 100%),
+      linear-gradient(90deg, rgba(7, 7, 13, 0) 60%, #07070d 100%);
+  }
+
   .landing-nav-link {
     font-size: 11px;
     font-weight: 500;
