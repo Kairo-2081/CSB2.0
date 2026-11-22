@@ -100,3 +100,19 @@ describe('your data', () => {
     assert.equal((await admin.c.del('/api/account', { password: admin.password })).status, 409);
   });
 });
+
+describe('first administrator', () => {
+  test('ADMIN_EMAIL creates an admin who must change the temporary password before anything else', async () => {
+    await pool.query("UPDATE users SET role = 'student' WHERE role = 'admin'");
+    const { rows } = await pool.query("SELECT ensure_admin('first.admin@buet.ac.bd', 'Temp0rary!pw') AS r");
+    assert.equal(rows[0].r, 'created');
+    const c = client(srv.base);
+    const login = await c.post('/api/auth/login', { email: 'first.admin@buet.ac.bd', password: 'Temp0rary!pw' });
+    assert.equal(login.data.user.mustChangePassword, true);
+    assert.equal((await c.get('/api/admin/metrics')).status, 403);
+    assert.equal((await c.post('/api/auth/change-password', { oldPassword: 'Temp0rary!pw', newPassword: 'MyOwn!pass1' })).status, 200);
+    assert.equal((await c.get('/api/admin/metrics')).status, 200);
+    const again = await pool.query("SELECT ensure_admin('someone@buet.ac.bd', 'x') AS r");
+    assert.equal(again.rows[0].r, 'admin exists');
+  });
+});

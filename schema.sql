@@ -492,7 +492,8 @@ $$;
 CREATE OR REPLACE FUNCTION session_user_info(p_token text) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
   SELECT jsonb_build_object('id', u.id, 'name', u.name, 'role', u.role, 'universityId', u.university_id,
-                            'emailVerified', u.email_verified_at IS NOT NULL)
+                            'emailVerified', u.email_verified_at IS NOT NULL,
+                            'mustChangePassword', u.must_change_password)
   FROM auth_sessions s
   JOIN users u ON u.id = s.user_id
   WHERE s.token_hash = token_hash(p_token)

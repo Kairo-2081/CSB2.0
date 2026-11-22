@@ -20,7 +20,7 @@ try {
   console.log(JSON.stringify({ level: 'info', msg: 'database ready (schema.sql applied)' }));
 } catch (error) {
   console.error(JSON.stringify({ level: 'error', msg: 'failed to initialize database', error: error.message }));
-  console.error('Set DATABASE_URL to a reachable PostgreSQL database (see DATABASE_SETUP.md).');
+  console.error('Set DATABASE_URL to a reachable PostgreSQL database (see README.md).');
   process.exit(1);
 }
 
