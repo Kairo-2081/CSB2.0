@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { DateBlock, EmptyState, FilterBar, Kicker, RowList } from "@/components/editorial";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bell, Calendar, User, ChevronRight, Plus, Loader2, Trash2 } from "lucide-react";
+import { Plus, Loader2, Trash2 } from "lucide-react";
 import { noticeService } from "@/services/database.service";
 import { toast } from "sonner";
 
@@ -34,21 +33,23 @@ interface Notice {
   created_at: string;
 }
 
-const categoryConfig = {
-  general: { label: "General", variant: "secondary" as const },
-  academic: { label: "Academic", variant: "info" as const },
-  event: { label: "Event", variant: "success" as const },
-  urgent: { label: "Urgent", variant: "destructive" as const },
+const categoryConfig: Record<Notice["category"], { label: string }> = {
+  general: { label: "General" },
+  academic: { label: "Academic" },
+  event: { label: "Event" },
+  urgent: { label: "Urgent" },
 };
 
 export default function Notices() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filter, setFilter] = useState<"all" | Notice["category"]>("all");
+  const [query, setQuery] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "general" as const,
+    category: "general" as Notice["category"],
     posted_by: "Admin",
   });
 
@@ -112,6 +113,13 @@ export default function Notices() {
     }
   };
 
+  const q = query.trim().toLowerCase();
+  const visible = notices.filter(
+    (n) =>
+      (filter === "all" || n.category === filter) &&
+      (!q || `${n.title} ${n.description} ${n.posted_by}`.toLowerCase().includes(q)),
+  );
+
   return (
     <MainLayout>
       <div className="page-container">
@@ -120,89 +128,78 @@ export default function Notices() {
           eyebrow="Announcements"
           title="Notices"
           accent="from across campus."
-          description="Official announcements and updates."
+          description="Official announcements from offices, halls and departments."
           actions={
             <>
-              <Button 
-             
-                className="gap-2"
-                onClick={() => setIsDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Post Notice
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus aria-hidden="true" />
+                Post a notice
               </Button>
             </>
           }
         />
 
-        {/* Notices List */}
-        <div className="space-y-4">
-          {notices.map((notice, index) => {
-            const category = categoryConfig[notice.category];
-            
-            return (
-              <Card 
-                key={notice.id} 
-                className="group"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-white/10 text-accent transition-colors group-hover:border-primary/50">
-                      <Bell className="h-5 w-5" />
+        <section aria-label="Notices">
+          <FilterBar<"all" | Notice["category"]>
+            label="Filter notices"
+            tabs={[
+              { value: "all", label: "All" },
+              { value: "academic", label: "Academic" },
+              { value: "event", label: "Events" },
+              { value: "general", label: "General" },
+              { value: "urgent", label: "Urgent" },
+            ]}
+            value={filter}
+            onChange={setFilter}
+            search={query}
+            onSearch={setQuery}
+            searchLabel="Search notices"
+          />
+
+          {visible.length > 0 ? (
+            <RowList label="Notices">
+              {visible.map((notice) => {
+                const category = categoryConfig[notice.category] ?? categoryConfig.general;
+                return (
+                  <li key={notice.id} className="grid grid-cols-[64px_minmax(0,1fr)] gap-5 py-8 md:grid-cols-[96px_minmax(0,1fr)_200px] md:gap-8">
+                    <DateBlock date={notice.created_at} />
+                    <div className="min-w-0">
+                      <Kicker className="flex items-center gap-2">
+                        {notice.category === "urgent" && <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-destructive" />}
+                        {category.label}
+                      </Kicker>
+                      <h3 className="mt-2.5 font-display text-[26px] font-normal leading-[1.2] tracking-[-0.01em]">{notice.title}</h3>
+                      <p className="mt-2.5 max-w-2xl whitespace-pre-line text-[15px] leading-[26px] text-muted-foreground">{notice.description}</p>
+                      <p className="mt-3 text-[13px] text-muted-foreground md:hidden">{notice.posted_by}</p>
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-foreground">{notice.title}</h3>
-                        <Badge variant={category.variant}>{category.label}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{notice.description}</p>
-                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-2">
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {notice.posted_by}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(notice.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                    <div className="hidden flex-col items-end gap-4 text-right md:flex">
+                      <span className="text-[13px] leading-5 text-muted-foreground">{notice.posted_by}</span>
                       {notice.user_id === "current-user-id" && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDelete(notice.id)}
-                          className="h-5 w-5 p-0 hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(notice.id)} className="text-destructive hover:text-destructive">
+                          <Trash2 aria-hidden="true" /> Delete
                         </Button>
                       )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {notices.length === 0 && (
-          <Card className="p-12 text-center">
-            <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No notices yet</h3>
-            <p className="text-muted-foreground mt-1">Check back later for announcements</p>
-          </Card>
-        )}
+                  </li>
+                );
+              })}
+            </RowList>
+          ) : (
+            <EmptyState
+              title={notices.length === 0 ? "No notices yet." : "Nothing matches."}
+              text={notices.length === 0 ? "Announcements from offices, halls and departments will appear here." : "Try another category or a different search."}
+              action={notices.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Post the first notice</Button> : undefined}
+            />
+          )}
+        </section>
 
         {/* Post Notice Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Post New Notice</DialogTitle>
+              <DialogTitle>Post a notice.</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
                 <label className="block text-sm font-medium mb-1">Title *</label>
                 <Input
@@ -217,7 +214,7 @@ export default function Notices() {
                 <label className="block text-sm font-medium mb-1">Category *</label>
                 <Select 
                   value={formData.category}
-                  onValueChange={(value) => setFormData({...formData, category: value as any})}
+                  onValueChange={(value) => setFormData({ ...formData, category: value as Notice["category"] })}
                   disabled={isLoading}
                 >
                   <SelectTrigger>
