@@ -9,6 +9,7 @@
     "dev:backend": "node --env-file-if-exists=.env.local server.js",
     "db:reset": "node --env-file-if-exists=.env.local scripts/db-reset.mjs",
     "build": "vite build",
+    "start": "node server.js",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
