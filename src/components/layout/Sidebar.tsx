@@ -29,16 +29,16 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Lost and found", href: "/lost-found", icon: Search },
-  { title: "Complaints", href: "/complaints", icon: MessageSquare },
   { title: "Notices", href: "/notices", icon: Bell },
-  { title: "Marketplace", href: "/marketplace", icon: ShoppingBag },
-  { title: "Bicycles", href: "/bicycles", icon: Bike },
+  { title: "Lost and found", href: "/lost-found", icon: Search },
   { title: "Lend and borrow", href: "/lend-borrow", icon: BookOpen },
-  { title: "Animal welfare", href: "/animal-welfare", icon: Heart },
+  { title: "Marketplace", href: "/marketplace", icon: ShoppingBag },
+  { title: "Complaints", href: "/complaints", icon: MessageSquare },
+  { title: "Bicycles", href: "/bicycles", icon: Bike },
   { title: "Blood donation", href: "/blood-donation", icon: Droplets },
-  { title: "Student directory", href: "/students", icon: User },
+  { title: "Animal welfare", href: "/animal-welfare", icon: Heart },
   { title: "Faculty suggestions", href: "/faculty-suggestions", icon: GraduationCap },
+  { title: "Student directory", href: "/students", icon: User },
   { title: "Profile", href: "/profile", icon: User },
 ];
 
@@ -49,7 +49,7 @@ export function Sidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const visibleNavItems: NavItem[] =
     user?.role === "admin"
-      ? [{ title: "University network", href: "/central-admin", icon: Building2 }, ...navItems]
+      ? [...navItems, { title: "University network", href: "/central-admin", icon: Building2 }]
       : navItems;
   const activeTitle = visibleNavItems.find((item) => item.href === location.pathname)?.title ?? "Campus services";
 
