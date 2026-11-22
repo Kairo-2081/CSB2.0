@@ -216,6 +216,14 @@ class AuthService {
    * Logout user
    */
   logout(): void {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      // End the session on the server too; signing out locally never waits on it.
+      fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
   }

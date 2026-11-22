@@ -85,7 +85,7 @@ A comprehensive campus community management platform designed to streamline camp
 
 ### Backend
 - **Runtime**: Node.js with Express.js 4.22.1
-- **Database**: SQLite3 5.1.7 with sqlite abstraction layer
+- **Database**: PostgreSQL 14+ via `pg`; schema and PL/pgSQL functions in `schema.sql`
 - **Middleware**: CORS 2.8.5 for cross-origin requests
 - **Port**: 3001 (Express development server)
 - **Database File**: csb-2.0.db
@@ -142,10 +142,9 @@ campus-hub-main/
 │   ├── index.css              # Global styles
 │   └── vite-env.d.ts          # Vite environment types
 ├── supabase/
-│   ├── config.toml            # Supabase configuration
-│   └── migrations/
-│       └── init.sql           # Database initialization
-├── server.js                  # Express backend server
+│   └── config.toml            # Supabase configuration
+├── schema.sql                 # PostgreSQL: tables, seed and every function
+├── server.js                  # Express API; only calls schema.sql functions
 ├── vite.config.ts             # Vite configuration
 ├── tailwind.config.ts         # Tailwind CSS configuration
 ├── postcss.config.js          # PostCSS configuration
@@ -222,7 +221,7 @@ npm run preview
 1. **Frontend Development**: Vite provides hot module replacement (HMR) for instant feedback
 2. **Backend Development**: Express server runs with nodemon-like functionality
 3. **API Testing**: Use browser DevTools or Postman to test API endpoints
-4. **Database**: SQLite database automatically initializes on first backend run
+4. **Database**: the backend applies `schema.sql` to `DATABASE_URL` on every start
 
 ### Code Quality
 - Run `npm run lint` before committing code
@@ -264,19 +263,25 @@ view registry-wide student totals and university-level registration counts.
 The metrics endpoint requires a server-issued session token and an administrator
 account.
 
-### Central PostgreSQL schema
+### Database
 
-`schema.sql` is the initial PostgreSQL/PLpgSQL model for the cross-university
-registry. It includes a shared university catalog, account records, student
-profiles partitioned by university, registration functions, and an aggregate
-view for central-admin metrics. It seeds a starter catalog; additional
-universities can be registered through `register_university`.
+The backend runs on **PostgreSQL 14+**. `schema.sql` is the whole database:
+tables, indexes, triggers, the university seed and a PL/pgSQL function for
+every operation the API performs. `server.js` contains no SQL of its own; each
+route validates the request and calls one function, e.g.
+`SELECT create_notice($1, $2, $3, $4, $5)`.
 
-The running development backend still uses the existing SQLite database
-(`campus-hub.db`) and applies its local schema/migrations in `server.js`.
-`schema.sql` is the PostgreSQL foundation for the later central-database
-migration; it is not automatically applied by `npm run dev`. The data model is
-an initial framework and can be revised when the ERD is provided.
+1. Create a database and put its URL in `.env.local` (copy `.env.local.example`).
+2. `npm run dev`. The server runs `schema.sql` on every start; it is safe to re-run.
+
+- Functions return jsonb shaped like the API response. Client errors are raised
+  with SQLSTATE `CSnnn`, and the server answers with HTTP status `nnn`.
+- Passwords are bcrypt-hashed with `pgcrypto`. Sign-in sessions are stored in
+  `auth_sessions`, so they survive a restart.
+- Changed a column? `npm run db:reset` drops and rebuilds the local database
+  (deletes all data). Re-running `schema.sql` does not alter existing tables.
+- No accounts are seeded. Register, then promote the first admin:
+  `UPDATE users SET role = 'admin' WHERE lower(email) = lower('<their email>');`
 
 ### Data Endpoints
 ```http

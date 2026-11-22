@@ -17,7 +17,7 @@ You should see:
 ╔════════════════════════════════════════╗
 ║  🚀 Campus Hub Backend Server Ready    ║
 ║  URL: http://localhost:3001            ║
-║  Database: SQLite (campus-hub.db)      ║
+║  Database: PostgreSQL (schema.sql)     ║
 ╚════════════════════════════════════════╝
 ```
 
@@ -36,18 +36,14 @@ Navigate to: **http://localhost:5173**
 
 ---
 
-## 🔐 Demo Login Credentials
+## 🔐 Accounts
 
-### Admin Account
-- **Email:** admin@campushub.com
-- **Password:** Admin@123
+No demo accounts are seeded. Register a BUET account from the sign-up screen.
+Set up PostgreSQL first (see `DATABASE_SETUP.md`). To make the first admin, run this once:
 
-### Student Accounts (Password for all: `Student@123`)
-1. raj@student.com
-2. priya@student.com
-3. amit@student.com
-4. neha@student.com
-5. arjun@student.com
+```sql
+UPDATE users SET role = 'admin' WHERE lower(email) = lower('you@ugrad.cse.buet.ac.bd');
+```
 
 ---
 
@@ -55,7 +51,7 @@ Navigate to: **http://localhost:5173**
 
 ```
 campus-hub-main/
-├── server.js                 # Backend server (Node.js + Express + SQLite)
+├── server.js                 # Backend API (Node.js + Express + PostgreSQL)
 ├── src/
 │   ├── App.tsx              # Main app component
 │   ├── main.tsx             # React entry point
@@ -89,7 +85,7 @@ campus-hub-main/
 - Admin-only pages support
 
 ✅ **Database**
-- SQLite local database
+- PostgreSQL database defined in schema.sql
 - Automatic schema creation
 - Default demo accounts
 
@@ -164,8 +160,8 @@ Get-Process -Id (Get-NetTCPConnection -LocalPort 3001).OwningProcess | Stop-Proc
 ### Database Error
 Reset the database:
 ```bash
-Remove-Item campus-hub.db -Force
-node server.js
+npm run db:reset   # drops all local data, rebuilds from schema.sql
+npm run dev
 ```
 
 ### CORS Error
@@ -211,9 +207,7 @@ NODE_ENV=production node server.js
 ```
 
 For deployment, consider:
-- Using PostgreSQL instead of SQLite
 - Implementing JWT authentication
-- Adding password hashing (bcrypt)
 - Setting up environment variables
 - Using a process manager (PM2)
 
