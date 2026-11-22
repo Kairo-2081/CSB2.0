@@ -1,10 +1,10 @@
-# Obsidian, Ivory and Sand
+# Obsidian, Ivory and Saffron
 
 ## Visual direction
 
 CSB 2.0 reads like an architecture studio's site for a campus: a near-black
-field, ivory type, a warm sand accent and real BUET photography graded toward
-dusk. The landing page sets the tone; every signed-in page carries the same
+field, ivory type, a saffron accent and real BUET photography in its own
+colour, warmed toward the accent. The landing page sets the tone; every signed-in page carries the same
 editorial voice through the shared `PageHeader`.
 
 ## Palette
@@ -13,17 +13,16 @@ editorial voice through the shared `PageHeader`.
 - Panel: `rgba(22, 20, 18, 0.72)` with a `rgba(244, 239, 232, 0.08)` edge
 - Ivory (main text): `#F4EFE8`
 - Stone (secondary text): `#B7AEA4`
-- Sand (primary action, active marker): `#A88D76`, hover `#BCA08A`
-- Pale sand (accent lines in headlines): `#CDB9A5`
+- Saffron (primary action, active marker, headline second clause): `#F2A93B`, hover `#F6BB5C`, text on it `#140D04`
+- Light saffron (`--accent`, kickers and highlights): `#F6C26B`
 - Status: success, info, warning and destructive tokens in `src/index.css`
 
 ## Type
 
-- Display: the system serif stack (`font-display`: Iowan Old Style, Palatino,
-  Georgia). Use it for page titles, dialog titles, panel titles and big
-  numbers, at weight 400 with tight tracking. Don't load a web font without an
-  approved asset.
-- Interface: the system sans stack for everything else.
+- Display: Instrument Serif (`font-display`, bundled via `@fontsource`). Page
+  titles, dialog titles, panel titles and big numbers. It has one weight (400);
+  never set it bold, the browser would fake it.
+- Interface: Geist (`font-sans`, variable). Geist Mono for code.
 - Labels: 11px uppercase with 0.14–0.2em tracking for eyebrows, nav and
   button text on large buttons.
 
@@ -32,32 +31,35 @@ editorial voice through the shared `PageHeader`.
 Photos live in `public/campus/` as WebP:
 
 - `buet-hero.webp` (1720 px) and `buet-hero-960.webp`: landing hero, sign-in
-  panel. The only photo sharp enough to fill a screen.
-- `buet-day-reflection.webp` (640 px) and `buet-dusk-reflection.webp`
-  (531 px): the dashboard picks one by time of day; the 404 uses the day one.
-  Keep these at their native size or smaller, since they blur when stretched.
+  panel.
+- `bands/*.webp` (1100×520) with `bands/*@2x.webp` (2200×1040) twins: page
+  header bands. `PageHeader` picks one with `srcset`.
 
-Grade every photo down (`.landing-photo`, `.auth-photo`, `.dashboard-photo`)
-so type always sits on a dark, warm field.
+The source photos are small web-saved copies (455–738 px). Bands are made by
+upscaling the source 4× with Real-ESRGAN (x4plus), then grading. Replace them
+with camera originals (2000 px or wider) when available.
+
+Photos keep their colour. The grade only normalises exposure, lands blacks on
+the page colour and warms highlights toward saffron; the dark fade in
+`.page-band-shade` keeps type readable.
 
 ## Surfaces
 
 - Panels are matte and warm, with a fine ivory edge and soft depth; no violet
   glow, no star field.
 - Corners are small: 6px on controls, 12px on panels.
-- Icons are outlined, 1.5px stroke, in pale sand. No filled icon tiles.
+- Icons are outlined, 1.5px stroke, in saffron or stone. No filled icon tiles.
 
 ## Layout
 
 - Keep the floating navigation rail and give the main workspace a generous
-  black canvas. The active item gets a 1px sand marker, not a glow.
+  black canvas. The active item gets a 1px saffron marker, not a glow.
 - Every signed-in page opens with `PageHeader`: "BUET • section" eyebrow,
-  serif title with an optional pale-sand second clause, a short rule, and the
+  serif title with an optional saffron second clause, a short rule, and the
   page's main action on the right.
 - The landing page is the one cinematic surface: a full-bleed BUET campus
-  photograph graded to dusk (`public/campus/buet-hero*.webp`), warm sand accent
-  `#A88D76`, ivory text `#F4EFE8`, and a system serif display stack
-  (`font-display`, Iowan / Palatino / Georgia) for headlines only. The
+  photograph (`public/campus/buet-hero*.webp`), saffron accent `#F2A93B`,
+  ivory text `#F4EFE8`, and Instrument Serif headlines. The
   application behind sign-in keeps the violet glass system.
 - The landing stats strip shows live BUET counts from
   `/api/public/campus-stats` only once at least two are non-zero; until then it
@@ -84,5 +86,5 @@ focus, and maintain readable text contrast on translucent surfaces.
 
 ## Photos
 
-Run new photos through `scripts/grade-photos.py --band 1100x520 --grain` into `public/campus/bands`. Prefer real photos; drawn or rendered stand-ins for a page read as AI art next to photographs.
+Upscale new photos 4× if they are under 2200 px wide, then run `scripts/grade-photos.py SRC public/campus/bands/NAME@2x.webp --band 2200x1040 --grain` and again with `--band 1100x520` for `NAME.webp`. Prefer real photos; drawn or rendered stand-ins for a page read as AI art next to photographs.
 
