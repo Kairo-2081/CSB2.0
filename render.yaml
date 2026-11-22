@@ -1,4 +1,4 @@
-# Render Blueprint: one web service (site + API) and one PostgreSQL database.
+# Render Blueprint: one web service (site + API). The database is on Neon.
 # New deploy: Render dashboard → New → Blueprint → pick this repo.
 services:
   - type: web
@@ -15,12 +15,7 @@ services:
         value: production
       - key: OPEN_UNIVERSITIES
         value: buet
+      # Neon connection string (Neon console -> Connect). Render asks for it
+      # when the Blueprint is created; it is never stored in the repo.
       - key: DATABASE_URL
-        fromDatabase:
-          name: csb2-db
-          property: connectionString
-
-databases:
-  - name: csb2-db
-    plan: free
-    databaseName: csb2
+        sync: false
