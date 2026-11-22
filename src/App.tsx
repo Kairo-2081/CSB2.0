@@ -23,6 +23,7 @@ const FacultySuggestions = lazy(() => import("./pages/FacultySuggestions"));
 const Profile = lazy(() => import("./pages/Profile"));
 const CentralAdmin = lazy(() => import("./pages/CentralAdmin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 const Bicycles = lazy(() => import("./pages/Bicycles"));
 const LendBorrow = lazy(() => import("./pages/LendBorrow"));
 
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/students" element={<Module><Students /></Module>} />
             <Route path="/faculty-suggestions" element={<Module><FacultySuggestions /></Module>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
