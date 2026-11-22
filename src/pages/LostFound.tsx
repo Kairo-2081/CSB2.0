@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { DateBlock, EmptyState, FilterBar, RowList } from "@/components/editorial";
+import { StatusDot } from "@/components/ui/status-dot";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,7 +58,7 @@ export default function LostFound() {
     title: "",
     description: "",
     location: "",
-    type: "lost" as const,
+    type: "lost" as "lost" | "found",
     posted_by: "Anonymous",
     contact_number: "",
   });
@@ -140,134 +142,88 @@ export default function LostFound() {
           eyebrow={"Lost & found"}
           title="Lost something?"
           accent="Found something?"
-          description="Report lost items or help others find theirs."
+          description="Report it here. Most things turn up within a day or two."
           actions={
             <>
-              <Button 
-             
-                className="gap-2"
-                onClick={() => setIsDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Post Item
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus aria-hidden="true" />
+                Report an item
               </Button>
             </>
           }
         />
 
-        {/* Search and Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+        <section aria-label="Lost and found items">
+          <FilterBar<"all" | "lost" | "found">
+            label="Show"
+            tabs={[
+              { value: "all", label: "All", count: items.length },
+              { value: "lost", label: "Lost", count: items.filter((i) => i.item_type === "lost").length },
+              { value: "found", label: "Found", count: items.filter((i) => i.item_type === "found").length },
+            ]}
+            value={filter}
+            onChange={setFilter}
+            search={searchQuery}
+            onSearch={setSearchQuery}
+            searchLabel="Search items"
+          />
+
+          {filteredItems.length > 0 ? (
+            <RowList label="Items">
+              {filteredItems.map((item) => (
+                <li key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)] gap-5 py-8 md:grid-cols-[96px_minmax(0,1fr)_220px] md:gap-8">
+                  <DateBlock date={item.created_at} />
+                  <div className="min-w-0">
+                    <StatusDot tone={item.item_type === "found" ? "resolved" : "open"} className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8d857c]">
+                      {item.item_type === "found" ? "Found" : "Lost"}
+                    </StatusDot>
+                    <h3 className="mt-2.5 font-display text-[26px] font-normal leading-[1.2]">{item.title}</h3>
+                    {item.description && <p className="mt-2 max-w-2xl text-[15px] leading-[26px] text-muted-foreground">{item.description}</p>}
+                    <p className="mt-2.5 flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin aria-hidden="true" className="h-3.5 w-3.5" />
+                      {item.location}
+                    </p>
+                  </div>
+                  <div className="col-span-2 flex items-center justify-between gap-3 md:col-span-1 md:flex-col md:items-end">
+                    <span className="text-[13px] text-muted-foreground">Posted by {item.posted_by}</span>
+                    {item.contact_number && (
+                      <a
+                        href={`tel:${item.contact_number}`}
+                        className="inline-flex h-10 items-center rounded-md border border-foreground/30 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground transition-colors hover:border-foreground/70"
+                      >
+                        Call {item.contact_number}
+                      </a>
+                    )}
+                    {item.user_id === "current-user-id" && (
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
+                        <Trash2 aria-hidden="true" /> Delete
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </RowList>
+          ) : (
+            <EmptyState
+              title={items.length === 0 ? "Nothing reported yet." : "Nothing matches."}
+              text={items.length === 0 ? "Lost something on campus, or found something that isn't yours? Post it here." : "Try another tab or a different search."}
+              action={items.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Report an item</Button> : undefined}
             />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={filter === "all" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setFilter("all")}
-            >
-              All
-            </Button>
-            <Button
-              variant={filter === "lost" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setFilter("lost")}
-            >
-              Lost
-            </Button>
-            <Button
-              variant={filter === "found" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setFilter("found")}
-            >
-              Found
-            </Button>
-          </div>
-        </div>
-
-        {/* Items Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((item, index) => (
-            <Card 
-              key={item.id}
-              className=""
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <Badge variant={item.item_type === "lost" ? "destructive" : "success"}>
-                      {item.item_type === "lost" ? "Lost" : "Found"}
-                    </Badge>
-                    <CardTitle className="text-lg mt-2">{item.title}</CardTitle>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">{item.description}</p>
-                
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4" />
-                    {item.location}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" />
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <User className="h-4 w-4" />
-                    {item.posted_by}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-border gap-2">
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
-                  {item.user_id === "current-user-id" && (
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => handleDelete(item.id)}
-                      className="gap-2"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredItems.length === 0 && (
-          <Card className="p-12 text-center">
-            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No items found</h3>
-            <p className="text-muted-foreground mt-1">Try adjusting your search or filters</p>
-          </Card>
-        )}
+          )}
+        </section>
 
         {/* New Item Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Report Lost/Found Item</DialogTitle>
+              <DialogTitle>Report an item.</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
                 <label className="block text-sm font-medium mb-1">Type *</label>
                 <Select 
                   value={formData.type}
-                  onValueChange={(value) => setFormData({...formData, type: value as any})}
+                  onValueChange={(value) => setFormData({...formData, type: value as "lost" | "found"})}
                   disabled={isLoading}
                 >
                   <SelectTrigger>
