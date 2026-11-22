@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local SQLite database, built from schema.sql on server start
+*.db
+*.db-journal
