@@ -202,7 +202,7 @@ describe('passwords and sessions', () => {
     const c = client(srv.base);
     const res = await c.post('/api/auth/register', {
       name: 'Cookie', email: `cookie-${Date.now()}@buet.ac.bd`, password: 'Passw0rd!x', phone: '01711111111',
-      department: 'EEE', universityName: 'BUET', homeDistrict: 'Khulna', currentResidence: 'Titumir Hall',
+      department: 'EEE', universityName: 'BUET', homeDistrict: 'Khulna', currentResidence: 'Titumir Hall', consent: true,
     });
     assert.equal(res.data.token, undefined);
     const setCookie = res.headers.get('set-cookie');
@@ -251,7 +251,7 @@ describe('passwords and sessions', () => {
   test('sign-up needs a university email', async () => {
     const res = await client(srv.base).post('/api/auth/register', {
       name: 'Gmail', email: `x${Date.now()}@gmail.com`, password: 'Passw0rd!x', phone: '01722222222',
-      department: 'ME', universityName: 'BUET', homeDistrict: 'Sylhet', currentResidence: 'Hall',
+      department: 'ME', universityName: 'BUET', homeDistrict: 'Sylhet', currentResidence: 'Hall', consent: true,
     });
     assert.equal(res.status, 400);
   });

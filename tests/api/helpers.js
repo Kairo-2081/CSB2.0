@@ -84,6 +84,7 @@ export async function signUp(base, { university = 'BUET', domain = 'buet.ac.bd',
     universityName: university,
     homeDistrict: 'Dhaka',
     currentResidence: 'Ahsanullah Hall',
+    consent: true,
   });
   if (res.status !== 201) throw new Error(`sign-up failed: ${res.status} ${JSON.stringify(res.data)}`);
   return { c, user: res.data.user, email, password: 'Passw0rd!x' };
