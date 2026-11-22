@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { hueFor } from "@/lib/board-hues";
 
 interface NavItem {
   title: string;
@@ -72,23 +73,25 @@ export function Sidebar() {
       {items.map((item) => {
         const active = location.pathname === item.href;
         return (
-          <li key={item.href}>
+          <li key={item.href} className="hue-scope" style={{ "--hue": hueFor(item.href) } as React.CSSProperties}>
             <Link
               to={item.href}
               onClick={() => setIsMobileOpen(false)}
               className={cn(
-                "group relative flex items-center gap-3 rounded-sm px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-[color,background-color,transform] duration-200",
+                "group relative flex items-center gap-3 rounded-lg px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-[color,background-color,transform] duration-200",
                 active
-                  ? "bg-foreground/[0.04] text-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:origin-center before:animate-[nav-indicator_320ms_cubic-bezier(.2,.8,.2,1)] before:rounded-full before:bg-primary"
+                  ? "bg-third/15 font-semibold text-third-ink"
                   : "text-foreground/75 hover:translate-x-0.5 hover:text-foreground",
               )}
             >
-              <item.icon
+              <span
                 className={cn(
-                  "h-[18px] w-[18px] transition-colors",
-                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-[background-color,transform] duration-200 group-hover:scale-110",
+                  active ? "bg-third text-background" : "bg-third/15 text-third-ink",
                 )}
-              />
+              >
+                <item.icon className="h-4 w-4" />
+              </span>
               {item.title}
             </Link>
           </li>

@@ -3,7 +3,7 @@
 export const CHART = {
   saffron: "hsl(var(--glow))",
   green: "hsl(var(--success))",
-  blue: "hsl(var(--info))",
+  blue: "hsl(var(--third))",
   olive: "hsl(var(--muted-foreground) / 0.55)",
   grid: "hsl(var(--chart-grid))",
   muted: "hsl(var(--muted-foreground))",
