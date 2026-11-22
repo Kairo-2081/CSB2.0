@@ -1,0 +1,24 @@
+# Render Blueprint: one web service (site + API). The database is on Neon.
+# New deploy: Render dashboard → New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: csb2-sg
+    runtime: node
+    plan: free
+    # Render cannot move a service between regions. Singapore is closest to
+    # Bangladesh and is where the Neon database lives.
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: OPEN_UNIVERSITIES
+        value: buet
+      # Neon connection string (Neon console -> Connect). Render asks for it
+      # when the Blueprint is created; it is never stored in the repo.
+      - key: DATABASE_URL
+        sync: false

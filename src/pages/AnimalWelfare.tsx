@@ -90,6 +90,7 @@ export default function AnimalWelfare() {
         description: formData.description,
         location: formData.location,
         urgency: formData.urgency_level,
+        posted_by: formData.posted_by,
         user_id: "current-user-id",
       });
       toast.success("Report submitted successfully!");

@@ -1,306 +1,113 @@
 import express from 'express';
 import cors from 'cors';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import fs from 'fs';
 import path from 'path';
-import { randomBytes } from 'crypto';
+import pg from 'pg';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
+// The database lives entirely in schema.sql (tables, seed data and every
+// function). This file only validates requests and calls those functions.
+
+const PORT = Number(process.env.PORT) || 3001;
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://localhost:5432/csb2';
 // CSB 2.0 opens at BUET first. Add slugs here (comma-separated) to open more campuses.
 const OPEN_UNIVERSITY_SLUGS = (process.env.OPEN_UNIVERSITIES || 'buet')
   .split(',')
   .map((slug) => slug.trim().toLowerCase())
   .filter(Boolean);
-const PORT = 3001;
-const authSessions = new Map();
-const UNIVERSITY_CATALOG = [
-  { name: 'Bangladesh University of Engineering and Technology', shortName: 'BUET', division: 'Dhaka' },
-  { name: 'Rajshahi University of Engineering and Technology', shortName: 'RUET', division: 'Rajshahi' },
-  { name: 'University of Dhaka', shortName: 'DU', division: 'Dhaka' },
-  { name: 'University of Rajshahi', shortName: 'RU', division: 'Rajshahi' },
-  { name: 'University of Chittagong', shortName: 'CU', division: 'Chattogram' },
-  { name: 'Jahangirnagar University', shortName: 'JU', division: 'Dhaka' },
-  { name: 'Khulna University', shortName: 'KU', division: 'Khulna' },
-  { name: 'Shahjalal University of Science and Technology', shortName: 'SUST', division: 'Sylhet' },
-  { name: 'Chittagong University of Engineering and Technology', shortName: 'CUET', division: 'Chattogram' },
-  { name: 'Khulna University of Engineering and Technology', shortName: 'KUET', division: 'Khulna' },
-  { name: 'Dhaka University of Engineering and Technology', shortName: 'DUET', division: 'Dhaka' },
-  { name: 'Bangladesh Agricultural University', shortName: 'BAU', division: 'Mymensingh' },
-];
 
-// Middleware
+// Hosted Postgres (Render's external URL, Supabase) needs TLS; local and Render's
+// internal URL do not. Set DATABASE_SSL=true to force it on.
+const useSsl = process.env.DATABASE_SSL === 'true' || /sslmode=require/.test(DATABASE_URL);
+const pool = new pg.Pool({
+  connectionString: DATABASE_URL,
+  ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+});
+let dbReady = false;
+
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ 
-    success: false, 
-    error: 'Internal server error',
-    details: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// Initialize database
-let db;
-let dbReady = false;
-
-async function initializeDatabase() {
-  db = await open({
-    filename: path.join(__dirname, 'campus-hub.db'),
-    driver: sqlite3.Database,
-  });
-
-  // Create tables
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      role TEXT DEFAULT 'student',
-      phone TEXT,
-      department TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS universities (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      slug TEXT NOT NULL UNIQUE,
-      short_name TEXT,
-      division TEXT,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_universities_name
-      ON universities(name COLLATE NOCASE);
-
-    CREATE TABLE IF NOT EXISTS complaints (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      category TEXT NOT NULL,
-      posted_by TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      status TEXT DEFAULT 'pending',
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS notices (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      category TEXT NOT NULL,
-      posted_by TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS marketplace (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      price REAL NOT NULL,
-      seller TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS animal_welfare (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      location TEXT NOT NULL,
-      urgency TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS faculty_suggestions (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      faculty_name TEXT NOT NULL,
-      rating INTEGER NOT NULL,
-      feedback TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS blood_donation (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      blood_type TEXT NOT NULL,
-      contact_number TEXT NOT NULL,
-      location TEXT NOT NULL,
-      available_date TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS bicycles (
-      id TEXT PRIMARY KEY,
-      brand TEXT NOT NULL,
-      color TEXT NOT NULL,
-      location TEXT NOT NULL,
-      contact_number TEXT NOT NULL,
-      description TEXT,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS lending_items (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      category TEXT NOT NULL,
-      item_condition TEXT NOT NULL,
-      handoff_location TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'borrowed')),
-      owner_id TEXT NOT NULL,
-      university_id TEXT,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (owner_id) REFERENCES users(id),
-      FOREIGN KEY (university_id) REFERENCES universities(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS lending_requests (
-      id TEXT PRIMARY KEY,
-      item_id TEXT NOT NULL,
-      requester_id TEXT NOT NULL,
-      message TEXT,
-      status TEXT NOT NULL DEFAULT 'pending'
-        CHECK (status IN ('pending', 'approved', 'declined', 'returned')),
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (item_id) REFERENCES lending_items(id),
-      FOREIGN KEY (requester_id) REFERENCES users(id)
-    );
-
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_lending_active_request
-      ON lending_requests(item_id, requester_id)
-      WHERE status IN ('pending', 'approved');
-
-    CREATE TABLE IF NOT EXISTS lost_found (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      item_type TEXT NOT NULL,
-      status TEXT DEFAULT 'lost',
-      location TEXT NOT NULL,
-      contact_number TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  const userColumns = await db.all('PRAGMA table_info(users)');
-  const existingUserColumns = new Set(userColumns.map((column) => column.name));
-  for (const [column, definition] of [
-    ['university_id', 'TEXT'],
-    ['home_district', 'TEXT'],
-    ['current_residence', 'TEXT'],
-  ]) {
-    if (!existingUserColumns.has(column)) {
-      await db.exec(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
-    }
-  }
-
-  for (const university of UNIVERSITY_CATALOG) {
-    const slug = university.shortName.toLowerCase();
-    await db.run(
-      `INSERT OR IGNORE INTO universities (id, name, slug, short_name, division)
-       VALUES (?, ?, ?, ?, ?)`,
-      [slug, university.name, slug, university.shortName, university.division]
-    );
-  }
-
-  // Insert default users (Admin + 5 Students)
-  try {
-    const existingUsers = await db.all('SELECT COUNT(*) as count FROM users');
-    if (existingUsers[0].count === 0) {
-      const defaultUsers = [
-        // Admin User
-        { id: 'admin_1', name: 'Admin User', email: 'admin@campushub.com', password: 'Admin@123', role: 'admin', phone: '9876543210', department: 'Administration' },
-        // Student Users
-        { id: 'student_1', name: 'Raj Kumar', email: 'raj@student.com', password: 'Student@123', role: 'student', phone: '9876543211', department: 'Computer Science' },
-        { id: 'student_2', name: 'Priya Singh', email: 'priya@student.com', password: 'Student@123', role: 'student', phone: '9876543212', department: 'Engineering' },
-        { id: 'student_3', name: 'Amit Patel', email: 'amit@student.com', password: 'Student@123', role: 'student', phone: '9876543213', department: 'Business' },
-        { id: 'student_4', name: 'Neha Sharma', email: 'neha@student.com', password: 'Student@123', role: 'student', phone: '9876543214', department: 'Medicine' },
-        { id: 'student_5', name: 'Arjun Verma', email: 'arjun@student.com', password: 'Student@123', role: 'student', phone: '9876543215', department: 'Law' }
-      ];
-
-      for (const user of defaultUsers) {
-        await db.run(
-          'INSERT INTO users (id, name, email, password, role, phone, department, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [user.id, user.name, user.email, user.password, user.role, user.phone, user.department, new Date().toISOString(), new Date().toISOString()]
-        );
-      }
-      console.log('✅ Default users created');
-    }
-  } catch (error) {
-    console.log('Users already exist or error:', error.message);
-  }
-
-  dbReady = true;
-  console.log('✅ Database initialized successfully');
-}
-
-// Database ready check middleware
 app.use((req, res, next) => {
   if (!dbReady && req.path !== '/api/health') {
-    return res.status(503).json({
-      success: false,
-      error: 'Database is not ready. Please try again in a moment.'
-    });
+    return res.status(503).json({ success: false, error: 'Database is not ready. Please try again in a moment.' });
   }
   next();
 });
 
-// ========== HEALTH CHECK ==========
+// ========== DATABASE ==========
 
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    status: 'ok',
-    database: dbReady ? 'ready' : 'initializing',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// ========== AUTHENTICATION ==========
-
-// Generate UUID
-function generateId() {
-  return 'id_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+async function initializeDatabase() {
+  const client = await pool.connect();
+  try {
+    await client.query(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'));
+  } finally {
+    client.release();
+  }
+  dbReady = true;
+  console.log('✅ Database initialized from schema.sql');
 }
 
-// Validate email format
+// Call one function from schema.sql and return its jsonb result.
+// `fn` is always a constant name from this file, never user input.
+async function call(fn, ...args) {
+  const placeholders = args.map((_, i) => `$${i + 1}`).join(', ');
+  const { rows } = await pool.query(`SELECT ${fn}(${placeholders}) AS result`, args);
+  return rows[0].result;
+}
+
+// schema.sql raises SQLSTATE 'CSnnn' for client errors, where nnn is the HTTP status.
+function sendError(res, error, fallback) {
+  if (/^CS\d{3}$/.test(error.code || '')) {
+    return res.status(Number(error.code.slice(2))).json({ success: false, error: error.message });
+  }
+  if (error.code === '23505') {
+    return res.status(409).json({ success: false, error: 'That record already exists' });
+  }
+  // not-null, check, bad number/date/text input
+  if (['23502', '23514', '22P02', '22007', '22008', '22003', '22001'].includes(error.code)) {
+    return res.status(400).json({ success: false, error: 'Some fields are missing or invalid' });
+  }
+  console.error(`${fallback}:`, error);
+  return res.status(500).json({ success: false, error: fallback });
+}
+
+// Wrap a handler: it returns the response body; `status` sets the success code.
+const route = (fallback, handler, status = 200) => async (req, res) => {
+  try {
+    const body = await handler(req, res);
+    if (!res.headersSent) res.status(status).json(body);
+  } catch (error) {
+    sendError(res, error, fallback);
+  }
+};
+
+const clientError = (status, message) =>
+  Object.assign(new Error(message), { code: `CS${status}` });
+
+function bearerToken(req) {
+  const header = req.headers.authorization || '';
+  return header.startsWith('Bearer ') ? header.substring(7) : null;
+}
+
+async function sessionUserId(req) {
+  const token = bearerToken(req);
+  return token ? call('session_user_id', token) : null;
+}
+
+// ========== VALIDATION ==========
+
 function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// Validate password strength
 function validatePassword(password) {
   return (
+    typeof password === 'string' &&
     password.length >= 8 &&
     /[A-Z]/.test(password) &&
     /[a-z]/.test(password) &&
@@ -309,1114 +116,245 @@ function validatePassword(password) {
   );
 }
 
-function createAuthToken(userId) {
-  const token = randomBytes(32).toString('hex');
-  authSessions.set(token, {
-    userId,
-    expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+const text = (value) => (typeof value === 'string' ? value : value == null ? null : String(value));
+
+// ========== HEALTH ==========
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    database: dbReady ? 'ready' : 'initializing',
+    timestamp: new Date().toISOString(),
   });
-  return token;
+});
+
+// ========== AUTHENTICATION ==========
+
+app.post('/api/auth/login', route('Internal server error', async (req) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) throw clientError(400, 'Email and password are required');
+  return call('login_user', text(email), text(password));
+}));
+
+app.post('/api/auth/register', route('Failed to create account', async (req) => {
+  const { name, email, password, phone, department, universityName, homeDistrict, currentResidence } = req.body || {};
+  const required = [name, email, password, phone, department, universityName, homeDistrict, currentResidence];
+  if (required.some((field) => typeof field !== 'string' || !field.trim())) {
+    throw clientError(400, 'Name, email, password, phone, university, department, home district, and current residence are required');
+  }
+  if (!validateEmail(email.trim().toLowerCase())) throw clientError(400, 'Invalid email format');
+  if (!validatePassword(password)) {
+    throw clientError(400, 'Password must be at least 8 characters and contain uppercase, lowercase, number, and special character');
+  }
+  return call(
+    'register_user',
+    name, email, password, phone, department, universityName, homeDistrict, currentResidence,
+    OPEN_UNIVERSITY_SLUGS,
+  );
+}, 201));
+
+app.get('/api/auth/verify', route('Verification failed', async (req) => {
+  const token = bearerToken(req);
+  if (!token) throw clientError(401, 'A valid session is required');
+  return call('verify_session', token);
+}));
+
+app.post('/api/auth/logout', route('Failed to sign out', async (req) => {
+  const token = bearerToken(req);
+  if (token) await call('end_session', token);
+  return { success: true };
+}));
+
+app.put('/api/auth/profile/:id', route('Failed to update profile', async (req) => {
+  const actorId = await sessionUserId(req);
+  if (!actorId) throw clientError(401, 'A valid session is required');
+  const allowed = ['name', 'phone', 'department'];
+  const updates = Object.fromEntries(
+    Object.entries(req.body || {}).filter(([key, value]) => allowed.includes(key) && typeof value === 'string'),
+  );
+  if (Object.keys(updates).length === 0) throw clientError(400, 'No supported profile fields were provided');
+  return call('update_profile', actorId, req.params.id, updates.name ?? null, updates.phone ?? null, updates.department ?? null);
+}));
+
+app.post('/api/auth/change-password', route('Failed to change password', async (req) => {
+  const { userId, oldPassword, newPassword } = req.body || {};
+  if (!userId || !oldPassword || !newPassword) throw clientError(400, 'All fields are required');
+  if (!validatePassword(newPassword)) throw clientError(400, 'New password does not meet security requirements');
+  return call('change_password', text(userId), text(oldPassword), text(newPassword));
+}));
+
+app.get('/api/auth/users', route('Failed to load users', () => call('list_users')));
+
+// ========== UNIVERSITIES & STATS ==========
+
+app.get('/api/universities', route('Failed to load universities', () =>
+  call('list_open_universities', OPEN_UNIVERSITY_SLUGS)));
+
+app.get('/api/public/campus-stats', route('Failed to load campus stats', () =>
+  call('campus_stats', 'buet')));
+
+app.get('/api/admin/metrics', route('Failed to load university metrics', async (req) =>
+  call('admin_metrics', await sessionUserId(req))));
+
+// ========== CAMPUS BOARDS ==========
+
+app.get('/api/notices', route('Failed to load notices', () => call('list_notices')));
+app.post('/api/notices', route('Failed to post notice', (req) => {
+  const b = req.body || {};
+  return call('create_notice', text(b.title), text(b.description), text(b.category), text(b.posted_by), text(b.user_id));
+}));
+app.delete('/api/notices/:id', route('Failed to delete notice', (req) => call('delete_notice', req.params.id)));
+
+app.get('/api/complaints', route('Failed to load complaints', () => call('list_complaints')));
+app.post('/api/complaints', route('Failed to post complaint', (req) => {
+  const b = req.body || {};
+  return call('create_complaint', text(b.title), text(b.description), text(b.category), text(b.posted_by), text(b.user_id));
+}));
+app.delete('/api/complaints/:id', route('Failed to delete complaint', (req) => {
+  const { userId, userRole } = req.body || {};
+  return call('delete_complaint', req.params.id, text(userId), text(userRole));
+}));
+
+app.get('/api/faculty-suggestions', route('Failed to load suggestions', () => call('list_faculty_suggestions')));
+app.post('/api/faculty-suggestions', route('Failed to submit suggestion', (req) => {
+  const b = req.body || {};
+  return call(
+    'create_faculty_suggestion',
+    text(b.title), text(b.faculty_name), text(b.subject), parseInt(b.rating, 10),
+    text(b.feedback), text(b.posted_by), text(b.user_id),
+  );
+}));
+app.delete('/api/faculty-suggestions/:id', route('Failed to delete suggestion', (req) =>
+  call('delete_faculty_suggestion', req.params.id)));
+
+app.get('/api/marketplace', route('Failed to load listings', () => call('list_marketplace')));
+app.post('/api/marketplace', route('Failed to post item', async (req) => {
+  const b = req.body || {};
+  if (!Number.isFinite(Number(b.price)) || Number(b.price) < 0) throw clientError(400, 'Enter a valid price');
+  return call(
+    'create_marketplace_item',
+    text(b.title), text(b.description), Number(b.price), text(b.category),
+    text(b.seller), text(b.phone), text(b.user_id),
+  );
+}));
+app.delete('/api/marketplace/:id', route('Failed to delete item', (req) => {
+  const { userId, userRole } = req.body || {};
+  return call('delete_marketplace_item', req.params.id, text(userId), text(userRole));
+}));
+
+app.get('/api/lost-found', route('Failed to load items', () => call('list_lost_found')));
+app.post('/api/lost-found', route('Failed to post item', (req) => {
+  const b = req.body || {};
+  return call(
+    'create_lost_found_item',
+    text(b.title), text(b.description), text(b.item_type), text(b.status),
+    text(b.location), text(b.contact_number), text(b.posted_by), text(b.user_id),
+  );
+}));
+app.delete('/api/lost-found/:id', route('Failed to delete item', (req) => call('delete_lost_found_item', req.params.id)));
+
+app.get('/api/bicycles', route('Failed to load bicycles', () => call('list_bicycles')));
+app.post('/api/bicycles', route('Failed to add bicycle', (req) => {
+  const b = req.body || {};
+  return call(
+    'create_bicycle',
+    text(b.brand), text(b.color), text(b.location), text(b.contact_number), text(b.description), text(b.user_id),
+  );
+}));
+app.delete('/api/bicycles/:id', route('Failed to delete bicycle', (req) => call('delete_bicycle', req.params.id)));
+
+app.get('/api/blood-donation', route('Failed to load donors', () => call('list_blood_donors')));
+app.post('/api/blood-donation', route('Failed to register donor', (req) => {
+  const b = req.body || {};
+  return call(
+    'create_blood_donor',
+    text(b.name), text(b.blood_type), text(b.contact_number), text(b.location),
+    text(b.available_date) || null, text(b.user_id),
+  );
+}));
+app.delete('/api/blood-donation/:id', route('Failed to delete donor entry', (req) => {
+  const { userId, userRole } = req.body || {};
+  return call('delete_blood_donor', req.params.id, text(userId), text(userRole));
+}));
+
+app.get('/api/animal-welfare', route('Failed to load reports', () => call('list_animal_reports')));
+app.post('/api/animal-welfare', route('Failed to submit report', (req) => {
+  const b = req.body || {};
+  return call(
+    'create_animal_report',
+    text(b.title), text(b.description), text(b.location), text(b.urgency), text(b.posted_by), text(b.user_id),
+  );
+}));
+app.delete('/api/animal-welfare/:id', route('Failed to delete report', (req) => call('delete_animal_report', req.params.id)));
+
+// ========== LEND & BORROW ==========
+
+app.get('/api/lend-borrow/items', route('Failed to load lending listings', async (req) =>
+  call('list_lending_items', await sessionUserId(req))));
+
+app.post('/api/lend-borrow/items', route('Failed to create lending listing', async (req) => {
+  const b = req.body || {};
+  return call(
+    'create_lending_item',
+    await sessionUserId(req), text(b.title), text(b.description), text(b.category),
+    text(b.itemCondition), text(b.handoffLocation),
+  );
+}, 201));
+
+app.get('/api/lend-borrow/requests', route('Failed to load borrow requests', async (req) =>
+  call('list_lending_requests', await sessionUserId(req))));
+
+app.post('/api/lend-borrow/items/:id/requests', route('Failed to send borrow request', async (req) =>
+  call('request_to_borrow', await sessionUserId(req), req.params.id, text(req.body?.message)), 201));
+
+app.patch('/api/lend-borrow/requests/:id', route('Failed to update borrow request', async (req) =>
+  call('update_lending_request', await sessionUserId(req), req.params.id, text(req.body?.action))));
+
+// ========== FRONTEND ==========
+// In production the same service serves the built React app (npm run build -> dist/).
+// Unknown /api paths get a JSON 404; every other GET falls back to index.html so
+// client-side routes like /dashboard work on refresh.
+
+const DIST_DIR = path.join(__dirname, 'dist');
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, error: `No API route for ${req.method} ${req.originalUrl}` });
+});
+
+if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
+  app.use(express.static(DIST_DIR, { index: false, maxAge: '1h' }));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.type('text').send('CSB 2.0 API is running. The frontend is not built: run `npm run build`, or use `npm run dev` locally.');
+  });
 }
 
-function getAuthenticatedUserId(req) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const token = authHeader.substring(7);
-  const session = authSessions.get(token);
-  if (!session) {
-    return null;
-  }
-  if (session.expiresAt <= Date.now()) {
-    authSessions.delete(token);
-    return null;
-  }
-  return session.userId;
-}
-
-// Login endpoint
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Email and password are required' 
-      });
-    }
-
-    const user = await db.get(
-      `SELECT users.*, universities.name AS university_name
-       FROM users
-       LEFT JOIN universities ON universities.id = users.university_id
-       WHERE lower(users.email) = lower(?) AND users.password = ?`,
-      [email, password]
-    );
-
-    if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Invalid email or password' 
-      });
-    }
-
-    res.json({
-      success: true,
-      token: createAuthToken(user.id),
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        phone: user.phone,
-        department: user.department,
-        universityId: user.university_id,
-        universityName: user.university_name,
-        homeDistrict: user.home_district,
-        currentResidence: user.current_residence
-      }
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Internal server error' 
-    });
-  }
+// Error handling middleware (must come after the routes)
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
-// Register endpoint
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { name, email, password, phone, department, universityName, homeDistrict, currentResidence } = req.body;
-    const requiredFields = [name, email, password, phone, department, universityName, homeDistrict, currentResidence];
-
-    if (
-      requiredFields.some((field) => typeof field !== 'string' || !field.trim())
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: 'Name, email, password, phone, university, department, home district, and current residence are required'
-      });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!validateEmail(normalizedEmail)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email format'
-      });
-    }
-
-    if (!validatePassword(password)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Password must be at least 8 characters and contain uppercase, lowercase, number, and special character'
-      });
-    }
-
-    // Check if email already exists
-    const id = generateId();
-    const now = new Date().toISOString();
-    const normalizedUniversityName = universityName.trim().replace(/\s+/g, ' ');
-    const slugBase = normalizedUniversityName
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || `university-${Date.now()}`;
-
-    const openUniversity = await db.get(
-      `SELECT id FROM universities
-       WHERE is_active = 1 AND (name = ? COLLATE NOCASE OR short_name = ? COLLATE NOCASE)
-         AND slug IN (${OPEN_UNIVERSITY_SLUGS.map(() => '?').join(', ')})`,
-      [normalizedUniversityName, normalizedUniversityName, ...OPEN_UNIVERSITY_SLUGS]
-    );
-    if (!openUniversity) {
-      return res.status(403).json({
-        success: false,
-        error: 'CSB 2.0 is open to BUET students only for now. More universities are coming later.'
-      });
-    }
-
-    await db.exec('BEGIN IMMEDIATE');
-    let university;
-    try {
-      const existingUser = await db.get(
-        'SELECT id FROM users WHERE lower(email) = ?',
-        [normalizedEmail]
-      );
-      if (existingUser) {
-        await db.exec('ROLLBACK');
-        return res.status(409).json({
-          success: false,
-          error: 'Email already registered'
-        });
-      }
-
-      university = await db.get(
-        'SELECT id, name FROM universities WHERE name = ? COLLATE NOCASE AND is_active = 1',
-        [normalizedUniversityName]
-      );
-
-      if (!university) {
-        const slug = `${slugBase}-${Date.now().toString(36)}`;
-        university = {
-          id: slug,
-          name: normalizedUniversityName,
-        };
-        await db.run(
-          `INSERT INTO universities (id, name, slug, short_name, division)
-           VALUES (?, ?, ?, NULL, NULL)`,
-          [university.id, university.name, slug]
-        );
-      }
-
-      await db.run(
-        `INSERT INTO users (
-          id, name, email, password, role, phone, department,
-          university_id, home_district, current_residence, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, 'student', ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          id,
-          name.trim(),
-          normalizedEmail,
-          password,
-          phone.trim(),
-          department.trim(),
-          university.id,
-          homeDistrict.trim(),
-          currentResidence.trim(),
-          now,
-          now,
-        ]
-      );
-      await db.exec('COMMIT');
-    } catch (error) {
-      await db.exec('ROLLBACK');
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        return res.status(409).json({
-          success: false,
-          error: 'Email already registered'
-        });
-      }
-      throw error;
-    }
-
-    res.status(201).json({
-      success: true,
-      token: createAuthToken(id),
-      user: {
-        id,
-        name,
-        email: normalizedEmail,
-        role: 'student',
-        phone: phone.trim(),
-        department: department.trim(),
-        universityId: university.id,
-        universityName: university.name,
-        homeDistrict: homeDistrict.trim(),
-        currentResidence: currentResidence.trim()
-      },
-      message: 'Account created successfully'
-    });
-  } catch (error) {
-    console.error('Register error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create account'
-    });
-  }
-});
-
-// Verify auth endpoint (optional)
-app.get('/api/auth/verify', async (req, res) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        error: 'A valid session is required'
-      });
-    }
-
-    const user = await db.get(
-      `SELECT users.*, universities.name AS university_name
-       FROM users
-       LEFT JOIN universities ON universities.id = users.university_id
-       WHERE users.id = ?`,
-      [userId]
-    );
-
-    if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'User not found' 
-      });
-    }
-
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        phone: user.phone,
-        department: user.department,
-        universityId: user.university_id,
-        universityName: user.university_name,
-        homeDistrict: user.home_district,
-        currentResidence: user.current_residence
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: 'Verification failed' 
-    });
-  }
-});
-
-app.put('/api/auth/profile/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const authenticatedUserId = getAuthenticatedUserId(req);
-    if (!authenticatedUserId) {
-      return res.status(401).json({ success: false, error: 'A valid session is required' });
-    }
-
-    const authenticatedUser = await db.get('SELECT role FROM users WHERE id = ?', [authenticatedUserId]);
-    if (authenticatedUserId !== id && authenticatedUser?.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'You can only update your own profile' });
-    }
-
-    const allowedFields = ['name', 'phone', 'department'];
-    const updates = Object.fromEntries(
-      Object.entries(req.body || {}).filter(([key, value]) =>
-        allowedFields.includes(key) && typeof value === 'string'
-      )
-    );
-
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ success: false, error: 'No supported profile fields were provided' });
-    }
-
-    const assignments = Object.keys(updates).map((key) => `${key} = ?`).join(', ');
-    await db.run(`UPDATE users SET ${assignments}, updated_at = ? WHERE id = ?`, [
-      ...Object.values(updates),
-      new Date().toISOString(),
-      id,
-    ]);
-
-    const user = await db.get(
-      `SELECT users.*, universities.name AS university_name
-       FROM users LEFT JOIN universities ON universities.id = users.university_id
-       WHERE users.id = ?`,
-      [id]
-    );
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        phone: user.phone,
-        department: user.department,
-        universityId: user.university_id,
-        universityName: user.university_name,
-        homeDistrict: user.home_district,
-        currentResidence: user.current_residence,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to update profile' });
-  }
-});
-
-app.get('/api/universities', async (req, res) => {
-  try {
-    const universities = await db.all(
-      `SELECT id, name, short_name AS shortName, division
-       FROM universities
-       WHERE is_active = 1 AND slug IN (${OPEN_UNIVERSITY_SLUGS.map(() => '?').join(', ')})
-       ORDER BY name COLLATE NOCASE`,
-      OPEN_UNIVERSITY_SLUGS
-    );
-    res.json({ success: true, universities });
-  } catch (error) {
-    console.error('University list error:', error);
-    res.status(500).json({ success: false, error: 'Failed to load universities' });
-  }
-});
-
-// Public, aggregate-only counts for the landing page. CSB 2.0 launches at BUET
-// first, so members and lending are scoped to BUET. Notices and lost-and-found
-// rows carry no university yet; while BUET is the only campus they are BUET's.
-app.get('/api/public/campus-stats', async (req, res) => {
-  try {
-    const campus = await db.get(
-      `SELECT id, name, short_name AS shortName FROM universities WHERE slug = 'buet'`
-    );
-    if (!campus) {
-      return res.status(404).json({ success: false, error: 'Campus not found' });
-    }
-
-    const [members, notices, lostFound, lendingItems] = await Promise.all([
-      db.get('SELECT COUNT(*) AS count FROM users WHERE university_id = ?', [campus.id]),
-      db.get('SELECT COUNT(*) AS count FROM notices'),
-      db.get("SELECT COUNT(*) AS count FROM lost_found WHERE status = 'lost'"),
-      db.get(
-        "SELECT COUNT(*) AS count FROM lending_items WHERE university_id = ? AND status = 'available'",
-        [campus.id]
-      ),
-    ]);
-
-    res.json({
-      success: true,
-      campus,
-      stats: {
-        members: members.count,
-        notices: notices.count,
-        openLostItems: lostFound.count,
-        itemsToBorrow: lendingItems.count,
-      },
-    });
-  } catch (error) {
-    console.error('Campus stats error:', error);
-    res.status(500).json({ success: false, error: 'Failed to load campus stats' });
-  }
-});
-
-app.get('/api/admin/metrics', async (req, res) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ success: false, error: 'Authentication is required' });
-    }
-
-    const account = await db.get('SELECT role FROM users WHERE id = ?', [userId]);
-    if (!account) {
-      return res.status(401).json({ success: false, error: 'User not found' });
-    }
-    if (account.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Central administrator access is required' });
-    }
-
-    const universities = await db.all(
-      `SELECT
-        universities.id,
-        universities.name,
-        universities.short_name AS shortName,
-        universities.division,
-        COUNT(CASE WHEN users.role = 'student' THEN users.id END) AS studentCount,
-        COUNT(CASE
-          WHEN users.role = 'student'
-            AND strftime('%Y-%m', users.created_at) = strftime('%Y-%m', 'now')
-          THEN users.id
-        END) AS studentsThisMonth
-      FROM universities
-      LEFT JOIN users ON users.university_id = universities.id
-      WHERE universities.is_active = 1
-      GROUP BY universities.id
-      ORDER BY studentCount DESC, universities.name COLLATE NOCASE`
-    );
-    const totals = await db.get(
-      `SELECT
-        COUNT(*) AS universityCount,
-        COALESCE(SUM(studentCount), 0) AS studentCount,
-        COALESCE(SUM(studentsThisMonth), 0) AS studentsThisMonth
-      FROM (
-        SELECT
-          universities.id,
-          COUNT(CASE WHEN users.role = 'student' THEN users.id END) AS studentCount,
-          COUNT(CASE
-            WHEN users.role = 'student'
-              AND strftime('%Y-%m', users.created_at) = strftime('%Y-%m', 'now')
-            THEN users.id
-          END) AS studentsThisMonth
-        FROM universities
-        LEFT JOIN users ON users.university_id = universities.id
-        WHERE universities.is_active = 1
-        GROUP BY universities.id
-      ) AS university_totals`
-    );
-
-    res.json({ success: true, ...totals, universities });
-  } catch (error) {
-    console.error('Admin metrics error:', error);
-    res.status(500).json({ success: false, error: 'Failed to load university metrics' });
-  }
-});
-
-// Change password endpoint
-app.post('/api/auth/change-password', async (req, res) => {
-  try {
-    const { userId, oldPassword, newPassword } = req.body;
-
-    if (!userId || !oldPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        error: 'All fields are required'
-      });
-    }
-
-    const user = await db.get(
-      'SELECT * FROM users WHERE id = ?',
-      [userId]
-    );
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
-
-    if (user.password !== oldPassword) {
-      return res.status(401).json({
-        success: false,
-        error: 'Current password is incorrect'
-      });
-    }
-
-    if (!validatePassword(newPassword)) {
-      return res.status(400).json({
-        success: false,
-        error: 'New password does not meet security requirements'
-      });
-    }
-
-    const now = new Date().toISOString();
-    await db.run(
-      'UPDATE users SET password = ?, updated_at = ? WHERE id = ?',
-      [newPassword, now, userId]
-    );
-
-    res.json({
-      success: true,
-      message: 'Password changed successfully'
-    });
-  } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to change password'
-    });
-  }
-});
-
-// Get all users (for demo/testing)
-app.get('/api/auth/users', async (req, res) => {
-  try {
-    const users = await db.all('SELECT id, name, email, role, phone, department FROM users');
-    res.json({
-      success: true,
-      users: users || []
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// ========== COMPLAINTS ==========
-app.get('/api/complaints', async (req, res) => {
-  try {
-    const data = await db.all('SELECT * FROM complaints ORDER BY created_at DESC');
-    res.json(data || []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/complaints', async (req, res) => {
-  try {
-    const { title, description, category, posted_by, user_id } = req.body;
-    const id = generateId();
-    const created_at = new Date().toISOString();
-
-    await db.run(
-      'INSERT INTO complaints (id, title, description, category, posted_by, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, category, posted_by, user_id, created_at, created_at]
-    );
-
-    const result = await db.get('SELECT * FROM complaints WHERE id = ?', [id]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/complaints/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { userId, userRole } = req.body;
-
-    // Get complaint details
-    const complaint = await db.get('SELECT * FROM complaints WHERE id = ?', [id]);
-    
-    if (!complaint) {
-      return res.status(404).json({ error: 'Complaint not found' });
-    }
-
-    // Check authorization: Admin can delete any, student can only delete own
-    if (userRole !== 'admin' && complaint.user_id !== userId) {
-      return res.status(403).json({ error: 'Unauthorized: You can only delete your own complaints' });
-    }
-
-    await db.run('DELETE FROM complaints WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Complaint deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ========== NOTICES ==========
-app.get('/api/notices', async (req, res) => {
-  try {
-    const data = await db.all('SELECT * FROM notices ORDER BY created_at DESC');
-    res.json(data || []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/notices', async (req, res) => {
-  try {
-    const { title, description, category, posted_by, user_id } = req.body;
-    const id = generateId();
-    const created_at = new Date().toISOString();
-
-    await db.run(
-      'INSERT INTO notices (id, title, description, category, posted_by, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, category, posted_by, user_id, created_at, created_at]
-    );
-
-    const result = await db.get('SELECT * FROM notices WHERE id = ?', [id]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/notices/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await db.run('DELETE FROM notices WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Notice deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ========== MARKETPLACE ==========
-app.get('/api/marketplace', async (req, res) => {
-  try {
-    const data = await db.all('SELECT * FROM marketplace ORDER BY created_at DESC');
-    res.json(data || []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/marketplace', async (req, res) => {
-  try {
-    const { title, description, price, seller, phone, user_id } = req.body;
-    const id = generateId();
-    const created_at = new Date().toISOString();
-
-    await db.run(
-      'INSERT INTO marketplace (id, title, description, price, seller, phone, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, parseFloat(price), seller, phone, user_id, created_at, created_at]
-    );
-
-    const result = await db.get('SELECT * FROM marketplace WHERE id = ?', [id]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/marketplace/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { userId, userRole } = req.body;
-
-    // Get marketplace item details
-    const item = await db.get('SELECT * FROM marketplace WHERE id = ?', [id]);
-    
-    if (!item) {
-      return res.status(404).json({ error: 'Item not found' });
-    }
-
-    // Check authorization: Admin can delete any, student can only delete own
-    if (userRole !== 'admin' && item.user_id !== userId) {
-      return res.status(403).json({ error: 'Unauthorized: You can only delete your own items' });
-    }
-
-    await db.run('DELETE FROM marketplace WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Item deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ========== ANIMAL WELFARE ==========
-app.get('/api/animal-welfare', async (req, res) => {
-  try {
-    const data = await db.all('SELECT * FROM animal_welfare ORDER BY created_at DESC');
-    res.json(data || []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/animal-welfare', async (req, res) => {
-  try {
-    const { title, description, location, urgency, user_id } = req.body;
-    const id = generateId();
-    const created_at = new Date().toISOString();
-
-    await db.run(
-      'INSERT INTO animal_welfare (id, title, description, location, urgency, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, location, urgency, user_id, created_at, created_at]
-    );
-
-    const result = await db.get('SELECT * FROM animal_welfare WHERE id = ?', [id]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/animal-welfare/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await db.run('DELETE FROM animal_welfare WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Report deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ========== FACULTY SUGGESTIONS ==========
-app.get('/api/faculty-suggestions', async (req, res) => {
-  try {
-    const data = await db.all('SELECT * FROM faculty_suggestions ORDER BY created_at DESC');
-    res.json(data || []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/faculty-suggestions', async (req, res) => {
-  try {
-    const { title, faculty_name, rating, feedback, user_id } = req.body;
-    const id = generateId();
-    const created_at = new Date().toISOString();
-
-    await db.run(
-      'INSERT INTO faculty_suggestions (id, title, faculty_name, rating, feedback, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, faculty_name, parseInt(rating), feedback, user_id, created_at, created_at]
-    );
-
-    const result = await db.get('SELECT * FROM faculty_suggestions WHERE id = ?', [id]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/faculty-suggestions/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await db.run('DELETE FROM faculty_suggestions WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Suggestion deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ========== BLOOD DONATION ==========
-app.get('/api/blood-donation', async (req, res) => {
-  try {
-    const data = await db.all('SELECT * FROM blood_donation ORDER BY created_at DESC');
-    res.json(data || []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/blood-donation', async (req, res) => {
-  try {
-    const { name, blood_type, contact_number, location, available_date, user_id } = req.body;
-    const id = generateId();
-    const created_at = new Date().toISOString();
-
-    await db.run(
-      'INSERT INTO blood_donation (id, name, blood_type, contact_number, location, available_date, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, name, blood_type, contact_number, location, available_date, user_id, created_at, created_at]
-    );
-
-    const result = await db.get('SELECT * FROM blood_donation WHERE id = ?', [id]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/blood-donation/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { userId, userRole } = req.body;
-
-    // Get donor details
-    const donor = await db.get('SELECT * FROM blood_donation WHERE id = ?', [id]);
-    
-    if (!donor) {
-      return res.status(404).json({ error: 'Donor record not found' });
-    }
-
-    // Check authorization: Admin can delete any, user can only delete own
-    if (userRole !== 'admin' && donor.user_id !== userId) {
-      return res.status(403).json({ error: 'Unauthorized: You can only delete your own records' });
-    }
-
-    await db.run('DELETE FROM blood_donation WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Donor record deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ========== BICYCLES ==========
-app.get('/api/bicycles', async (req, res) => {
-  try {
-    const data = await db.all('SELECT * FROM bicycles ORDER BY created_at DESC');
-    res.json(data || []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/bicycles', async (req, res) => {
-  try {
-    const { brand, color, location, contact_number, description, user_id } = req.body;
-    const id = generateId();
-    const created_at = new Date().toISOString();
-
-    await db.run(
-      'INSERT INTO bicycles (id, brand, color, location, contact_number, description, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, brand, color, location, contact_number, description, user_id, created_at, created_at]
-    );
-
-    const result = await db.get('SELECT * FROM bicycles WHERE id = ?', [id]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/bicycles/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await db.run('DELETE FROM bicycles WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Report deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ========== UNIVERSITY LENDING ==========
-app.get('/api/lend-borrow/items', async (req, res) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ success: false, error: 'A valid session is required' });
-    }
-
-    const user = await db.get('SELECT university_id FROM users WHERE id = ?', [userId]);
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'User not found' });
-    }
-
-    const items = await db.all(
-      `SELECT items.*, owner.name AS owner_name,
-              EXISTS (
-                SELECT 1 FROM lending_requests requests
-                WHERE requests.item_id = items.id
-                  AND requests.requester_id = ?
-                  AND requests.status IN ('pending', 'approved')
-              ) AS has_active_request
-       FROM lending_items items
-       JOIN users owner ON owner.id = items.owner_id
-       WHERE items.university_id IS ?
-         AND (items.status = 'available' OR items.owner_id = ?)
-       ORDER BY items.created_at DESC`,
-      [userId, user.university_id, userId]
-    );
-
-    res.json(items);
-  } catch (error) {
-    console.error('Lend and borrow items error:', error);
-    res.status(500).json({ success: false, error: 'Failed to load lending listings' });
-  }
-});
-
-app.post('/api/lend-borrow/items', async (req, res) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ success: false, error: 'A valid session is required' });
-    }
-
-    const { title, description, category, itemCondition, handoffLocation } = req.body || {};
-    const fields = [title, description, category, itemCondition, handoffLocation];
-    if (fields.some((value) => typeof value !== 'string' || !value.trim())) {
-      return res.status(400).json({ success: false, error: 'Complete all listing fields before posting' });
-    }
-    if (title.trim().length > 100 || description.trim().length > 1200 || handoffLocation.trim().length > 120) {
-      return res.status(400).json({ success: false, error: 'One or more fields exceed the allowed length' });
-    }
-
-    const user = await db.get('SELECT university_id FROM users WHERE id = ?', [userId]);
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'User not found' });
-    }
-
-    const id = generateId();
-    const now = new Date().toISOString();
-    await db.run(
-      `INSERT INTO lending_items (
-        id, title, description, category, item_condition, handoff_location,
-        owner_id, university_id, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id, title.trim(), description.trim(), category.trim(), itemCondition.trim(),
-        handoffLocation.trim(), userId, user.university_id, now, now,
-      ]
-    );
-
-    const item = await db.get(
-      `SELECT items.*, owner.name AS owner_name, 0 AS has_active_request
-       FROM lending_items items JOIN users owner ON owner.id = items.owner_id
-       WHERE items.id = ?`,
-      [id]
-    );
-    res.status(201).json(item);
-  } catch (error) {
-    console.error('Create lending listing error:', error);
-    res.status(500).json({ success: false, error: 'Failed to create lending listing' });
-  }
-});
-
-app.get('/api/lend-borrow/requests', async (req, res) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ success: false, error: 'A valid session is required' });
-    }
-
-    const user = await db.get('SELECT university_id FROM users WHERE id = ?', [userId]);
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'User not found' });
-    }
-
-    const requests = await db.all(
-      `SELECT requests.*, items.title AS item_title, items.owner_id,
-              items.status AS item_status, owner.name AS owner_name,
-              requester.name AS requester_name
-       FROM lending_requests requests
-       JOIN lending_items items ON items.id = requests.item_id
-       JOIN users owner ON owner.id = items.owner_id
-       JOIN users requester ON requester.id = requests.requester_id
-       WHERE items.university_id IS ?
-         AND (requests.requester_id = ? OR items.owner_id = ?)
-       ORDER BY requests.created_at DESC`,
-      [user.university_id, userId, userId]
-    );
-    res.json(requests);
-  } catch (error) {
-    console.error('Lend and borrow requests error:', error);
-    res.status(500).json({ success: false, error: 'Failed to load borrow requests' });
-  }
-});
-
-app.post('/api/lend-borrow/items/:id/requests', async (req, res) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ success: false, error: 'A valid session is required' });
-    }
-
-    const user = await db.get('SELECT university_id FROM users WHERE id = ?', [userId]);
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'User not found' });
-    }
-    const item = await db.get(
-      'SELECT id, owner_id FROM lending_items WHERE id = ? AND university_id IS ? AND status = ?',
-      [req.params.id, user.university_id, 'available']
-    );
-    if (!item) {
-      return res.status(404).json({ success: false, error: 'This item is no longer available' });
-    }
-    if (item.owner_id === userId) {
-      return res.status(400).json({ success: false, error: 'You cannot request to borrow your own item' });
-    }
-
-    const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
-    if (message.length > 500) {
-      return res.status(400).json({ success: false, error: 'Request message must be 500 characters or fewer' });
-    }
-
-    const id = generateId();
-    const now = new Date().toISOString();
-    await db.run(
-      `INSERT INTO lending_requests (id, item_id, requester_id, message, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, item.id, userId, message || null, now, now]
-    );
-    res.status(201).json({ success: true, id, status: 'pending' });
-  } catch (error) {
-    if (
-      error.code === 'SQLITE_CONSTRAINT' &&
-      error.message.includes('UNIQUE constraint failed: lending_requests.item_id, lending_requests.requester_id')
-    ) {
-      return res.status(409).json({ success: false, error: 'You already have an active request for this item' });
-    }
-    console.error('Create borrow request error:', error);
-    res.status(500).json({ success: false, error: 'Failed to send borrow request' });
-  }
-});
-
-app.patch('/api/lend-borrow/requests/:id', async (req, res) => {
-  const action = req.body?.action;
-  if (!['approve', 'decline', 'return'].includes(action)) {
-    return res.status(400).json({ success: false, error: 'Choose approve, decline, or return' });
-  }
-
-  const userId = getAuthenticatedUserId(req);
-  if (!userId) {
-    return res.status(401).json({ success: false, error: 'A valid session is required' });
-  }
-
-  try {
-    await db.exec('BEGIN IMMEDIATE');
-    const request = await db.get(
-      `SELECT requests.id, requests.item_id, requests.status, items.owner_id, items.status AS item_status
-       FROM lending_requests requests
-       JOIN lending_items items ON items.id = requests.item_id
-       WHERE requests.id = ?`,
-      [req.params.id]
-    );
-
-    if (!request) {
-      await db.exec('ROLLBACK');
-      return res.status(404).json({ success: false, error: 'Borrow request not found' });
-    }
-    if (request.owner_id !== userId) {
-      await db.exec('ROLLBACK');
-      return res.status(403).json({ success: false, error: 'Only the lender can update this request' });
-    }
-
-    const now = new Date().toISOString();
-    if (action === 'approve') {
-      if (request.status !== 'pending' || request.item_status !== 'available') {
-        await db.exec('ROLLBACK');
-        return res.status(409).json({ success: false, error: 'This request can no longer be approved' });
-      }
-      await db.run('UPDATE lending_items SET status = ?, updated_at = ? WHERE id = ?', ['borrowed', now, request.item_id]);
-      await db.run('UPDATE lending_requests SET status = ?, updated_at = ? WHERE id = ?', ['approved', now, request.id]);
-      await db.run(
-        `UPDATE lending_requests SET status = 'declined', updated_at = ?
-         WHERE item_id = ? AND id != ? AND status = 'pending'`,
-        [now, request.item_id, request.id]
-      );
-    } else if (action === 'decline') {
-      if (request.status !== 'pending') {
-        await db.exec('ROLLBACK');
-        return res.status(409).json({ success: false, error: 'Only pending requests can be declined' });
-      }
-      await db.run('UPDATE lending_requests SET status = ?, updated_at = ? WHERE id = ?', ['declined', now, request.id]);
-    } else {
-      if (request.status !== 'approved' || request.item_status !== 'borrowed') {
-        await db.exec('ROLLBACK');
-        return res.status(409).json({ success: false, error: 'This item is not currently lent through this request' });
-      }
-      await db.run('UPDATE lending_items SET status = ?, updated_at = ? WHERE id = ?', ['available', now, request.item_id]);
-      await db.run('UPDATE lending_requests SET status = ?, updated_at = ? WHERE id = ?', ['returned', now, request.id]);
-    }
-
-    await db.exec('COMMIT');
-    res.json({ success: true, status: action === 'approve' ? 'approved' : action === 'decline' ? 'declined' : 'returned' });
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    console.error('Update borrow request error:', error);
-    res.status(500).json({ success: false, error: 'Failed to update borrow request' });
-  }
-});
-
-// ========== LOST & FOUND ==========
-app.get('/api/lost-found', async (req, res) => {
-  try {
-    const data = await db.all('SELECT * FROM lost_found ORDER BY created_at DESC');
-    res.json(data || []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/lost-found', async (req, res) => {
-  try {
-    const { title, description, item_type, status, location, contact_number, user_id } = req.body;
-    const id = generateId();
-    const created_at = new Date().toISOString();
-
-    await db.run(
-      'INSERT INTO lost_found (id, title, description, item_type, status, location, contact_number, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, item_type, status || 'lost', location, contact_number, user_id, created_at, created_at]
-    );
-
-    const result = await db.get('SELECT * FROM lost_found WHERE id = ?', [id]);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete('/api/lost-found/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await db.run('DELETE FROM lost_found WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Item deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Start server
-initializeDatabase().then(() => {
-  app.listen(PORT, () => {
-    console.log(`
+// ========== START ==========
+
+initializeDatabase()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`
 ╔════════════════════════════════════════╗
 ║  🚀 Campus Hub Backend Server Ready    ║
 ║  URL: http://localhost:${PORT}            ║
-║  Database: SQLite (campus-hub.db)     ║
+║  Database: PostgreSQL (schema.sql)     ║
 ╚════════════════════════════════════════╝
-    `);
+      `);
+    });
+  })
+  .catch((error) => {
+    console.error('❌ Failed to initialize database:', error.message);
+    console.error('   Set DATABASE_URL to a reachable PostgreSQL database (see DATABASE_SETUP.md).');
+    process.exit(1);
   });
-}).catch((error) => {
-  console.error('❌ Failed to initialize database:', error);
-  process.exit(1);
-});

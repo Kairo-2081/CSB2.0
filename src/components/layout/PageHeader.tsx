@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { BloodMotif } from "./BloodMotif";
 
 export interface PageHeaderPhoto {
-  /** A band photo from public/campus/bands (graded, 1100×520, with grain). */
+  /** A band photo from public/campus/bands (graded 1100×520; a 2200×1040 `@2x` twin sits next to it). */
   src: string;
   alt: string;
   /** CSS object-position, e.g. "50% 40%", to keep the subject in frame. */
@@ -14,7 +14,7 @@ interface PageHeaderProps {
   /** Short section label shown after "BUET", e.g. "Announcements". */
   eyebrow?: string;
   title: ReactNode;
-  /** Optional second clause, set in pale sand like the landing headline. */
+  /** Optional second clause, set in saffron like the landing headline. */
   accent?: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
@@ -45,6 +45,8 @@ export function PageHeader({ eyebrow, title, accent, description, actions, photo
         <>
           <img
             src={photo.src}
+            srcSet={`${photo.src} 1100w, ${photo.src.replace(/\.webp$/, "@2x.webp")} 2200w`}
+            sizes="(min-width: 1024px) 78vw, 100vw"
             alt={photo.alt}
             decoding="async"
             className="page-band-photo absolute inset-0 -z-20 h-full w-full object-cover lg:left-auto lg:right-0 lg:w-[78%]"
@@ -75,7 +77,7 @@ export function PageHeader({ eyebrow, title, accent, description, actions, photo
             {accent && (
               <>
                 <br />
-                <span className="text-[#cdb9a5]/80">{accent}</span>
+                <span className="text-[#f2a93b]">{accent}</span>
               </>
             )}
           </h1>

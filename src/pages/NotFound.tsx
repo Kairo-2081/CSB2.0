@@ -41,7 +41,7 @@ const NotFound = () => {
         <div className="mt-9 flex flex-wrap gap-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-3 rounded-md bg-primary px-6 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-foreground transition-colors hover:bg-[#bca08a]"
+            className="inline-flex items-center gap-3 rounded-md bg-primary px-6 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-foreground transition-colors hover:bg-[#f6bb5c]"
           >
             Back to start
             <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />

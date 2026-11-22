@@ -75,8 +75,10 @@ export default function FacultySuggestions() {
       await facultySuggestionService.createSuggestion({
         title: formData.title,
         faculty_name: formData.faculty_name,
+        subject: formData.subject,
         rating: parseInt(formData.rating.toString()),
         feedback: formData.description,
+        posted_by: formData.posted_by,
         user_id: "current-user-id",
       });
       toast.success("Suggestion submitted successfully!");
