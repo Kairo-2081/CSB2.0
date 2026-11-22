@@ -1,23 +1,40 @@
 # Database setup
 
-The whole database is defined in one file: [`schema.sql`](schema.sql).
+CSB 2.0 runs on PostgreSQL 14 or newer. The whole database — tables, indexes,
+triggers, seed rows and every PL/pgSQL function the API calls — is in one
+file: [`schema.sql`](schema.sql).
 
-1. `npm run server` (or `npm run dev`). The server creates `campus-hub.db` if it
-   is missing and runs `schema.sql` against it.
-2. That's it. Tables, indexes and the university catalog are all in the file.
+## Local PostgreSQL
+
+```bash
+createdb csb2
+cp .env.local.example .env.local     # set DATABASE_URL
+npm run dev                          # runs schema.sql, then starts the API
+```
+
+## Supabase (or any hosted Postgres)
+
+Use the project's connection string (Settings → Database) as `DATABASE_URL`.
+The server applies `schema.sql` on start. You can also paste the file into the
+SQL editor and run it; it is safe to run more than once.
+
+`pgcrypto` must be available. It is on Supabase and in every standard
+PostgreSQL install.
 
 ## Changing the schema
 
-Edit `schema.sql` only. Do not add SQL definitions to `server.js` or anywhere
-else.
+Edit `schema.sql` only. Do not write SQL in `server.js`; add a function to
+`schema.sql` and call it.
 
-Re-running the file creates missing tables but does not alter existing ones.
-After you change a column, delete your local `campus-hub.db` and restart.
+- New table, index or function: restart the server.
+- Changed a column, or a function's arguments or return type: run
+  `npm run db:reset` locally (drops all data), or write the `ALTER` /
+  `DROP FUNCTION` yourself for a database whose data you need to keep.
 
 ## First admin
 
 No accounts are seeded. Register normally, then:
 
 ```sql
-UPDATE users SET role = 'admin' WHERE email = '<their email>';
+UPDATE users SET role = 'admin' WHERE lower(email) = lower('<their email>');
 ```
