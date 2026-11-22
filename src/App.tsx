@@ -2,27 +2,40 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import Auth from "./pages/Auth";
-import LostFound from "./pages/LostFound";
-import Complaints from "./pages/Complaints";
-import Notices from "./pages/Notices";
-import Marketplace from "./pages/Marketplace";
-import AnimalWelfare from "./pages/AnimalWelfare";
-import BloodDonation from "./pages/BloodDonation";
-import Students from "./pages/Students";
-import FacultySuggestions from "./pages/FacultySuggestions";
-import Profile from "./pages/Profile";
-import CentralAdmin from "./pages/CentralAdmin";
-import NotFound from "./pages/NotFound";
-import Bicycles from "./pages/Bicycles";
-import LendBorrow from "./pages/LendBorrow";
+import { useModules } from "@/lib/modules";
+
+// Every page except the landing page loads on demand.
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Auth = lazy(() => import("./pages/Auth"));
+const LostFound = lazy(() => import("./pages/LostFound"));
+const Complaints = lazy(() => import("./pages/Complaints"));
+const Notices = lazy(() => import("./pages/Notices"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const AnimalWelfare = lazy(() => import("./pages/AnimalWelfare"));
+const BloodDonation = lazy(() => import("./pages/BloodDonation"));
+const Students = lazy(() => import("./pages/Students"));
+const FacultySuggestions = lazy(() => import("./pages/FacultySuggestions"));
+const Profile = lazy(() => import("./pages/Profile"));
+const CentralAdmin = lazy(() => import("./pages/CentralAdmin"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Bicycles = lazy(() => import("./pages/Bicycles"));
+const LendBorrow = lazy(() => import("./pages/LendBorrow"));
 
 const queryClient = new QueryClient();
+
+/** A module page, or the 404 page when that module is switched off. */
+function Module({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const { enabled } = useModules();
+  return enabled(pathname) ? <ProtectedRoute>{children}</ProtectedRoute> : <NotFound />;
+}
+
+const PageFallback = () => <div className="min-h-screen bg-background" aria-busy="true" />;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -31,24 +44,26 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/central-admin" element={<ProtectedRoute requireAdmin><CentralAdmin /></ProtectedRoute>} />
-            <Route path="/lost-found" element={<ProtectedRoute><LostFound /></ProtectedRoute>} />
-            <Route path="/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
-            <Route path="/notices" element={<ProtectedRoute><Notices /></ProtectedRoute>} />
-            <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
-            <Route path="/animal-welfare" element={<ProtectedRoute><AnimalWelfare /></ProtectedRoute>} />
-            <Route path="/blood-donation" element={<ProtectedRoute><BloodDonation /></ProtectedRoute>} />
-            <Route path="/bicycles" element={<ProtectedRoute><Bicycles /></ProtectedRoute>} />
-            <Route path="/lend-borrow" element={<ProtectedRoute><LendBorrow /></ProtectedRoute>} />
-            <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
-            <Route path="/faculty-suggestions" element={<ProtectedRoute><FacultySuggestions /></ProtectedRoute>} />
+            <Route path="/lost-found" element={<Module><LostFound /></Module>} />
+            <Route path="/complaints" element={<Module><Complaints /></Module>} />
+            <Route path="/notices" element={<Module><Notices /></Module>} />
+            <Route path="/marketplace" element={<Module><Marketplace /></Module>} />
+            <Route path="/animal-welfare" element={<Module><AnimalWelfare /></Module>} />
+            <Route path="/blood-donation" element={<Module><BloodDonation /></Module>} />
+            <Route path="/bicycles" element={<Module><Bicycles /></Module>} />
+            <Route path="/lend-borrow" element={<Module><LendBorrow /></Module>} />
+            <Route path="/students" element={<Module><Students /></Module>} />
+            <Route path="/faculty-suggestions" element={<Module><FacultySuggestions /></Module>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
