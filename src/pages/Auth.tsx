@@ -241,7 +241,7 @@ export default function Auth() {
           <Card className="overflow-visible border-0 bg-transparent shadow-none backdrop-blur-0">
               <CardContent className="p-0">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsList className="mb-8">
                     <TabsTrigger value="login">Login</TabsTrigger>
                     <TabsTrigger value="register">Register</TabsTrigger>
                   </TabsList>
