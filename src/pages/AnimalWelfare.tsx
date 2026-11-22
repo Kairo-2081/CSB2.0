@@ -22,17 +22,14 @@ import {
   Heart,
   Trash2
 } from "lucide-react";
-import { animalWelfareService } from "@/services/database.service";
+import { BoardRow, animalWelfareService } from "@/services/database.service";
 
-interface AnimalReport {
-  id: string;
+interface AnimalReport extends BoardRow {
   title?: string;
   description: string;
   location: string;
   urgency: "low" | "medium" | "high";
   posted_by: string;
-  user_id: string;
-  created_at: string;
 }
 
 const zoneConfig = {
@@ -58,7 +55,6 @@ export default function AnimalWelfare() {
     description: "",
     location: "",
     urgency_level: "medium" as "low" | "medium" | "high",
-    posted_by: "",
   });
 
   useEffect(() => {
@@ -67,7 +63,7 @@ export default function AnimalWelfare() {
 
   const loadReports = async () => {
     try {
-      const data = await animalWelfareService.getReports();
+      const data = await animalWelfareService.list<AnimalReport>();
       setReports(data);
     } catch (error) {
       console.error("Error loading reports:", error);
@@ -78,20 +74,18 @@ export default function AnimalWelfare() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.location || !formData.posted_by) {
+    if (!formData.title || !formData.description || !formData.location) {
       toast.error("Please fill in all fields");
       return;
     }
 
     setIsLoading(true);
     try {
-      await animalWelfareService.createReport({
+      await animalWelfareService.create({
         title: formData.title,
         description: formData.description,
         location: formData.location,
         urgency: formData.urgency_level,
-        posted_by: formData.posted_by,
-        user_id: "current-user-id",
       });
       toast.success("Report submitted successfully!");
       setIsDialogOpen(false);
@@ -100,12 +94,10 @@ export default function AnimalWelfare() {
         description: "",
         location: "",
         urgency_level: "medium",
-        posted_by: "",
       });
       await loadReports();
     } catch (error) {
-      console.error("Error submitting report:", error);
-      toast.error("Failed to submit report");
+      toast.error(error instanceof Error ? error.message : "Failed to submit report");
     } finally {
       setIsLoading(false);
     }
@@ -118,12 +110,11 @@ export default function AnimalWelfare() {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this report?")) {
       try {
-        await animalWelfareService.deleteReport(id);
+        await animalWelfareService.remove(id);
         toast.success("Report deleted successfully!");
         await loadReports();
       } catch (error) {
-        console.error("Error deleting report:", error);
-        toast.error("Failed to delete report");
+        toast.error(error instanceof Error ? error.message : "Failed to delete report");
       }
     }
   };
@@ -202,15 +193,6 @@ export default function AnimalWelfare() {
                     disabled={isLoading}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="posted_by">Your Name</Label>
-                  <Input
-                    id="posted_by"
-                    value={formData.posted_by}
-                    onChange={(e) => setFormData({...formData, posted_by: e.target.value})}
-                    disabled={isLoading}
-                  />
-                </div>
               </div>
               <DialogFooter className="gap-2 pt-4">
                 <Button 
@@ -252,7 +234,7 @@ export default function AnimalWelfare() {
                       <StatusDot tone={report.urgency === "high" ? "urgent" : report.urgency === "medium" ? "progress" : "open"}>
                         {statusConfig[report.urgency]?.label ?? "Reported"}
                       </StatusDot>
-                      {report.user_id === "current-user-id" && (
+                      {report.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(report.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>

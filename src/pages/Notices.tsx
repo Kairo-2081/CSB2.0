@@ -20,17 +20,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Loader2, Trash2 } from "lucide-react";
-import { noticeService } from "@/services/database.service";
+import { BoardRow, noticeService } from "@/services/database.service";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-interface Notice {
-  id: string;
+const message = (error: unknown, fallback: string) => (error instanceof Error ? error.message : fallback);
+
+interface Notice extends BoardRow {
   title: string;
   description: string;
   category: "general" | "academic" | "event" | "urgent";
   posted_by: string;
-  user_id: string;
-  created_at: string;
 }
 
 const categoryConfig: Record<Notice["category"], { label: string }> = {
@@ -41,6 +41,7 @@ const categoryConfig: Record<Notice["category"], { label: string }> = {
 };
 
 export default function Notices() {
+  const { isAdmin } = useAuth();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -50,7 +51,6 @@ export default function Notices() {
     title: "",
     description: "",
     category: "general" as Notice["category"],
-    posted_by: "Admin",
   });
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function Notices() {
   const loadNotices = async () => {
     try {
       setIsLoading(true);
-      const data = await noticeService.getNotices();
+      const data = await noticeService.list<Notice>();
       setNotices(data);
     } catch (error) {
       console.error("Error loading notices:", error);
@@ -79,22 +79,17 @@ export default function Notices() {
 
     try {
       setIsLoading(true);
-      await noticeService.createNotice({
-        ...formData,
-        user_id: "current-user-id",
-      });
+      await noticeService.create(formData);
       toast.success("Notice posted successfully!");
       setFormData({
         title: "",
         description: "",
         category: "general",
-        posted_by: "Admin",
       });
       setIsDialogOpen(false);
       await loadNotices();
     } catch (error) {
-      console.error("Error creating notice:", error);
-      toast.error("Failed to post notice");
+      toast.error(message(error, "Failed to post notice"));
     } finally {
       setIsLoading(false);
     }
@@ -103,12 +98,11 @@ export default function Notices() {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this notice?")) {
       try {
-        await noticeService.deleteNotice(id);
+        await noticeService.remove(id);
         toast.success("Notice deleted successfully!");
         await loadNotices();
       } catch (error) {
-        console.error("Error deleting notice:", error);
-        toast.error("Failed to delete notice");
+        toast.error(message(error, "Failed to delete notice"));
       }
     }
   };
@@ -130,12 +124,12 @@ export default function Notices() {
           accent="from across campus."
           description="Official announcements from offices, halls and departments."
           actions={
-            <>
+            isAdmin ? (
               <Button onClick={() => setIsDialogOpen(true)}>
                 <Plus aria-hidden="true" />
                 Post a notice
               </Button>
-            </>
+            ) : undefined
           }
         />
 
@@ -174,7 +168,7 @@ export default function Notices() {
                     </div>
                     <div className="hidden flex-col items-end gap-4 text-right md:flex">
                       <span className="text-[13px] leading-5 text-muted-foreground">{notice.posted_by}</span>
-                      {notice.user_id === "current-user-id" && (
+                      {notice.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(notice.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>
@@ -188,7 +182,7 @@ export default function Notices() {
             <EmptyState
               title={notices.length === 0 ? "No notices yet." : "Nothing matches."}
               text={notices.length === 0 ? "Announcements from offices, halls and departments will appear here." : "Try another category or a different search."}
-              action={notices.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Post the first notice</Button> : undefined}
+              action={notices.length === 0 && isAdmin ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Post the first notice</Button> : undefined}
             />
           )}
         </section>
@@ -201,8 +195,8 @@ export default function Notices() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
-                <label className="block text-sm font-medium mb-1">Title *</label>
-                <Input
+                <label htmlFor="notices-title" className="block text-sm font-medium mb-1">Title *</label>
+                <Input id="notices-title"
                   placeholder="Notice title"
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
@@ -211,13 +205,13 @@ export default function Notices() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Category *</label>
+                <label htmlFor="notices-category" className="block text-sm font-medium mb-1">Category *</label>
                 <Select 
                   value={formData.category}
                   onValueChange={(value) => setFormData({ ...formData, category: value as Notice["category"] })}
                   disabled={isLoading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="notices-category">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -230,23 +224,13 @@ export default function Notices() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description *</label>
-                <Textarea
+                <label htmlFor="notices-description" className="block text-sm font-medium mb-1">Description *</label>
+                <Textarea id="notices-description"
                   placeholder="Write the notice details..."
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   disabled={isLoading}
                   className="min-h-[120px]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Posted By</label>
-                <Input
-                  placeholder="Your name or department"
-                  value={formData.posted_by}
-                  onChange={(e) => setFormData({...formData, posted_by: e.target.value})}
-                  disabled={isLoading}
                 />
               </div>
 

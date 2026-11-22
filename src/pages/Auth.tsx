@@ -21,6 +21,28 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+// BUET's departments, for the sign-up form.
+const BUET_DEPARTMENTS = [
+  "Architecture",
+  "Biomedical Engineering",
+  "Chemical Engineering",
+  "Chemistry",
+  "Civil Engineering",
+  "Computer Science and Engineering",
+  "Electrical and Electronic Engineering",
+  "Humanities",
+  "Industrial and Production Engineering",
+  "Materials and Metallurgical Engineering",
+  "Mathematics",
+  "Mechanical Engineering",
+  "Nanomaterials and Ceramic Engineering",
+  "Naval Architecture and Marine Engineering",
+  "Petroleum and Mineral Resources Engineering",
+  "Physics",
+  "Urban and Regional Planning",
+  "Water Resources Engineering",
+];
+
 interface PasswordValidation {
   hasMinLength: boolean;
   hasUpperCase: boolean;
@@ -263,7 +285,7 @@ export default function Auth() {
                           <Input
                             id="login-email"
                             type="email"
-                            placeholder="you@university.edu"
+                            placeholder="you@ugrad.cse.buet.ac.bd"
                             value={loginEmail}
                             onChange={(e) => setLoginEmail(e.target.value)}
                             className="pl-10"
@@ -341,7 +363,7 @@ export default function Auth() {
                           <Input
                             id="email"
                             type="email"
-                            placeholder="you@university.edu"
+                            placeholder="you@ugrad.cse.buet.ac.bd"
                             value={registerEmail}
                             onChange={(e) => setRegisterEmail(e.target.value)}
                             className="pl-10"
@@ -385,13 +407,9 @@ export default function Auth() {
                           disabled={isLoading}
                         >
                           <option value="">Select a department</option>
-                          <option value="Computer Science">Computer Science</option>
-                          <option value="Engineering">Engineering</option>
-                          <option value="Business">Business</option>
-                          <option value="Medical">Medical</option>
-                          <option value="Science">Science</option>
-                          <option value="Arts">Arts</option>
-                          <option value="Law">Law</option>
+                          {BUET_DEPARTMENTS.map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
                         </select>
                       </div>
 
