@@ -5,6 +5,7 @@ services:
     name: csb2
     runtime: node
     plan: free
+    region: singapore   # closest Render region to Bangladesh; Neon is in Singapore too
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
