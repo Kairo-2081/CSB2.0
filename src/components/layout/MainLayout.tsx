@@ -11,7 +11,7 @@ interface MainLayoutProps {
  */
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="min-h-screen bg-[#07070d]">
+    <div className="min-h-screen bg-background">
       <Sidebar />
       <main className="min-h-screen lg:pl-64">
         <VerifyEmailBanner />

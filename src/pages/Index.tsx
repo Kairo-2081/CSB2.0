@@ -108,7 +108,7 @@ export default function Index() {
   const showLive = stats.status === "loading" || nonZero.length >= 2;
 
   return (
-    <div className="min-h-screen bg-[#07070d] text-[#f4efe8]">
+    <div className="theme-dark min-h-screen bg-[#07070d] text-[#f4efe8]">
       <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden lg:min-h-[max(720px,min(100svh,960px))]">
         {/* Campus photograph, graded down so the type sits on a dusk-toned field */}
         <picture>

@@ -244,7 +244,7 @@ export default function AnimalWelfare() {
 
           <aside aria-labelledby="how-to-report">
             <SectionTitle id="how-to-report">How to report</SectionTitle>
-            <dl className="divide-y divide-white/[0.07]">
+            <dl className="divide-y divide-foreground/[0.07]">
               <div className="py-5">
                 <dt><StatusDot tone="urgent">High</StatusDot></dt>
                 <dd className="mt-1.5 text-sm leading-6 text-muted-foreground">Needs a vet now: bleeding, can't stand, or hit by a vehicle.</dd>

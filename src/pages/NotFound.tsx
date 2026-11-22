@@ -10,7 +10,7 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="relative isolate flex min-h-screen flex-col overflow-hidden bg-[#07070d]">
+    <div className="theme-dark relative isolate flex min-h-screen flex-col overflow-hidden bg-[#07070d]">
       <img
         src="/campus/bands/buet-day-reflection.webp"
         alt=""

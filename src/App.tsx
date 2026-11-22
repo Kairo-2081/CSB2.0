@@ -8,6 +8,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import { useModules } from "@/lib/modules";
+import { ThemeProvider } from "next-themes";
 
 // Every page except the landing page loads on demand.
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -39,6 +40,7 @@ function Module({ children }: { children: React.ReactNode }) {
 const PageFallback = () => <div className="min-h-screen bg-background" aria-busy="true" />;
 
 const App = () => (
+  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem themes={["dark", "light"]} storageKey="csb-theme">
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
@@ -70,6 +72,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;
