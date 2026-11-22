@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
+import fs from 'fs';
 import path from 'path';
 import { randomBytes } from 'crypto';
 import { fileURLToPath } from 'url';
@@ -17,20 +18,6 @@ const OPEN_UNIVERSITY_SLUGS = (process.env.OPEN_UNIVERSITIES || 'buet')
   .filter(Boolean);
 const PORT = 3001;
 const authSessions = new Map();
-const UNIVERSITY_CATALOG = [
-  { name: 'Bangladesh University of Engineering and Technology', shortName: 'BUET', division: 'Dhaka' },
-  { name: 'Rajshahi University of Engineering and Technology', shortName: 'RUET', division: 'Rajshahi' },
-  { name: 'University of Dhaka', shortName: 'DU', division: 'Dhaka' },
-  { name: 'University of Rajshahi', shortName: 'RU', division: 'Rajshahi' },
-  { name: 'University of Chittagong', shortName: 'CU', division: 'Chattogram' },
-  { name: 'Jahangirnagar University', shortName: 'JU', division: 'Dhaka' },
-  { name: 'Khulna University', shortName: 'KU', division: 'Khulna' },
-  { name: 'Shahjalal University of Science and Technology', shortName: 'SUST', division: 'Sylhet' },
-  { name: 'Chittagong University of Engineering and Technology', shortName: 'CUET', division: 'Chattogram' },
-  { name: 'Khulna University of Engineering and Technology', shortName: 'KUET', division: 'Khulna' },
-  { name: 'Dhaka University of Engineering and Technology', shortName: 'DUET', division: 'Dhaka' },
-  { name: 'Bangladesh Agricultural University', shortName: 'BAU', division: 'Mymensingh' },
-];
 
 // Middleware
 app.use(cors());
@@ -56,208 +43,9 @@ async function initializeDatabase() {
     driver: sqlite3.Database,
   });
 
-  // Create tables
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      role TEXT DEFAULT 'student',
-      phone TEXT,
-      department TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS universities (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      slug TEXT NOT NULL UNIQUE,
-      short_name TEXT,
-      division TEXT,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_universities_name
-      ON universities(name COLLATE NOCASE);
-
-    CREATE TABLE IF NOT EXISTS complaints (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      category TEXT NOT NULL,
-      posted_by TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      status TEXT DEFAULT 'pending',
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS notices (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      category TEXT NOT NULL,
-      posted_by TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS marketplace (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      price REAL NOT NULL,
-      seller TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS animal_welfare (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      location TEXT NOT NULL,
-      urgency TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS faculty_suggestions (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      faculty_name TEXT NOT NULL,
-      rating INTEGER NOT NULL,
-      feedback TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS blood_donation (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      blood_type TEXT NOT NULL,
-      contact_number TEXT NOT NULL,
-      location TEXT NOT NULL,
-      available_date TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS bicycles (
-      id TEXT PRIMARY KEY,
-      brand TEXT NOT NULL,
-      color TEXT NOT NULL,
-      location TEXT NOT NULL,
-      contact_number TEXT NOT NULL,
-      description TEXT,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS lending_items (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      category TEXT NOT NULL,
-      item_condition TEXT NOT NULL,
-      handoff_location TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'borrowed')),
-      owner_id TEXT NOT NULL,
-      university_id TEXT,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (owner_id) REFERENCES users(id),
-      FOREIGN KEY (university_id) REFERENCES universities(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS lending_requests (
-      id TEXT PRIMARY KEY,
-      item_id TEXT NOT NULL,
-      requester_id TEXT NOT NULL,
-      message TEXT,
-      status TEXT NOT NULL DEFAULT 'pending'
-        CHECK (status IN ('pending', 'approved', 'declined', 'returned')),
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (item_id) REFERENCES lending_items(id),
-      FOREIGN KEY (requester_id) REFERENCES users(id)
-    );
-
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_lending_active_request
-      ON lending_requests(item_id, requester_id)
-      WHERE status IN ('pending', 'approved');
-
-    CREATE TABLE IF NOT EXISTS lost_found (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      item_type TEXT NOT NULL,
-      status TEXT DEFAULT 'lost',
-      location TEXT NOT NULL,
-      contact_number TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  const userColumns = await db.all('PRAGMA table_info(users)');
-  const existingUserColumns = new Set(userColumns.map((column) => column.name));
-  for (const [column, definition] of [
-    ['university_id', 'TEXT'],
-    ['home_district', 'TEXT'],
-    ['current_residence', 'TEXT'],
-  ]) {
-    if (!existingUserColumns.has(column)) {
-      await db.exec(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
-    }
-  }
-
-  for (const university of UNIVERSITY_CATALOG) {
-    const slug = university.shortName.toLowerCase();
-    await db.run(
-      `INSERT OR IGNORE INTO universities (id, name, slug, short_name, division)
-       VALUES (?, ?, ?, ?, ?)`,
-      [slug, university.name, slug, university.shortName, university.division]
-    );
-  }
-
-  // Insert default users (Admin + 5 Students)
-  try {
-    const existingUsers = await db.all('SELECT COUNT(*) as count FROM users');
-    if (existingUsers[0].count === 0) {
-      const defaultUsers = [
-        // Admin User
-        { id: 'admin_1', name: 'Admin User', email: 'admin@campushub.com', password: 'Admin@123', role: 'admin', phone: '9876543210', department: 'Administration' },
-        // Student Users
-        { id: 'student_1', name: 'Raj Kumar', email: 'raj@student.com', password: 'Student@123', role: 'student', phone: '9876543211', department: 'Computer Science' },
-        { id: 'student_2', name: 'Priya Singh', email: 'priya@student.com', password: 'Student@123', role: 'student', phone: '9876543212', department: 'Engineering' },
-        { id: 'student_3', name: 'Amit Patel', email: 'amit@student.com', password: 'Student@123', role: 'student', phone: '9876543213', department: 'Business' },
-        { id: 'student_4', name: 'Neha Sharma', email: 'neha@student.com', password: 'Student@123', role: 'student', phone: '9876543214', department: 'Medicine' },
-        { id: 'student_5', name: 'Arjun Verma', email: 'arjun@student.com', password: 'Student@123', role: 'student', phone: '9876543215', department: 'Law' }
-      ];
-
-      for (const user of defaultUsers) {
-        await db.run(
-          'INSERT INTO users (id, name, email, password, role, phone, department, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [user.id, user.name, user.email, user.password, user.role, user.phone, user.department, new Date().toISOString(), new Date().toISOString()]
-        );
-      }
-      console.log('✅ Default users created');
-    }
-  } catch (error) {
-    console.log('Users already exist or error:', error.message);
-  }
+  // Every table, index and seed row lives in schema.sql. Nothing else here.
+  await db.exec(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'));
+  // PRAGMA foreign_keys is per-connection; schema.sql sets it on this one.
 
   dbReady = true;
   console.log('✅ Database initialized successfully');
@@ -932,13 +720,13 @@ app.get('/api/marketplace', async (req, res) => {
 
 app.post('/api/marketplace', async (req, res) => {
   try {
-    const { title, description, price, seller, phone, user_id } = req.body;
+    const { title, description, price, category, seller, phone, user_id } = req.body;
     const id = generateId();
     const created_at = new Date().toISOString();
 
     await db.run(
-      'INSERT INTO marketplace (id, title, description, price, seller, phone, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, parseFloat(price), seller, phone, user_id, created_at, created_at]
+      'INSERT INTO marketplace (id, title, description, price, category, seller, phone, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, title, description, parseFloat(price), category || 'Other', seller, phone, user_id, created_at, created_at]
     );
 
     const result = await db.get('SELECT * FROM marketplace WHERE id = ?', [id]);
@@ -984,13 +772,13 @@ app.get('/api/animal-welfare', async (req, res) => {
 
 app.post('/api/animal-welfare', async (req, res) => {
   try {
-    const { title, description, location, urgency, user_id } = req.body;
+    const { title, description, location, urgency, posted_by, user_id } = req.body;
     const id = generateId();
     const created_at = new Date().toISOString();
 
     await db.run(
-      'INSERT INTO animal_welfare (id, title, description, location, urgency, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, location, urgency, user_id, created_at, created_at]
+      'INSERT INTO animal_welfare (id, title, description, location, urgency, posted_by, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, title, description, location, urgency || 'medium', posted_by || null, user_id, created_at, created_at]
     );
 
     const result = await db.get('SELECT * FROM animal_welfare WHERE id = ?', [id]);
@@ -1022,13 +810,13 @@ app.get('/api/faculty-suggestions', async (req, res) => {
 
 app.post('/api/faculty-suggestions', async (req, res) => {
   try {
-    const { title, faculty_name, rating, feedback, user_id } = req.body;
+    const { title, faculty_name, subject, rating, feedback, posted_by, user_id } = req.body;
     const id = generateId();
     const created_at = new Date().toISOString();
 
     await db.run(
-      'INSERT INTO faculty_suggestions (id, title, faculty_name, rating, feedback, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, faculty_name, parseInt(rating), feedback, user_id, created_at, created_at]
+      'INSERT INTO faculty_suggestions (id, title, faculty_name, subject, rating, feedback, posted_by, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, title, faculty_name, subject || null, parseInt(rating), feedback, posted_by || null, user_id, created_at, created_at]
     );
 
     const result = await db.get('SELECT * FROM faculty_suggestions WHERE id = ?', [id]);
@@ -1379,13 +1167,13 @@ app.get('/api/lost-found', async (req, res) => {
 
 app.post('/api/lost-found', async (req, res) => {
   try {
-    const { title, description, item_type, status, location, contact_number, user_id } = req.body;
+    const { title, description, item_type, status, location, contact_number, posted_by, user_id } = req.body;
     const id = generateId();
     const created_at = new Date().toISOString();
 
     await db.run(
-      'INSERT INTO lost_found (id, title, description, item_type, status, location, contact_number, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, item_type, status || 'lost', location, contact_number, user_id, created_at, created_at]
+      'INSERT INTO lost_found (id, title, description, item_type, status, location, contact_number, posted_by, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, title, description, item_type, status || item_type || 'lost', location, contact_number || null, posted_by || null, user_id, created_at, created_at]
     );
 
     const result = await db.get('SELECT * FROM lost_found WHERE id = ?', [id]);

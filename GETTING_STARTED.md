@@ -36,18 +36,14 @@ Navigate to: **http://localhost:5173**
 
 ---
 
-## 🔐 Demo Login Credentials
+## 🔐 Accounts
 
-### Admin Account
-- **Email:** admin@campushub.com
-- **Password:** Admin@123
+No demo accounts are seeded. Register a BUET account from the sign-up screen.
+To make the first admin, run this once against `campus-hub.db`:
 
-### Student Accounts (Password for all: `Student@123`)
-1. raj@student.com
-2. priya@student.com
-3. amit@student.com
-4. neha@student.com
-5. arjun@student.com
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'you@ugrad.cse.buet.ac.bd';
+```
 
 ---
 

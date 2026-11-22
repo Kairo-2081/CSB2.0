@@ -142,10 +142,9 @@ campus-hub-main/
 │   ├── index.css              # Global styles
 │   └── vite-env.d.ts          # Vite environment types
 ├── supabase/
-│   ├── config.toml            # Supabase configuration
-│   └── migrations/
-│       └── init.sql           # Database initialization
-├── server.js                  # Express backend server
+│   └── config.toml            # Supabase configuration
+├── schema.sql                 # The whole database: tables, indexes, seed
+├── server.js                  # Express backend server (runs schema.sql)
 ├── vite.config.ts             # Vite configuration
 ├── tailwind.config.ts         # Tailwind CSS configuration
 ├── postcss.config.js          # PostCSS configuration
@@ -264,19 +263,18 @@ view registry-wide student totals and university-level registration counts.
 The metrics endpoint requires a server-issued session token and an administrator
 account.
 
-### Central PostgreSQL schema
+### Database
 
-`schema.sql` is the initial PostgreSQL/PLpgSQL model for the cross-university
-registry. It includes a shared university catalog, account records, student
-profiles partitioned by university, registration functions, and an aggregate
-view for central-admin metrics. It seeds a starter catalog; additional
-universities can be registered through `register_university`.
+`schema.sql` is the only database definition. Every table, index and seed row
+is in that one file; `server.js` has no `CREATE`, `ALTER` or seed SQL. On start
+the server opens `campus-hub.db` (created if missing) and runs `schema.sql`.
+Everything in it is safe to re-run.
 
-The running development backend still uses the existing SQLite database
-(`campus-hub.db`) and applies its local schema/migrations in `server.js`.
-`schema.sql` is the PostgreSQL foundation for the later central-database
-migration; it is not automatically applied by `npm run dev`. The data model is
-an initial framework and can be revised when the ERD is provided.
+- Changed a table? Delete `campus-hub.db` and restart. Re-running the file does
+  not add columns to a table that already exists.
+- `campus-hub.db` is not committed. Each machine builds its own.
+- No accounts are seeded. Register, then promote the first admin by hand:
+  `UPDATE users SET role = 'admin' WHERE email = '<their email>';`
 
 ### Data Endpoints
 ```http

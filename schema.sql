@@ -1,196 +1,215 @@
--- Central student registry for the Bangladesh public-university network.
--- Student rows are stored in one PostgreSQL partition per university.
+-- CSB 2.0 database schema (SQLite)
+--
+-- This is the only place the database is defined. server.js reads this file
+-- and runs it on every start, so every statement must be safe to re-run:
+-- tables and indexes use IF NOT EXISTS, seed rows use INSERT OR IGNORE.
+--
+-- Changing a table that already exists in someone's campus-hub.db is NOT
+-- handled by re-running this file (SQLite has no ADD COLUMN IF NOT EXISTS).
+-- During development, delete campus-hub.db and restart the server.
 
-CREATE TABLE IF NOT EXISTS public.universities (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  slug TEXT NOT NULL UNIQUE,
-  short_name TEXT,
-  division TEXT,
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT universities_name_not_blank CHECK (length(trim(name)) > 0)
+PRAGMA foreign_keys = ON;
+
+-- ---------------------------------------------------------------------------
+-- Universities and people
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS universities (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  slug        TEXT NOT NULL UNIQUE,
+  short_name  TEXT,
+  division    TEXT,
+  is_active   INTEGER NOT NULL DEFAULT 1,
+  created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS universities_name_lower_idx
-  ON public.universities (lower(name));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_universities_name
+  ON universities(name COLLATE NOCASE);
 
-CREATE TABLE IF NOT EXISTS public.user_accounts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'student'
-    CHECK (role IN ('student', 'admin')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT user_accounts_email_not_blank CHECK (length(trim(email)) > 0)
+CREATE TABLE IF NOT EXISTS users (
+  id                 TEXT PRIMARY KEY,
+  name               TEXT NOT NULL,
+  email              TEXT NOT NULL UNIQUE,
+  password           TEXT NOT NULL,
+  role               TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
+  phone              TEXT,
+  department         TEXT,
+  university_id      TEXT REFERENCES universities(id),
+  home_district      TEXT,
+  current_residence  TEXT,
+  created_at         TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at         TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS user_accounts_email_lower_idx
-  ON public.user_accounts (lower(email));
+CREATE INDEX IF NOT EXISTS idx_users_university ON users(university_id);
 
-CREATE TABLE IF NOT EXISTS public.students (
-  university_id UUID NOT NULL REFERENCES public.universities(id),
-  account_id UUID NOT NULL REFERENCES public.user_accounts(id),
-  full_name TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  department TEXT NOT NULL,
-  home_district TEXT NOT NULL,
-  current_residence TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (university_id, account_id),
-  CONSTRAINT students_name_not_blank CHECK (length(trim(full_name)) > 0),
-  CONSTRAINT students_phone_not_blank CHECK (length(trim(phone)) > 0),
-  CONSTRAINT students_home_district_not_blank CHECK (length(trim(home_district)) > 0),
-  CONSTRAINT students_current_residence_not_blank CHECK (length(trim(current_residence)) > 0)
-) PARTITION BY LIST (university_id);
+-- ---------------------------------------------------------------------------
+-- Campus boards
+-- ---------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION public.create_university_student_partition()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = pg_catalog, public
-AS $$
-DECLARE
-  partition_name TEXT := 'students_' || replace(NEW.id::TEXT, '-', '');
-BEGIN
-  EXECUTE format(
-    'CREATE TABLE IF NOT EXISTS public.%I PARTITION OF public.students FOR VALUES IN (%L)',
-    partition_name,
-    NEW.id
-  );
-  RETURN NEW;
-END;
-$$;
+CREATE TABLE IF NOT EXISTS notices (
+  id           TEXT PRIMARY KEY,
+  title        TEXT NOT NULL,
+  description  TEXT NOT NULL,
+  category     TEXT NOT NULL,
+  posted_by    TEXT NOT NULL,
+  user_id      TEXT NOT NULL,
+  created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
+);
 
-DROP TRIGGER IF EXISTS universities_create_student_partition ON public.universities;
-CREATE TRIGGER universities_create_student_partition
-AFTER INSERT ON public.universities
-FOR EACH ROW
-EXECUTE FUNCTION public.create_university_student_partition();
+CREATE TABLE IF NOT EXISTS complaints (
+  id           TEXT PRIMARY KEY,
+  title        TEXT NOT NULL,
+  description  TEXT NOT NULL,
+  category     TEXT NOT NULL,
+  posted_by    TEXT NOT NULL,
+  user_id      TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'pending',
+  created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
+);
 
-CREATE OR REPLACE FUNCTION public.register_university(
-  p_name TEXT,
-  p_slug TEXT,
-  p_short_name TEXT,
-  p_division TEXT
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SET search_path = pg_catalog, public
-AS $$
-DECLARE
-  registered_university_id UUID;
-BEGIN
-  IF length(trim(coalesce(p_name, ''))) = 0
-    OR coalesce(p_slug, '') !~ '^[a-z0-9]+(-[a-z0-9]+)*$' THEN
-    RAISE EXCEPTION 'A university name and lowercase slug are required';
-  END IF;
+CREATE TABLE IF NOT EXISTS faculty_suggestions (
+  id            TEXT PRIMARY KEY,
+  title         TEXT NOT NULL,
+  faculty_name  TEXT NOT NULL,
+  subject       TEXT,
+  rating        INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  feedback      TEXT NOT NULL,
+  posted_by     TEXT,
+  user_id       TEXT NOT NULL,
+  created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TEXT DEFAULT CURRENT_TIMESTAMP
+);
 
-  SELECT id INTO registered_university_id
-  FROM public.universities
-  WHERE lower(name) = lower(trim(p_name));
+-- ---------------------------------------------------------------------------
+-- Things students trade, lend and lose
+-- ---------------------------------------------------------------------------
 
-  IF registered_university_id IS NOT NULL THEN
-    RETURN registered_university_id;
-  END IF;
+CREATE TABLE IF NOT EXISTS marketplace (
+  id           TEXT PRIMARY KEY,
+  title        TEXT NOT NULL,
+  description  TEXT NOT NULL,
+  price        REAL NOT NULL CHECK (price >= 0),
+  category     TEXT NOT NULL DEFAULT 'Other',
+  is_sold      INTEGER NOT NULL DEFAULT 0,
+  seller       TEXT NOT NULL,
+  phone        TEXT NOT NULL,
+  user_id      TEXT NOT NULL,
+  created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
+);
 
-  INSERT INTO public.universities (name, slug, short_name, division)
-  VALUES (trim(p_name), p_slug, nullif(trim(p_short_name), ''), nullif(trim(p_division), ''))
-  RETURNING id INTO registered_university_id;
+CREATE TABLE IF NOT EXISTS lending_items (
+  id                TEXT PRIMARY KEY,
+  title             TEXT NOT NULL,
+  description       TEXT NOT NULL,
+  category          TEXT NOT NULL,
+  item_condition    TEXT NOT NULL,
+  handoff_location  TEXT NOT NULL,
+  status            TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'borrowed')),
+  owner_id          TEXT NOT NULL REFERENCES users(id),
+  university_id     TEXT REFERENCES universities(id),
+  created_at        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
-  RETURN registered_university_id;
-END;
-$$;
+CREATE INDEX IF NOT EXISTS idx_lending_items_university ON lending_items(university_id, status);
 
-CREATE OR REPLACE FUNCTION public.register_student(
-  p_full_name TEXT,
-  p_email TEXT,
-  p_password_hash TEXT,
-  p_university_id UUID,
-  p_phone TEXT,
-  p_department TEXT,
-  p_home_district TEXT,
-  p_current_residence TEXT
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SET search_path = pg_catalog, public
-AS $$
-DECLARE
-  created_account_id UUID;
-BEGIN
-  IF length(trim(coalesce(p_full_name, ''))) = 0
-    OR length(trim(coalesce(p_email, ''))) = 0
-    OR length(trim(coalesce(p_password_hash, ''))) = 0
-    OR length(trim(coalesce(p_phone, ''))) = 0
-    OR length(trim(coalesce(p_department, ''))) = 0
-    OR length(trim(coalesce(p_home_district, ''))) = 0
-    OR length(trim(coalesce(p_current_residence, ''))) = 0 THEN
-    RAISE EXCEPTION 'All student registration fields are required';
-  END IF;
+CREATE TABLE IF NOT EXISTS lending_requests (
+  id            TEXT PRIMARY KEY,
+  item_id       TEXT NOT NULL REFERENCES lending_items(id),
+  requester_id  TEXT NOT NULL REFERENCES users(id),
+  message       TEXT,
+  status        TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'approved', 'declined', 'returned')),
+  created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
-  IF NOT EXISTS (
-    SELECT 1
-    FROM public.universities
-    WHERE id = p_university_id AND is_active
-  ) THEN
-    RAISE EXCEPTION 'University is not active or does not exist';
-  END IF;
+-- One open request per student per item.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lending_active_request
+  ON lending_requests(item_id, requester_id)
+  WHERE status IN ('pending', 'approved');
 
-  INSERT INTO public.user_accounts (email, password_hash)
-  VALUES (lower(trim(p_email)), p_password_hash)
-  RETURNING id INTO created_account_id;
+CREATE TABLE IF NOT EXISTS lost_found (
+  id              TEXT PRIMARY KEY,
+  title           TEXT NOT NULL,
+  description     TEXT NOT NULL,
+  item_type       TEXT NOT NULL CHECK (item_type IN ('lost', 'found')),
+  status          TEXT NOT NULL DEFAULT 'lost',
+  location        TEXT NOT NULL,
+  contact_number  TEXT,
+  posted_by       TEXT,
+  user_id         TEXT NOT NULL,
+  created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
 
-  INSERT INTO public.students (
-    university_id,
-    account_id,
-    full_name,
-    phone,
-    department,
-    home_district,
-    current_residence
-  )
-  VALUES (
-    p_university_id,
-    created_account_id,
-    trim(p_full_name),
-    trim(p_phone),
-    trim(p_department),
-    trim(p_home_district),
-    trim(p_current_residence)
-  );
+CREATE TABLE IF NOT EXISTS bicycles (
+  id              TEXT PRIMARY KEY,
+  brand           TEXT NOT NULL,
+  color           TEXT NOT NULL,
+  location        TEXT NOT NULL,
+  contact_number  TEXT NOT NULL,
+  description     TEXT,
+  status          TEXT NOT NULL DEFAULT 'available'
+                  CHECK (status IN ('available', 'rented', 'maintenance')),
+  rented_by       TEXT,
+  user_id         TEXT NOT NULL,
+  created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
 
-  RETURN created_account_id;
-END;
-$$;
+-- ---------------------------------------------------------------------------
+-- Care
+-- ---------------------------------------------------------------------------
 
-CREATE OR REPLACE VIEW public.admin_university_metrics AS
-SELECT
-  universities.id AS university_id,
-  universities.name AS university_name,
-  universities.short_name,
-  universities.division,
-  COUNT(students.account_id)::BIGINT AS student_count,
-  COUNT(students.account_id) FILTER (
-    WHERE students.created_at >= date_trunc('month', NOW())
-  )::BIGINT AS students_this_month
-FROM public.universities
-LEFT JOIN public.students
-  ON students.university_id = universities.id
-WHERE universities.is_active
-GROUP BY universities.id, universities.name, universities.short_name, universities.division;
+CREATE TABLE IF NOT EXISTS blood_donation (
+  id              TEXT PRIMARY KEY,
+  name            TEXT NOT NULL,
+  blood_type      TEXT NOT NULL CHECK (blood_type IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
+  contact_number  TEXT NOT NULL,
+  location        TEXT NOT NULL,
+  available_date  TEXT NOT NULL,
+  user_id         TEXT NOT NULL,
+  created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
 
-INSERT INTO public.universities (name, slug, short_name, division)
-VALUES
-  ('Bangladesh University of Engineering and Technology', 'buet', 'BUET', 'Dhaka'),
-  ('Rajshahi University of Engineering and Technology', 'ruet', 'RUET', 'Rajshahi'),
-  ('University of Dhaka', 'du', 'DU', 'Dhaka'),
-  ('University of Rajshahi', 'ru', 'RU', 'Rajshahi'),
-  ('University of Chittagong', 'cu', 'CU', 'Chattogram'),
-  ('Jahangirnagar University', 'ju', 'JU', 'Dhaka'),
-  ('Khulna University', 'ku', 'KU', 'Khulna'),
-  ('Shahjalal University of Science and Technology', 'sust', 'SUST', 'Sylhet'),
-  ('Chittagong University of Engineering and Technology', 'cuet', 'CUET', 'Chattogram'),
-  ('Khulna University of Engineering and Technology', 'kuet', 'KUET', 'Khulna'),
-  ('Dhaka University of Engineering and Technology', 'duet', 'DUET', 'Dhaka'),
-  ('Bangladesh Agricultural University', 'bau', 'BAU', 'Mymensingh')
-ON CONFLICT (slug) DO NOTHING;
+CREATE TABLE IF NOT EXISTS animal_welfare (
+  id           TEXT PRIMARY KEY,
+  title        TEXT NOT NULL,
+  description  TEXT NOT NULL,
+  location     TEXT NOT NULL,
+  urgency      TEXT NOT NULL DEFAULT 'medium' CHECK (urgency IN ('low', 'medium', 'high')),
+  posted_by    TEXT,
+  user_id      TEXT NOT NULL,
+  created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ---------------------------------------------------------------------------
+-- Seed: university catalog
+-- id = slug = short name in lowercase. Registration is limited to the slugs
+-- in OPEN_UNIVERSITIES (default "buet"); the rest are ready for later.
+-- ---------------------------------------------------------------------------
+
+INSERT OR IGNORE INTO universities (id, name, slug, short_name, division) VALUES
+  ('buet', 'Bangladesh University of Engineering and Technology', 'buet', 'BUET', 'Dhaka'),
+  ('ruet', 'Rajshahi University of Engineering and Technology',   'ruet', 'RUET', 'Rajshahi'),
+  ('du',   'University of Dhaka',                                  'du',   'DU',   'Dhaka'),
+  ('ru',   'University of Rajshahi',                               'ru',   'RU',   'Rajshahi'),
+  ('cu',   'University of Chittagong',                             'cu',   'CU',   'Chattogram'),
+  ('ju',   'Jahangirnagar University',                             'ju',   'JU',   'Dhaka'),
+  ('ku',   'Khulna University',                                    'ku',   'KU',   'Khulna'),
+  ('sust', 'Shahjalal University of Science and Technology',       'sust', 'SUST', 'Sylhet'),
+  ('cuet', 'Chittagong University of Engineering and Technology',  'cuet', 'CUET', 'Chattogram'),
+  ('kuet', 'Khulna University of Engineering and Technology',      'kuet', 'KUET', 'Khulna'),
+  ('duet', 'Dhaka University of Engineering and Technology',       'duet', 'DUET', 'Dhaka'),
+  ('bau',  'Bangladesh Agricultural University',                   'bau',  'BAU',  'Mymensingh');
+
+-- No user accounts are seeded. The first admin is promoted by hand after they
+-- register:  UPDATE users SET role = 'admin' WHERE email = '<their email>';
