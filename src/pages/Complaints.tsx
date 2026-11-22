@@ -146,8 +146,9 @@ export default function Complaints() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+      <div className="page-container">
         <PageHeader
+          photo={{ src: "/campus/bands/buet-hall-night.webp", alt: "A red-brick BUET building lit in red and gold at night" }}
           eyebrow="Campus issues"
           title="Complaints,"
           accent="heard and tracked."

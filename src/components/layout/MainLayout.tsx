@@ -4,15 +4,15 @@ interface MainLayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * Signed-in shell. No boxed canvas: pages sit straight on the obsidian field,
+ * like the landing page, and open with a full-width PageHeader band.
+ */
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#07070d]">
       <Sidebar />
-      <main className="min-h-screen lg:pl-72">
-        <div className="app-stage app-stage-authenticated">
-          {children}
-        </div>
-      </main>
+      <main className="min-h-screen lg:pl-64">{children}</main>
     </div>
   );
 }

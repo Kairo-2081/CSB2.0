@@ -70,7 +70,7 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
         <div className="mx-2 mb-4 h-px bg-white/[0.07]" />
-        <p className="mb-2 px-3 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground/80">Services</p>
+        <p className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Services</p>
         <ul className="space-y-1">
           {visibleNavItems.map((item) => {
             const active = location.pathname === item.href;
@@ -80,10 +80,10 @@ export function Sidebar() {
                   to={item.href}
                   onClick={() => setIsMobileOpen(false)}
                   className={cn(
-                    "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors duration-150",
+                    "group relative flex items-center gap-3 px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors duration-150",
                     active
-                      ? "bg-white/[0.05] text-foreground before:absolute before:inset-y-2 before:left-0 before:w-px before:bg-primary"
-                      : "text-sidebar-foreground hover:bg-white/[0.035] hover:text-foreground",
+                      ? "text-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-px before:bg-primary"
+                      : "text-[#b7aea4] hover:text-foreground",
                   )}
                 >
                   <item.icon
@@ -100,7 +100,7 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="m-3 rounded-md border border-white/[0.07] bg-black/20 p-3">
+      <div className="border-t border-white/[0.06] p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/40 font-display text-base text-accent">
             {user?.name?.charAt(0).toUpperCase() || "U"}
@@ -119,10 +119,10 @@ export function Sidebar() {
 
   return (
     <>
-      <header className="glass-shell fixed inset-x-3 top-3 z-30 flex h-14 items-center gap-3 rounded-lg px-3 lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center gap-3 bg-gradient-to-b from-[#07070d] to-[#07070d]/0 px-4 lg:hidden">
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="glass-control flex h-10 w-10 shrink-0 items-center justify-center rounded-md"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-foreground/30 bg-black/30 backdrop-blur-sm"
           aria-label="Open navigation"
         >
           <Menu className="h-5 w-5" />
@@ -148,7 +148,7 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "glass-shell fixed inset-y-3 left-3 z-50 w-64 rounded-lg transition-transform duration-200 lg:hidden",
+          "fixed inset-y-0 left-0 z-50 w-72 border-r border-white/[0.06] bg-[#09090d] transition-transform duration-200 lg:hidden",
           isMobileOpen ? "translate-x-0" : "-translate-x-[110%]",
         )}
       >
@@ -162,7 +162,7 @@ export function Sidebar() {
         <NavContent />
       </aside>
 
-      <aside className="glass-shell fixed inset-y-3 left-3 z-40 hidden w-64 flex-col rounded-lg lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-white/[0.06] bg-[#09090d] lg:flex">
         <NavContent />
       </aside>
     </>
