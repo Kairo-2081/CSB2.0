@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}`;
+import { API_URL } from '@/lib/api-url';
 
 export interface User {
   id: string;
@@ -80,7 +80,7 @@ async function parseErrorResponse(response: Response): Promise<string> {
     } else {
       const text = await response.text();
       if (text.includes('<!DOCTYPE') || text.includes('<html')) {
-        return 'Server returned an HTML error page. Is the backend running on http://localhost:3001?';
+        return `Server returned an HTML error page. Is the backend reachable at ${API_URL}?`;
       }
       return text || 'An error occurred';
     }

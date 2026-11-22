@@ -1,3 +1,4 @@
+import { API_URL } from "@/lib/api-url";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -20,7 +21,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 const modules = [
   { title: "Notices", description: "Read announcements from across campus", href: "/notices", icon: Bell },

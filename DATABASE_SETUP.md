@@ -21,6 +21,16 @@ SQL editor and run it; it is safe to run more than once.
 `pgcrypto` must be available. It is on Supabase and in every standard
 PostgreSQL install.
 
+## Render
+
+One web service serves the site and the API; `render.yaml` describes it.
+
+- Build command: `npm ci --include=dev && npm run build`
+- Start command: `npm start`
+- Environment: `DATABASE_URL` = the database's **Internal** connection string.
+  If you use the External one instead, also set `DATABASE_SSL=true`.
+- Do not set `VITE_API_URL`. The built site calls `/api` on its own domain.
+
 ## Changing the schema
 
 Edit `schema.sql` only. Do not write SQL in `server.js`; add a function to

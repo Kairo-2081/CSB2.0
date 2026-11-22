@@ -1,3 +1,4 @@
+import { API_URL } from "@/lib/api-url";
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -19,8 +20,7 @@ export default function Students() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
-    fetch(`${baseUrl}/auth/users`)
+    fetch(`${API_URL}/auth/users`)
       .then((response) => {
         if (!response.ok) throw new Error("Could not load the directory");
         return response.json();

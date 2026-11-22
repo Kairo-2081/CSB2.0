@@ -1,5 +1,5 @@
 // Using local API backend - No Supabase
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { API_URL } from '@/lib/api-url';
 
 export interface LendingItem {
   id: string;
