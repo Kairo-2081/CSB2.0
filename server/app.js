@@ -197,6 +197,12 @@ export function createApp({ pool, log = console }) {
     return PUBLIC_ROUTES.has(key) ? next() : requireAuth(req, res, next);
   });
 
+  // An account created with a temporary password can only change it.
+  app.use('/api', (req, res, next) => {
+    if (!req.user?.mustChangePassword || req.path.startsWith('/auth/')) return next();
+    return res.status(403).json({ success: false, error: 'Change your temporary password first (Profile, then Change password).' });
+  });
+
   // Once email verification is on, unverified accounts can read but not post.
   app.use('/api', (req, res, next) => {
     if (!config.requireEmailVerification || !req.user || req.user.emailVerified) return next();

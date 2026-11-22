@@ -1,443 +1,92 @@
-# Campus Hub - CSB 2.0
+# CSB 2.0
 
-A comprehensive campus community management platform designed to streamline campus operations and enhance student-faculty interactions through an integrated digital ecosystem.
+Campus services for BUET students: notices, lost and found, lending and borrowing, a marketplace, complaints, bicycles, blood donation, animal welfare, faculty suggestions and a student directory, in one place. It opens at BUET first; other Bangladeshi universities come later.
 
----
+Live: <https://csb2-sg-yhv2.onrender.com> · Staging: <https://csb2-staging.onrender.com>
 
-## 📋 Table of Contents
+## How it fits together
 
-- [Overview](#overview)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Development](#development)
-- [API Documentation](#api-documentation)
-- [Database Schema](#database-schema)
-- [Authentication & Security](#authentication--security)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
+| Part | What it is |
+|---|---|
+| `src/` | React 18 + Vite + TypeScript + Tailwind. Pages load on demand. |
+| `server.js`, `server/` | Express API. Checks the session, validates the body (zod), calls one database function, returns its JSON. |
+| `schema.sql` | The whole database: tables, versioned migrations, seed data and every PL/pgSQL function the API calls. Access rules live here. |
+| `tests/api`, `tests/e2e` | Node test runner against a real PostgreSQL; Playwright smoke test in a browser. |
+| `.github/workflows` | CI, deploy, nightly encrypted backup with a restore check, uptime check. |
 
----
+Production runs on Render (Singapore) with PostgreSQL on Neon (Singapore).
 
-## 🎯 Overview
+## Run it locally
 
-**Campus Hub** is a full-stack web application that serves as a centralized platform for campus community management. It provides students, faculty, and administrators with tools to collaborate, communicate, and manage campus activities efficiently.
-
-### Key Objectives
-- Centralized campus information management
-- Streamlined student-faculty communication
-- Real-time notifications and updates
-- Community-driven features (marketplace, lost & found, blood donation, lending)
-- Animal welfare tracking
-- Complaint and feedback management
-- Student directory and profile management
-
----
-
-## ✨ Features
-
-### Core Functionalities
-- **User Authentication & Authorization**: Role-based access control (Student/Admin)
-- **Dashboard**: Personalized user dashboard with activity feed and quick actions
-- **Student Directory**: Searchable student profiles with contact information
-- **Lost & Found**: Community-driven system for tracking lost/found items
-- **Complaints Management**: Submit and track campus complaints with status updates
-- **Notices Board**: Campus announcements and important notifications
-- **Marketplace**: Buy/sell campus items and services
-- **Lend & Borrow**: Share items with people at your university and manage borrow requests
-- **Animal Welfare**: Track and report animal welfare concerns
-- **Blood Donation**: Coordinate blood donation drives and donor information
-- **Faculty Suggestions**: Submit feedback and suggestions to faculty
-- **User Profiles**: Manage personal information and preferences
-- **AI Assistant**: Intelligent assistant for campus-related queries
-
-### Advanced Features
-- Real-time toast notifications
-- Responsive mobile-first design
-- Dark mode support
-- Form validation with Zod schemas
-- Optimized performance with code splitting
-- Error handling and recovery mechanisms
-
----
-
-## 🛠️ Technology Stack
-
-### Frontend
-- **Build Tool**: Vite v5.4.19 with React-SWC plugin
-- **Framework**: React 18.3.1 with React Router 6.30.1
-- **Language**: TypeScript 5.8.3 with strict type checking
-- **Styling**: Tailwind CSS 3.4.17 with PostCSS and Autoprefixer
-- **UI Components**: shadcn/ui (Radix UI primitives)
-- **Form Management**: React Hook Form 7.61.1 with Zod 3.25.76 validation
-- **State Management**:
-  - React Context API (Auth)
-  - TanStack React Query 5.83.0 (Server state)
-- **Data Fetching**: Native Fetch API with error handling
-- **Notifications**: Sonner 1.7.4 (Toast notifications)
-- **Icons**: Lucide React 0.462.0
-- **Utilities**:
-  - date-fns 3.6.0 (Date operations)
-  - next-themes 0.3.0 (Theme management)
-  - Embla Carousel 8.6.0 (Carousel components)
-
-### Backend
-- **Runtime**: Node.js with Express.js 4.22.1
-- **Database**: PostgreSQL 14+ via `pg`; schema and PL/pgSQL functions in `schema.sql`
-- **Middleware**: CORS 2.8.5 for cross-origin requests
-- **Port**: 3001 (Express development server)
-- **Database File**: csb-2.0.db
-
-### Development & Build Tools
-- **Package Manager**: npm
-- **Linting**: ESLint 9.32.0 with TypeScript support
-- **Concurrency**: concurrently 8.2.2 (Run frontend & backend together)
-- **Node Version**: 22.16.5 (LTS)
-
----
-
-## 📁 Project Structure
-
-```
-campus-hub-main/
-├── public/                     # Static assets
-├── src/
-│   ├── components/
-│   │   ├── ui/                # shadcn/ui components (reusable)
-│   │   ├── dashboard/         # Dashboard-specific components
-│   │   ├── layout/            # Layout components (MainLayout, Sidebar)
-│   │   ├── AIAssistant.tsx    # AI assistant component
-│   │   ├── ProtectedRoute.tsx # Route protection HOC
-│   │   └── NavLink.tsx        # Navigation component
-│   ├── contexts/
-│   │   └── AuthContext.tsx    # Global auth state management
-│   ├── hooks/
-│   │   ├── use-mobile.tsx     # Mobile detection hook
-│   │   └── use-toast.ts       # Toast notification hook
-│   ├── pages/                 # Route page components
-│   │   ├── Dashboard.tsx
-│   │   ├── Auth.tsx
-│   │   ├── LostFound.tsx
-│   │   ├── Complaints.tsx
-│   │   ├── Notices.tsx
-│   │   ├── Marketplace.tsx
-│   │   ├── AnimalWelfare.tsx
-│   │   ├── BloodDonation.tsx
-│   │   ├── Students.tsx
-│   │   ├── FacultySuggestions.tsx
-│   │   ├── Profile.tsx
-│   │   └── NotFound.tsx
-│   ├── services/
-│   │   ├── api.service.ts     # Generic API functions
-│   │   ├── auth.service.ts    # Authentication service
-│   │   ├── database.service.ts # Database operations
-│   │   ├── ai-knowledge-base.ts # AI knowledge base
-│   │   └── credentials.ts      # Credential management
-│   ├── lib/
-│   │   └── utils.ts           # Utility functions
-│   ├── App.tsx                # Root component
-│   ├── main.tsx               # Entry point
-│   ├── index.css              # Global styles
-│   └── vite-env.d.ts          # Vite environment types
-├── supabase/
-│   └── config.toml            # Supabase configuration
-├── schema.sql                 # PostgreSQL: tables, seed and every function
-├── server.js                  # Express API; only calls schema.sql functions
-├── vite.config.ts             # Vite configuration
-├── tailwind.config.ts         # Tailwind CSS configuration
-├── postcss.config.js          # PostCSS configuration
-├── tsconfig.json              # TypeScript configuration
-├── eslint.config.js           # ESLint configuration
-├── package.json               # Project dependencies
-└── README.md                  # This file
-```
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+ and npm 9+ ([Install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
-- Git
-- Modern web browser
-
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone <YOUR_GIT_URL>
-cd campus-hub-main
-```
-
-2. **Install dependencies**
-```bash
-npm install
-```
-
-3. **Start development servers**
-```bash
-npm run dev
-```
-This command runs both frontend (Vite on port 8080) and backend (Express on port 3001) concurrently.
-
-### Accessing the Application
-- **Frontend**: http://localhost:8080
-- **Backend API**: http://localhost:3001/api
-- **Health Check**: http://localhost:3001/api/health
-
----
-
-## 💻 Development
-
-### Available Scripts
+You need Node 22 and PostgreSQL 14 or newer.
 
 ```bash
-# Start both frontend and backend in development mode
-npm run dev
-
-# Start only frontend (Vite dev server with HMR)
-npm run dev:frontend
-
-# Start only backend (Express server)
-npm run dev:backend
-
-# Build for production
-npm run build
-
-# Build for development environment
-npm run build:dev
-
-# Run ESLint to check code quality
-npm run lint
-
-# Preview production build locally
-npm run preview
+npm ci
+createdb csb2
+cp .env.local.example .env.local     # set DATABASE_URL
+npm run dev                          # API on :3001, site on :8080 (Vite proxies /api)
 ```
 
-### Development Workflow
+The server applies `schema.sql` on every start. It is safe to re-run.
 
-1. **Frontend Development**: Vite provides hot module replacement (HMR) for instant feedback
-2. **Backend Development**: Express server runs with nodemon-like functionality
-3. **API Testing**: Use browser DevTools or Postman to test API endpoints
-4. **Database**: the backend applies `schema.sql` to `DATABASE_URL` on every start
+Register with an `@buet.ac.bd` address (subdomains such as `ugrad.cse.buet.ac.bd` count). No accounts are seeded. To make yourself an administrator, either set `ADMIN_EMAIL` and `ADMIN_PASSWORD` before the first start (the account must change its password at first sign-in), or run:
 
-### Code Quality
-- Run `npm run lint` before committing code
-- Ensure TypeScript strict mode compliance
-- Follow shadcn/ui component patterns
-- Use Zod for form validation
-
----
-
-## 🔌 API Documentation
-
-### Base URL
-```
-http://localhost:3001/api
+```sql
+UPDATE users SET role = 'admin' WHERE lower(email) = lower('you@ugrad.cse.buet.ac.bd');
 ```
 
-### Health Check
-```http
-GET /health
-```
-Response: `{ success: boolean, database: "ready" | "error" }`
+`npm run db:reset` drops and rebuilds your local database. It refuses hosted databases.
 
-### Authentication Endpoints
-```http
-POST /auth/login
-POST /auth/register
-GET  /auth/verify
-GET  /universities
-GET  /admin/metrics
-```
+## Tests
 
-Student registration collects a name, email, password, contact number, university,
-department, home district, and current residence. Universities not yet in the
-suggested list are added to the shared registry when a student enters their
-official name.
-
-The central administrator can open **University network** from the sidebar to
-view registry-wide student totals and university-level registration counts.
-The metrics endpoint requires a server-issued session token and an administrator
-account.
-
-### Database
-
-The backend runs on **PostgreSQL 14+**. `schema.sql` is the whole database:
-tables, indexes, triggers, the university seed and a PL/pgSQL function for
-every operation the API performs. `server.js` contains no SQL of its own; each
-route validates the request and calls one function, e.g.
-`SELECT create_notice($1, $2, $3, $4, $5)`.
-
-1. Create a database and put its URL in `.env.local` (copy `.env.local.example`).
-2. `npm run dev`. The server runs `schema.sql` on every start; it is safe to re-run.
-
-- Functions return jsonb shaped like the API response. Client errors are raised
-  with SQLSTATE `CSnnn`, and the server answers with HTTP status `nnn`.
-- Passwords are bcrypt-hashed with `pgcrypto`. Sign-in sessions are stored in
-  `auth_sessions`, so they survive a restart.
-- Changed a column? `npm run db:reset` drops and rebuilds the local database
-  (deletes all data). Re-running `schema.sql` does not alter existing tables.
-- No accounts are seeded. Register, then promote the first admin:
-  `UPDATE users SET role = 'admin' WHERE lower(email) = lower('<their email>');`
-
-### Data Endpoints
-```http
-GET/POST /complaints
-GET/POST /notices
-GET/POST /marketplace
-GET/POST /lend-borrow/items
-GET /lend-borrow/requests
-POST /lend-borrow/items/:id/requests
-PATCH /lend-borrow/requests/:id
-GET/POST /animal-welfare
-GET/POST /blood-donation
-GET/POST /students
-GET/POST /faculty-suggestions
-GET/POST /lost-found
-```
-
-Lend and borrow endpoints require an authenticated session. Listings and requests
-are scoped to the signed-in user's university.
-
-### Authentication
-- Requests are authenticated via JWT tokens stored in localStorage
-- Include token in `Authorization: Bearer <token>` header
-- Server validates token before processing requests
-
----
-
-## 🗄️ Database Schema
-
-### Users Table
-| Column | Type | Description |
-|--------|------|-------------|
-| id | TEXT (PK) | Unique user identifier |
-| name | TEXT | User full name |
-| email | TEXT (UNIQUE) | Email address |
-| password | TEXT | Hashed password |
-| role | TEXT | 'admin' or 'student' |
-| phone | TEXT | Contact number |
-| department | TEXT | Department/faculty |
-| created_at | TEXT | Account creation timestamp |
-| updated_at | TEXT | Last update timestamp |
-
-### Related Tables
-- **complaints**: Issue tracking and resolution
-- **notices**: Campus announcements
-- **marketplace**: Buy/sell items
-- **lending_items**, **lending_requests**: University-scoped item listings and borrow requests
-- **animal_welfare**: Animal care reports
-- **blood_donation**: Donor and donation records
-- **students**: Student profiles
-- **faculty_suggestions**: Feedback submissions
-- **lost_found**: Lost/found item tracking
-
----
-
-## 🔐 Authentication & Security
-
-### Authentication Flow
-1. User submits email/password via Auth page
-2. Backend validates credentials and checks server health
-3. JWT token generated and stored in localStorage
-4. Token used for subsequent API requests
-5. AuthContext manages global auth state
-
-### Authorization
-- **Protected Routes**: ProtectedRoute component checks authentication
-- **Role-Based Access**: Student/Admin roles with conditional rendering
-- **Server Health**: Verified before each login attempt
-
-### Security Best Practices
-- Passwords stored as hashed values in database
-- CORS enabled for localhost development
-- Error messages sanitized for production
-- Sensitive data never logged or cached insecurely
-
----
-
-## 🌐 Deployment
-
-### Build for Production
 ```bash
-npm run build
-```
-Creates optimized production bundle in `dist/` directory.
+createdb csb2_test
+TEST_DATABASE_URL=postgresql://localhost/csb2_test npm test       # API access rules (wipes that database)
 
-### Hosting Options
-
-#### Vercel (Recommended)
-1. Push code to GitHub
-2. Connect repository to Vercel
-3. Set environment variables
-4. Vercel auto-deploys on push
-
-#### Netlify
-1. Connect GitHub repository
-2. Configure build command: `npm run build`
-3. Set publish directory: `dist`
-
-#### Traditional Hosting (VPS/Shared Hosting)
-1. Build frontend: `npm run build`
-2. Deploy `dist/` folder to web server
-3. Set up Node.js environment for backend
-4. Configure environment variables
-5. Start backend: `node server.js`
-
-### Environment Variables
-Create `.env.local` for development:
-```
-VITE_API_URL=http://localhost:3001/api
+npm run build && DATABASE_URL=postgresql://localhost/csb2_e2e PORT=3001 node server.js &
+npm run test:e2e                                                  # browser smoke test
 ```
 
-For production, set appropriate backend API URL.
+CI runs lint (zero warnings), the type check, the build, `npm audit` (fails on high), a secret scan, both test suites, and then deploys.
 
----
+## Security model
 
-## 🤝 Contributing
+- **Sessions** are an HttpOnly, SameSite=Lax cookie (Secure in production). Only a SHA-256 of the token is stored; sessions expire after 7 days and are revoked on sign-out and on password change.
+- **Default deny**: every `/api` route needs a session except those in `PUBLIC_ROUTES` (`server/app.js`). A test walks the router to prove it.
+- **The database decides**: each function takes the signed-in user's id from the session, never from the request body, and checks university scope, ownership and role itself.
+- **Passwords** are bcrypt hashes (`pgcrypto`, cost 12).
+- **Hardening**: helmet with a strict CSP, a CORS allowlist, an Origin check on writes, a 50 kB body limit, rate limits (8 sign-in attempts per 15 minutes, 10 sign-ups per hour, 300 requests per minute), and generic 500 errors with a request id.
+- **Moderation**: students can report posts; administrators review them, remove or keep them, and can restore removed notices and complaints.
+- **Privacy**: the directory shows phone and email only when a student opts in; sign-up and blood-donor listings require consent; students can download or delete their data. See `/privacy`.
 
-1. Create a feature branch: `git checkout -b feature/amazing-feature`
-2. Commit changes: `git commit -m 'Add amazing feature'`
-3. Push to branch: `git push origin feature/amazing-feature`
-4. Open a Pull Request
+## Configuration
 
-### Code Standards
-- Use TypeScript for type safety
-- Follow ESLint rules
-- Write meaningful commit messages
-- Test changes before submitting PR
+All settings are environment variables (`server/config.js`). The useful ones:
 
----
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://localhost:5432/csb2` | PostgreSQL connection string |
+| `NODE_ENV` | | `production` turns on Secure cookies and trusts one proxy |
+| `OPEN_UNIVERSITIES` | `buet` | University slugs that may register |
+| `ALLOWED_EMAIL_DOMAINS` | `buet.ac.bd` | Email domains allowed at sign-up |
+| `MODULES` | all ten | Comma-separated modules to switch on |
+| `SMTP_URL`, `MAIL_FROM` | | Outgoing mail; setting `SMTP_URL` turns on email verification |
+| `REQUIRE_EMAIL_VERIFICATION` | on when `SMTP_URL` is set | Override the above |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | | Create the first administrator once |
+| `CORS_ORIGINS` | none in production | Other origins allowed to call the API |
+| `DATABASE_SSL` | | `true` to force TLS when the URL lacks `sslmode` |
+| `VITE_PRIVACY_CONTACT` | | Contact address shown on the privacy page (build time) |
 
-## 📄 License
+## Changing the database
 
-This project is part of a hackathon initiative. For licensing information, please contact the project maintainers.
+Edit `schema.sql` only. To change an existing table, add a numbered migration block in section 3 and never edit an applied one. Functions are dropped and recreated on every start, so their signatures can change freely. Add a test in `tests/api` for every new access rule.
 
----
+## More
 
-## 📞 Support & Contact
+- [`docs/runbook.md`](docs/runbook.md): deploys, rollback, backups and restore, incidents.
+- [`LAUNCH_CHECKLIST.md`](LAUNCH_CHECKLIST.md): what must be true before the pilot and the campus launch.
+- [`DESIGN.md`](DESIGN.md): the visual system. [`PRODUCT.md`](PRODUCT.md): what the product promises.
 
-For issues, feature requests, or questions:
-1. Open an issue on GitHub
-2. Contact the development team
-3. Check existing documentation
+## Repositories
 
----
-
-## 🎯 Roadmap
-
-- [ ] Integrate Supabase for cloud database
-- [ ] Add email notifications
-- [ ] Implement real-time chat
-- [ ] Mobile app (React Native)
-- [ ] Advanced search and filtering
-- [ ] Analytics dashboard
-- [ ] API rate limiting
-- [ ] Webhook integrations
-
----
-
-**Last Updated**: December 2025 | **Version**: 2.0
+`Kairo-2081/CSB2.0` is where development happens; `unthinkingFool/CSB2.0` is the upstream it was forked from and merges its `main` periodically. Open pull requests against `Kairo-2081/CSB2.0`.

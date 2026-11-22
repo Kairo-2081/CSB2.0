@@ -1,0 +1,109 @@
+name: Nightly backup
+
+# An encrypted pg_dump of production every night, kept 30 days as a workflow
+# artifact, and restored into a scratch database straight away to prove it
+# works. Needs two repository secrets:
+#   BACKUP_DATABASE_URL  Neon connection string for production (direct, not -pooler)
+#   BACKUP_PASSPHRASE    long random passphrase; keep a copy in your password manager
+# The repository is public, so the dump is encrypted before it is uploaded.
+
+on:
+  schedule:
+    - cron: "30 20 * * *" # 02:30 in Dhaka
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    outputs:
+      ran: ${{ steps.check.outputs.ran }}
+      name: ${{ steps.dump.outputs.name }}
+    env:
+      DB: ${{ secrets.BACKUP_DATABASE_URL }}
+      PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - id: check
+        run: |
+          if [ -z "$DB" ] || [ -z "$PASS" ]; then
+            echo "::warning::BACKUP_DATABASE_URL or BACKUP_PASSPHRASE is not set; no backup taken."
+            echo "ran=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ran=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.check.outputs.ran == 'true'
+        name: Install the PostgreSQL 18 client
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+      - if: steps.check.outputs.ran == 'true'
+        id: dump
+        name: Dump and encrypt
+        run: |
+          name="csb2-$(date -u +%Y-%m-%dT%H%MZ).dump.gpg"
+          /usr/lib/postgresql/18/bin/pg_dump --format=custom --no-owner --no-privileges "$DB" > csb2.dump
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASS" \
+              --symmetric --cipher-algo AES256 -o "$name" csb2.dump
+          rm csb2.dump
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+      - if: steps.check.outputs.ran == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.dump.outputs.name }}
+          path: ${{ steps.dump.outputs.name }}
+          retention-days: 30
+          if-no-files-found: error
+
+  restore-test:
+    needs: backup
+    if: needs.backup.outputs.ran == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: restore
+          POSTGRES_PASSWORD: restore
+          POSTGRES_DB: restore
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U restore" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+      PGPASSWORD: restore
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.backup.outputs.name }}
+      - name: Install the PostgreSQL 18 client
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+      - name: Decrypt and restore into a scratch database
+        run: |
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASS" -d -o csb2.dump "${{ needs.backup.outputs.name }}"
+          /usr/lib/postgresql/18/bin/pg_restore --no-owner --no-privileges -h localhost -U restore -d restore csb2.dump
+      - name: Check the restored data
+        run: |
+          q() { /usr/lib/postgresql/18/bin/psql -h localhost -U restore -d restore -tAc "$1"; }
+          migrations=$(q "select max(version) from schema_migrations")
+          users=$(q "select count(*) from users")
+          universities=$(q "select count(*) from universities")
+          posts=$(q "select (select count(*) from notices)+(select count(*) from complaints)+(select count(*) from marketplace)+(select count(*) from lost_found)+(select count(*) from blood_donation)+(select count(*) from animal_welfare)+(select count(*) from faculty_suggestions)+(select count(*) from bicycles)")
+          test "$universities" -gt 0 || { echo "::error::restore has no universities"; exit 1; }
+          test -n "$migrations" || { echo "::error::restore has no schema_migrations"; exit 1; }
+          {
+            echo "### Restore check passed"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Backup | \`${{ needs.backup.outputs.name }}\` |"
+            echo "| Schema migration | $migrations |"
+            echo "| Users | $users |"
+            echo "| Board posts | $posts |"
+            echo "| Universities | $universities |"
+          } >> "$GITHUB_STEP_SUMMARY"

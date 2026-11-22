@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
 
 concurrency:
@@ -106,15 +106,22 @@ jobs:
   deploy:
     name: Deploy to Render
     needs: [checks, secrets, api, e2e]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Trigger the Render deploy hook
         env:
-          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          PRODUCTION_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          STAGING_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL }}
         run: |
+          # main deploys production; staging deploys the staging service.
+          case "$GITHUB_REF_NAME" in
+            main) HOOK="$PRODUCTION_HOOK"; NAME=RENDER_DEPLOY_HOOK_URL ;;
+            staging) HOOK="$STAGING_HOOK"; NAME=RENDER_STAGING_DEPLOY_HOOK_URL ;;
+            *) exit 0 ;;
+          esac
           if [ -z "$HOOK" ]; then
-            echo "::warning::RENDER_DEPLOY_HOOK_URL is not set; skipping deploy. Add it under Settings -> Secrets -> Actions."
+            echo "::warning::$NAME is not set; skipping deploy. Add it under Settings -> Secrets and variables -> Actions."
             exit 0
           fi
-          curl -fsS -X POST "$HOOK" > /dev/null && echo "Deploy started"
+          curl -fsS -X POST "$HOOK" > /dev/null && echo "Deploy of $GITHUB_REF_NAME started"
