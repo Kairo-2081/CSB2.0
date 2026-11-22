@@ -1,38 +1,24 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { DateBlock, EmptyState, FilterBar, Kicker, RowList, SectionTitle } from "@/components/editorial";
+import { DateBlock, EmptyState, FilterBar, Kicker, ReportButton, RowList, SectionTitle } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { 
-  Plus, 
-  MapPin, 
-  Clock, 
-  User,
-  AlertTriangle,
-  CheckCircle,
-  Heart,
-  Trash2
-} from "lucide-react";
-import { animalWelfareService } from "@/services/database.service";
+import { Plus, Trash2 } from "lucide-react";
+import { BoardRow, animalWelfareService } from "@/services/database.service";
 
-interface AnimalReport {
-  id: string;
+interface AnimalReport extends BoardRow {
   title?: string;
   description: string;
   location: string;
   urgency: "low" | "medium" | "high";
   posted_by: string;
-  user_id: string;
-  created_at: string;
 }
 
 const zoneConfig = {
@@ -58,7 +44,6 @@ export default function AnimalWelfare() {
     description: "",
     location: "",
     urgency_level: "medium" as "low" | "medium" | "high",
-    posted_by: "",
   });
 
   useEffect(() => {
@@ -67,7 +52,7 @@ export default function AnimalWelfare() {
 
   const loadReports = async () => {
     try {
-      const data = await animalWelfareService.getReports();
+      const data = await animalWelfareService.list<AnimalReport>();
       setReports(data);
     } catch (error) {
       console.error("Error loading reports:", error);
@@ -78,20 +63,18 @@ export default function AnimalWelfare() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.location || !formData.posted_by) {
+    if (!formData.title || !formData.description || !formData.location) {
       toast.error("Please fill in all fields");
       return;
     }
 
     setIsLoading(true);
     try {
-      await animalWelfareService.createReport({
+      await animalWelfareService.create({
         title: formData.title,
         description: formData.description,
         location: formData.location,
         urgency: formData.urgency_level,
-        posted_by: formData.posted_by,
-        user_id: "current-user-id",
       });
       toast.success("Report submitted successfully!");
       setIsDialogOpen(false);
@@ -100,12 +83,10 @@ export default function AnimalWelfare() {
         description: "",
         location: "",
         urgency_level: "medium",
-        posted_by: "",
       });
       await loadReports();
     } catch (error) {
-      console.error("Error submitting report:", error);
-      toast.error("Failed to submit report");
+      toast.error(error instanceof Error ? error.message : "Failed to submit report");
     } finally {
       setIsLoading(false);
     }
@@ -118,12 +99,11 @@ export default function AnimalWelfare() {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this report?")) {
       try {
-        await animalWelfareService.deleteReport(id);
+        await animalWelfareService.remove(id);
         toast.success("Report deleted successfully!");
         await loadReports();
       } catch (error) {
-        console.error("Error deleting report:", error);
-        toast.error("Failed to delete report");
+        toast.error(error instanceof Error ? error.message : "Failed to delete report");
       }
     }
   };
@@ -202,15 +182,6 @@ export default function AnimalWelfare() {
                     disabled={isLoading}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="posted_by">Your Name</Label>
-                  <Input
-                    id="posted_by"
-                    value={formData.posted_by}
-                    onChange={(e) => setFormData({...formData, posted_by: e.target.value})}
-                    disabled={isLoading}
-                  />
-                </div>
               </div>
               <DialogFooter className="gap-2 pt-4">
                 <Button 
@@ -252,7 +223,8 @@ export default function AnimalWelfare() {
                       <StatusDot tone={report.urgency === "high" ? "urgent" : report.urgency === "medium" ? "progress" : "open"}>
                         {statusConfig[report.urgency]?.label ?? "Reported"}
                       </StatusDot>
-                      {report.user_id === "current-user-id" && (
+                      {!report.is_mine && <ReportButton board="animal-welfare" rowId={report.id} />}
+                    {report.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(report.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>
@@ -272,7 +244,7 @@ export default function AnimalWelfare() {
 
           <aside aria-labelledby="how-to-report">
             <SectionTitle id="how-to-report">How to report</SectionTitle>
-            <dl className="divide-y divide-white/[0.07]">
+            <dl className="divide-y divide-foreground/[0.07]">
               <div className="py-5">
                 <dt><StatusDot tone="urgent">High</StatusDot></dt>
                 <dd className="mt-1.5 text-sm leading-6 text-muted-foreground">Needs a vet now: bleeding, can't stand, or hit by a vehicle.</dd>

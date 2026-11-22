@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  /* Dark (default). Landing, sign-in and 404 stay dark in light mode through .theme-dark. */
+  :root,
+  .theme-dark {
     /* Obsidian, ivory and sand: taken from the BUET landing photograph */
     --background: 240 30% 4%;
     --foreground: 35 37% 93%;
@@ -39,6 +41,49 @@
     --sidebar-accent-foreground: 35 37% 93%;
     --sidebar-border: 30 8% 15%;
     --sidebar-ring: 36 88% 59%;
+    --chart-grid: 30 8% 16%;
+    --glow: 36 88% 59%;
+    color-scheme: dark;
+  }
+
+  /* Light: warm paper and ink, with a deeper saffron that holds contrast on white. */
+  .light {
+    --background: 40 33% 97%;
+    --foreground: 28 18% 11%;
+    --card: 40 40% 99%;
+    --card-foreground: 28 18% 11%;
+    --popover: 40 40% 99%;
+    --popover-foreground: 28 18% 11%;
+    --primary: 29 88% 37%;
+    --primary-foreground: 40 60% 98%;
+    --secondary: 38 22% 91%;
+    --secondary-foreground: 28 18% 14%;
+    --muted: 38 22% 92%;
+    --muted-foreground: 28 9% 38%;
+    --accent: 30 85% 38%;
+    --accent-foreground: 40 60% 98%;
+    --destructive: 4 70% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 52% 32%;
+    --success-foreground: 0 0% 100%;
+    --warning: 34 85% 38%;
+    --warning-foreground: 0 0% 100%;
+    --info: 210 55% 42%;
+    --info-foreground: 0 0% 100%;
+    --border: 32 18% 84%;
+    --input: 32 18% 82%;
+    --ring: 29 88% 37%;
+    --sidebar-background: 38 30% 94%;
+    --sidebar-foreground: 28 14% 22%;
+    --sidebar-primary: 29 88% 37%;
+    --sidebar-primary-foreground: 40 60% 98%;
+    --sidebar-accent: 38 24% 89%;
+    --sidebar-accent-foreground: 28 18% 11%;
+    --sidebar-border: 32 18% 86%;
+    --sidebar-ring: 29 88% 37%;
+    --chart-grid: 32 16% 87%;
+    --glow: 36 92% 55%;
+    color-scheme: light;
   }
 
 
@@ -46,8 +91,10 @@
     @apply border-border;
   }
 
-  html {
-    color-scheme: dark;
+  html.theme-switching *,
+  html.theme-switching *::before,
+  html.theme-switching *::after {
+    transition: background-color 280ms ease, border-color 280ms ease, color 200ms ease !important;
   }
 
   body {
@@ -55,7 +102,7 @@
     font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
     font-feature-settings: "ss01", "cv11";
     background:
-      radial-gradient(ellipse at 88% -10%, rgba(242, 169, 59, 0.10), transparent 42rem),
+      radial-gradient(ellipse at 88% -10%, hsl(var(--glow) / 0.10), transparent 42rem),
       radial-gradient(ellipse at 0% 100%, rgba(232, 120, 40, 0.06), transparent 40rem),
       hsl(var(--background));
     color: hsl(var(--foreground));
@@ -84,8 +131,8 @@
   }
 
   ::selection {
-    background: rgba(242, 169, 59, 0.38);
-    color: white;
+    background: hsl(var(--glow) / 0.38);
+    color: hsl(var(--foreground));
   }
 
   :focus-visible {
@@ -164,7 +211,7 @@
   /* The opening band of each page: the landing hero at a smaller scale. */
   .page-band-shade {
     background:
-      linear-gradient(180deg, rgba(7, 7, 13, 0.75) 0%, rgba(7, 7, 13, 0.35) 30%, rgba(7, 7, 13, 0.6) 70%, #07070d 100%);
+      linear-gradient(180deg, hsl(var(--background) / 0.75) 0%, hsl(var(--background) / 0.35) 30%, hsl(var(--background) / 0.6) 70%, hsl(var(--background)) 100%);
   }
 
   @media (min-width: 1024px) {
@@ -175,10 +222,10 @@
 
     .page-band-shade {
       background:
-        linear-gradient(180deg, rgba(7, 7, 13, 0.55) 0%, rgba(7, 7, 13, 0) 24%),
-        linear-gradient(90deg, #07070d 24%, rgba(7, 7, 13, 0.82) 46%, rgba(7, 7, 13, 0.1) 76%),
-        linear-gradient(rgba(7, 7, 13, 0.12), rgba(7, 7, 13, 0.12)),
-        linear-gradient(0deg, #07070d 0%, rgba(7, 7, 13, 0.55) 20%, rgba(7, 7, 13, 0) 45%);
+        linear-gradient(180deg, hsl(var(--background) / 0.55) 0%, hsl(var(--background) / 0) 24%),
+        linear-gradient(90deg, hsl(var(--background)) 24%, hsl(var(--background) / 0.82) 46%, hsl(var(--background) / 0.1) 76%),
+        linear-gradient(hsl(var(--background) / 0.12), hsl(var(--background) / 0.12)),
+        linear-gradient(0deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.55) 20%, hsl(var(--background) / 0) 45%);
     }
   }
 
@@ -196,13 +243,13 @@
   .page-band-glow-red {
     background:
       radial-gradient(65% 95% at 82% 10%, rgba(110, 22, 30, 0.32), rgba(60, 12, 18, 0.12) 45%, transparent 75%),
-      linear-gradient(0deg, #07070d 0%, transparent 60%);
+      linear-gradient(0deg, hsl(var(--background)) 0%, transparent 60%);
   }
 
   .page-band-glow {
     background:
-      radial-gradient(70% 90% at 85% 0%, rgba(242, 169, 59, 0.14), transparent 70%),
-      linear-gradient(0deg, #07070d 0%, transparent 60%);
+      radial-gradient(70% 90% at 85% 0%, hsl(var(--glow) / 0.14), transparent 70%),
+      linear-gradient(0deg, hsl(var(--background)) 0%, transparent 60%);
   }
 
 
@@ -221,19 +268,19 @@
   }
 
   .glass-shell {
-    background: #0c0b0d;
-    border: 1px solid rgba(244, 239, 232, 0.09);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    background: hsl(var(--popover));
+    border: 1px solid hsl(var(--foreground) / 0.09);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
   }
 
   .glass-panel {
-    background: rgba(244, 239, 232, 0.022);
-    border: 1px solid rgba(244, 239, 232, 0.08);
+    background: hsl(var(--foreground) / 0.022);
+    border: 1px solid hsl(var(--foreground) / 0.08);
   }
 
   .glass-control {
-    background: rgba(244, 239, 232, 0.03);
-    border: 1px solid rgba(244, 239, 232, 0.14);
+    background: hsl(var(--foreground) / 0.03);
+    border: 1px solid hsl(var(--foreground) / 0.14);
   }
 
 
@@ -242,31 +289,146 @@
 
   .brand-mark {
     background: transparent;
-    border: 1px solid rgba(244, 239, 232, 0.7);
+    border: 1px solid hsl(var(--foreground) / 0.7);
     border-radius: 0;
-    color: #f4efe8;
+    color: hsl(var(--foreground));
     font-family: "Instrument Serif", Georgia, serif;
     font-weight: 400;
   }
 
   .button-primary {
-    border: 1px solid rgba(255, 214, 150, 0.35);
-    background: #f2a93b;
-    color: #140d04;
-    box-shadow: 0 10px 34px rgba(242, 169, 59, 0.28);
-    transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    border: 1px solid hsl(var(--glow) / 0.35);
+    background: hsl(var(--primary));
+    box-shadow: 0 10px 34px hsl(var(--glow) / 0.26);
+    transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, filter 180ms ease;
   }
 
   .button-primary:hover {
-    background: #f6bb5c;
-    box-shadow: 0 12px 40px rgba(242, 169, 59, 0.4);
+    filter: brightness(1.08);
+    box-shadow: 0 14px 42px hsl(var(--glow) / 0.4);
+    transform: translateY(-1px);
   }
 
   .button-primary:active {
-    transform: translateY(1px);
+    transform: translateY(1px) scale(0.99);
   }
 }
 
+
+/* ---------------------------------------------------------------------------
+   Motion. Pages rise in section by section, lists cascade, cards lift on
+   hover. Everything ends at transform: none so nothing is left holding a
+   containing block, and the reduced-motion rule at the end switches it off.
+   --------------------------------------------------------------------------- */
+@keyframes enter-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes enter-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes enter-scale {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes nav-indicator {
+  from { transform: scaleY(0); opacity: 0; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes grow-up {
+  from { transform: scaleY(0); }
+  to   { transform: none; }
+}
+
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to   { transform: none; }
+}
+
+@keyframes band-zoom {
+  from { transform: scale(1.06); opacity: 0.4; }
+  to   { transform: none; opacity: 1; }
+}
+
+@keyframes draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -6px, 0); }
+}
+
+@layer utilities {
+  .page-container > * {
+    animation: enter-up 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .page-container > *:nth-child(2) { animation-delay: 80ms; }
+  .page-container > *:nth-child(3) { animation-delay: 150ms; }
+  .page-container > *:nth-child(4) { animation-delay: 210ms; }
+  .page-container > *:nth-child(5) { animation-delay: 260ms; }
+  .page-container > *:nth-child(n + 6) { animation-delay: 300ms; }
+
+  /* Children rise one after another; anything past the 12th comes in together. */
+  .stagger > * {
+    animation: enter-up 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: 360ms;
+  }
+  .stagger > *:nth-child(1)  { animation-delay: 0ms; }
+  .stagger > *:nth-child(2)  { animation-delay: 40ms; }
+  .stagger > *:nth-child(3)  { animation-delay: 80ms; }
+  .stagger > *:nth-child(4)  { animation-delay: 120ms; }
+  .stagger > *:nth-child(5)  { animation-delay: 160ms; }
+  .stagger > *:nth-child(6)  { animation-delay: 190ms; }
+  .stagger > *:nth-child(7)  { animation-delay: 220ms; }
+  .stagger > *:nth-child(8)  { animation-delay: 250ms; }
+  .stagger > *:nth-child(9)  { animation-delay: 280ms; }
+  .stagger > *:nth-child(10) { animation-delay: 300ms; }
+  .stagger > *:nth-child(11) { animation-delay: 320ms; }
+  .stagger > *:nth-child(12) { animation-delay: 340ms; }
+
+  .animate-enter { animation: enter-up 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .animate-enter-scale { animation: enter-scale 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .animate-grow-up { animation: grow-up 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: bottom; }
+  .animate-grow-x { animation: grow-x 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: left; }
+  .animate-band { animation: band-zoom 1600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .spark-draw { stroke-dasharray: 1; animation: draw 1200ms cubic-bezier(0.4, 0, 0.2, 1) 150ms both; }
+  .animate-drift { animation: drift 7s ease-in-out infinite; }
+
+  /* Cards and tiles lift a little under the pointer. */
+  .lift {
+    transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 240ms ease, border-color 240ms ease, background-color 240ms ease;
+  }
+  .lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px -18px hsl(var(--glow) / 0.35);
+  }
+
+  /* Rows in hairline lists slide their content on hover. */
+  .row-hover {
+    transition: background-color 200ms ease, padding 200ms ease;
+  }
+  .row-hover:hover {
+    background-color: hsl(var(--foreground) / 0.025);
+  }
+
+  .skeleton-shimmer {
+    background: linear-gradient(90deg, hsl(var(--foreground) / 0.04) 25%, hsl(var(--foreground) / 0.09) 50%, hsl(var(--foreground) / 0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+}
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -274,16 +436,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
+  background: hsl(var(--foreground) / 0.03);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(244, 239, 232, 0.16);
+  background: hsl(var(--foreground) / 0.16);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 239, 232, 0.28);
+  background: hsl(var(--foreground) / 0.28);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, types, build, audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: npm
+      - run: npm ci
+      - run: npx eslint . --max-warnings 0
+      - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: npm run build
+      - name: Fail on high or critical advisories in production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  api:
+    name: API access tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: csb
+          POSTGRES_PASSWORD: csb
+          POSTGRES_DB: csb_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U csb" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://csb:csb@localhost:5432/csb_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: npm
+      - run: npm ci
+      - run: npm run test:api
+
+  e2e:
+    name: Browser smoke test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: csb
+          POSTGRES_PASSWORD: csb
+          POSTGRES_DB: csb_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U csb" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://csb:csb@localhost:5432/csb_e2e
+      PORT: "3001"
+      E2E_BASE_URL: http://localhost:3001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Start the server
+        run: |
+          node server.js > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:3001/api/health && break; sleep 1; done
+      - run: npm run test:e2e
+      - if: failure()
+        run: cat server.log
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+
+  deploy:
+    name: Deploy to Render
+    needs: [checks, secrets, api, e2e]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the Render deploy hook
+        env:
+          PRODUCTION_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          STAGING_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL }}
+        run: |
+          # main deploys production; staging deploys the staging service.
+          case "$GITHUB_REF_NAME" in
+            main) HOOK="$PRODUCTION_HOOK"; NAME=RENDER_DEPLOY_HOOK_URL ;;
+            staging) HOOK="$STAGING_HOOK"; NAME=RENDER_STAGING_DEPLOY_HOOK_URL ;;
+            *) exit 0 ;;
+          esac
+          if [ -z "$HOOK" ]; then
+            echo "::warning::$NAME is not set; skipping deploy. Add it under Settings -> Secrets and variables -> Actions."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" > /dev/null && echo "Deploy of $GITHUB_REF_NAME started"

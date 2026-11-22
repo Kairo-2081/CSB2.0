@@ -1,0 +1,19 @@
+name: Uptime check
+
+# Calls /api/health every 6 hours. A failed run emails the repository owner.
+# Not more often: each check wakes the free Render instance for ~15 minutes,
+# and free instance hours are shared by every service in the workspace.
+
+on:
+  schedule:
+    - cron: "15 */6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Production health
+        run: curl -fsS --retry 4 --retry-delay 20 --retry-all-errors --max-time 90 https://csb2-sg-yhv2.onrender.com/api/health

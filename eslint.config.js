@@ -20,7 +20,21 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": ["error", { args: "none", varsIgnorePattern: "^_", caughtErrors: "none" }],
+    },
+  },
+  {
+    // shadcn/ui primitives export their variant helpers next to the component.
+    files: ["src/components/ui/**/*.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
+  {
+    // The API server, scripts and API tests run on Node.
+    extends: [js.configs.recommended],
+    files: ["server.js", "server/**/*.js", "scripts/**/*.mjs", "tests/api/**/*.js"],
+    languageOptions: { ecmaVersion: 2022, sourceType: "module", globals: globals.node },
+    rules: {
+      "no-unused-vars": ["error", { args: "none", varsIgnorePattern: "^_" }],
     },
   },
 );

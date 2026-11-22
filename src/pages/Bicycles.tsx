@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { CountStrip, EmptyState, FilterBar, RowList } from "@/components/editorial";
+import { CountStrip, EmptyState, FilterBar, ReportButton, RowList } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { toneFor } from "@/lib/status";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -15,32 +13,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { 
-  Bike, 
-  MapPin, 
-  Clock, 
-  CheckCircle, 
-  XCircle,
-  AlertTriangle,
-  History,
-  Plus,
-  Loader2,
-  Trash2
-} from "lucide-react";
-import { bicycleService } from "@/services/database.service";
+import { Clock, CheckCircle, XCircle, AlertTriangle, Plus, Loader2, Trash2 } from "lucide-react";
+import { BoardRow, bicycleService } from "@/services/database.service";
 import { toast } from "sonner";
 
-interface Bicycle {
-  id: string;
+interface Bicycle extends BoardRow {
   brand: string;
   color: string;
   location: string;
   contact_number: string;
   description?: string;
-  user_id: string;
   status?: string;
   rented_by?: string;
-  created_at: string;
 }
 
 const statusConfig = {
@@ -101,7 +85,7 @@ export default function Bicycles() {
   const loadBicycles = async () => {
     try {
       setIsLoading(true);
-      const data = await bicycleService.getReports();
+      const data = await bicycleService.list<Bicycle>();
       setBicycles(data);
     } catch (error) {
       console.error("Error loading bicycles:", error);
@@ -120,21 +104,16 @@ export default function Bicycles() {
 
     try {
       setIsLoading(true);
-      await bicycleService.createReport({
+      await bicycleService.create({
         brand: formData.registration_number,
-        color: "Unknown",
-        location: "Campus",
-        contact_number: "N/A",
         description: formData.registration_number,
-        user_id: "current-user-id",
       });
       toast.success("Bicycle added successfully!");
       setFormData({ registration_number: "" });
       setIsDialogOpen(false);
       await loadBicycles();
     } catch (error) {
-      console.error("Error adding bicycle:", error);
-      toast.error("Failed to add bicycle");
+      toast.error(error instanceof Error ? error.message : "Failed to add bicycle");
     } finally {
       setIsLoading(false);
     }
@@ -151,12 +130,11 @@ export default function Bicycles() {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this bicycle report?")) {
       try {
-        await bicycleService.deleteReport(id);
+        await bicycleService.remove(id);
         toast.success("Report deleted successfully!");
         await loadBicycles();
       } catch (error) {
-        console.error("Error deleting report:", error);
-        toast.error("Failed to delete report");
+        toast.error(error instanceof Error ? error.message : "Failed to delete report");
       }
     }
   };
@@ -189,7 +167,7 @@ export default function Bicycles() {
             { value: stats.total, label: "Total", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" /> },
             { value: stats.available, label: "Available", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-success" /> },
             { value: stats.rented, label: "In use", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warning" /> },
-            { value: stats.maintenance, label: "In repair", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#6f685f]" /> },
+            { value: stats.maintenance, label: "In repair", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" /> },
           ]}
         />
 
@@ -222,7 +200,8 @@ export default function Bicycles() {
                     </div>
                     <StatusDot tone={toneFor(bicycle.status === "rented" ? "in_use" : bicycle.status)}>{bicycle.status ? status.label : "Status unknown"}</StatusDot>
                     <div className="col-span-2 flex items-center justify-end gap-2 md:col-span-1">
-                      {bicycle.user_id === "current-user-id" && (
+                      {!bicycle.is_mine && <ReportButton board="bicycles" rowId={bicycle.id} />}
+                    {bicycle.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(bicycle.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>
@@ -250,8 +229,8 @@ export default function Bicycles() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
-                <label className="block text-sm font-medium mb-1">Registration Number *</label>
-                <Input
+                <label htmlFor="bicycles-registration-number" className="block text-sm font-medium mb-1">Registration Number *</label>
+                <Input id="bicycles-registration-number"
                   placeholder="e.g., BIKE-001"
                   value={formData.registration_number}
                   onChange={(e) => setFormData({...formData, registration_number: e.target.value})}

@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { EmptyState, FilterBar, ObjectTile } from "@/components/editorial";
+import { EmptyState, FilterBar, ObjectTile, ReportButton } from "@/components/editorial";
 import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -15,35 +13,22 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { 
-  Plus, 
-  Search, 
-  Phone, 
-  User,
-  DollarSign,
-  Tag,
-  Loader2,
-  Trash2,
-  ArrowUpRight,
-} from "lucide-react";
-import { marketplaceService } from "@/services/database.service";
+import { Plus, Loader2, Trash2, ArrowUpRight } from "lucide-react";
+import { BoardRow, marketplaceService } from "@/services/database.service";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const takaNumber = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
 const taka = { format: (n: number) => `৳ ${takaNumber.format(n)}` };
 
-interface MarketplaceItem {
-  id: string;
+interface MarketplaceItem extends BoardRow {
   title: string;
   description: string;
   price: number;
   seller: string;
   phone: string;
-  user_id: string;
   category: string;
   is_sold: boolean;
-  created_at: string;
 }
 
 export default function Marketplace() {
@@ -57,7 +42,6 @@ export default function Marketplace() {
     title: "",
     description: "",
     price: "",
-    seller: "Anonymous",
     phone: "",
     category: "Books",
   });
@@ -69,7 +53,7 @@ export default function Marketplace() {
   const loadItems = async () => {
     try {
       setIsLoading(true);
-      const data = await marketplaceService.getItems();
+      const data = await marketplaceService.list<MarketplaceItem>();
       setItems(data);
     } catch (error) {
       console.error("Error loading items:", error);
@@ -92,17 +76,15 @@ export default function Marketplace() {
 
     try {
       setIsLoading(true);
-      await marketplaceService.createItem({
+      await marketplaceService.create({
         ...formData,
         price: parseFloat(formData.price),
-        user_id: user.id,
       });
       toast.success("Item posted successfully!");
       setFormData({
         title: "",
         description: "",
         price: "",
-        seller: "Anonymous",
         phone: "",
         category: "Books",
       });
@@ -123,7 +105,7 @@ export default function Marketplace() {
     if (window.confirm("Are you sure you want to delete this item?")) {
       try {
         setIsLoading(true);
-        await marketplaceService.deleteItem(id);
+        await marketplaceService.remove(id);
         toast.success("Item deleted successfully!");
         await loadItems();
       } catch (error) {
@@ -175,7 +157,7 @@ export default function Marketplace() {
           />
 
           {filteredItems.length > 0 ? (
-            <ul className="mt-10 grid gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="stagger mt-10 grid gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
               {filteredItems.map((item, index) => (
                 <li key={item.id}>
                   <ObjectTile title={item.title} category={item.category} index={index} />
@@ -196,7 +178,8 @@ export default function Marketplace() {
                     ) : (
                       <span />
                     )}
-                    {user && item.user_id === user.id && (
+                    {!item.is_mine && <ReportButton board="marketplace" rowId={item.id} />}
+                    {item.can_delete && (
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} disabled={isLoading} className="text-destructive hover:text-destructive">
                         <Trash2 aria-hidden="true" /> Delete
                       </Button>
@@ -222,8 +205,8 @@ export default function Marketplace() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
-                <label className="block text-sm font-medium mb-1">Title *</label>
-                <Input
+                <label htmlFor="marketplace-title" className="block text-sm font-medium mb-1">Title *</label>
+                <Input id="marketplace-title"
                   placeholder="Item name"
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
@@ -232,8 +215,8 @@ export default function Marketplace() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Category *</label>
-                <Input
+                <label htmlFor="marketplace-category" className="block text-sm font-medium mb-1">Category *</label>
+                <Input id="marketplace-category"
                   placeholder="e.g., Books, Electronics, Accessories"
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
@@ -242,8 +225,8 @@ export default function Marketplace() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Price (৳) *</label>
-                <Input
+                <label htmlFor="marketplace-price" className="block text-sm font-medium mb-1">Price (৳) *</label>
+                <Input id="marketplace-price"
                   type="number"
                   placeholder="Enter price"
                   value={formData.price}
@@ -253,8 +236,8 @@ export default function Marketplace() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description *</label>
-                <Textarea
+                <label htmlFor="marketplace-description" className="block text-sm font-medium mb-1">Description *</label>
+                <Textarea id="marketplace-description"
                   placeholder="Describe the item in detail..."
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -264,18 +247,8 @@ export default function Marketplace() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Your Name</label>
-                <Input
-                  placeholder="Your name (optional)"
-                  value={formData.seller}
-                  onChange={(e) => setFormData({...formData, seller: e.target.value})}
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Phone Number *</label>
-                <Input
+                <label htmlFor="marketplace-phone-number" className="block text-sm font-medium mb-1">Phone Number *</label>
+                <Input id="marketplace-phone-number"
                   placeholder="Your contact number"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}

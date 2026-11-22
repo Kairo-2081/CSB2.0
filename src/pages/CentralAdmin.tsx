@@ -7,6 +7,8 @@ import { authService, CentralAdminMetrics } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
 import { SectionTitle } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
+import { ModerationQueue } from "@/components/admin/ModerationQueue";
+import { CountUp } from "@/components/motion/CountUp";
 
 const numberFormat = new Intl.NumberFormat("en-BD");
 // Registration is limited by OPEN_UNIVERSITIES on the server; BUET is the launch campus.
@@ -44,9 +46,9 @@ export default function CentralAdmin() {
           <PageHeader
             photo={{ src: "/campus/bands/buet-hero.webp", alt: "A BUET building with a concrete block cantilevered above red brick" }}
             eyebrow="Central administration"
-            title="The university network."
+            title="Network and moderation."
             accent="BUET first."
-            description="Student registrations by university. CSB 2.0 opens at BUET first; other public universities follow later."
+            description="Student registrations by university, reported posts, and removed posts you can restore."
             actions={
               <Button type="button" variant="outline" onClick={() => void loadMetrics()} disabled={isLoading}>
                 <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
@@ -55,15 +57,15 @@ export default function CentralAdmin() {
             }
           />
 
-          <ul aria-label="Network totals" className="grid border-y border-white/10 sm:grid-cols-3">
+          <ul aria-label="Network totals" className="stagger grid border-y border-foreground/10 sm:grid-cols-3">
             {[
               { label: "Universities open", value: metrics ? metrics.universities.filter(isOpen).length : null },
               { label: "Students registered", value: metrics?.studentCount ?? null },
               { label: "Registered this month", value: metrics?.studentsThisMonth ?? null },
             ].map((item, i) => (
-              <li key={item.label} className={i ? "border-t border-white/10 py-7 sm:border-l sm:border-t-0 sm:px-6" : "py-7 sm:pr-6"}>
+              <li key={item.label} className={i ? "border-t border-foreground/10 py-7 sm:border-l sm:border-t-0 sm:px-6" : "py-7 sm:pr-6"}>
                 <span className="block font-display text-5xl leading-none tabular-nums">
-                  {isLoading || item.value === null ? "—" : numberFormat.format(item.value)}
+                  {isLoading || item.value === null ? "—" : <CountUp value={item.value} />}
                 </span>
                 <span className="mt-3.5 block text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{item.label}</span>
               </li>
@@ -83,7 +85,7 @@ export default function CentralAdmin() {
                 Loading university figures…
               </p>
             ) : metrics?.universities.length ? (
-              <ol className="divide-y divide-white/[0.07]">
+              <ol className="stagger divide-y divide-foreground/[0.07]">
                 {metrics.universities.map((university) => (
                   <li key={university.id} className="grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-6 gap-y-2 py-5 md:grid-cols-[96px_minmax(0,1fr)_140px_120px_100px]">
                     <span className="font-display text-[22px] text-accent">{university.shortName || "—"}</span>
@@ -104,6 +106,8 @@ export default function CentralAdmin() {
               <p className="py-12 text-[15px] text-muted-foreground">No universities in the registry yet.</p>
             ) : null}
           </section>
+
+          <ModerationQueue />
         </div>
       </div>
     </MainLayout>

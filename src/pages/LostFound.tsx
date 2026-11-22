@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { DateBlock, EmptyState, FilterBar, RowList } from "@/components/editorial";
+import { DateBlock, EmptyState, FilterBar, ReportButton, RowList } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -22,21 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Plus, 
-  Search, 
-  MapPin, 
-  Clock, 
-  MessageCircle,
-  User,
-  Loader2,
-  Trash2
-} from "lucide-react";
-import { lostFoundService } from "@/services/database.service";
+import { Plus, MapPin, Loader2, Trash2 } from "lucide-react";
+import { BoardRow, lostFoundService } from "@/services/database.service";
 import { toast } from "sonner";
 
-interface LostFoundItem {
-  id: string;
+interface LostFoundItem extends BoardRow {
   title: string;
   description: string;
   location: string;
@@ -44,8 +32,6 @@ interface LostFoundItem {
   status: "lost" | "found";
   contact_number?: string;
   posted_by: string;
-  user_id: string;
-  created_at: string;
 }
 
 export default function LostFound() {
@@ -59,7 +45,6 @@ export default function LostFound() {
     description: "",
     location: "",
     type: "lost" as "lost" | "found",
-    posted_by: "Anonymous",
     contact_number: "",
   });
 
@@ -70,7 +55,7 @@ export default function LostFound() {
   const loadItems = async () => {
     try {
       setIsLoading(true);
-      const data = await lostFoundService.getItems();
+      const data = await lostFoundService.list<LostFoundItem>();
       setItems(data);
     } catch (error) {
       console.error("Error loading items:", error);
@@ -89,11 +74,12 @@ export default function LostFound() {
 
     try {
       setIsLoading(true);
-      await lostFoundService.createItem({
-        ...formData,
+      await lostFoundService.create({
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
         item_type: formData.type,
-        status: formData.type,
-        user_id: "current-user-id",
+        contact_number: formData.contact_number,
       });
       toast.success("Item posted successfully!");
       setFormData({
@@ -101,14 +87,12 @@ export default function LostFound() {
         description: "",
         location: "",
         type: "lost",
-        posted_by: "Anonymous",
         contact_number: "",
       });
       setIsDialogOpen(false);
       await loadItems();
     } catch (error) {
-      console.error("Error creating item:", error);
-      toast.error("Failed to post item");
+      toast.error(error instanceof Error ? error.message : "Failed to post item");
     } finally {
       setIsLoading(false);
     }
@@ -117,12 +101,11 @@ export default function LostFound() {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       try {
-        await lostFoundService.deleteItem(id);
+        await lostFoundService.remove(id);
         toast.success("Item deleted successfully!");
         await loadItems();
       } catch (error) {
-        console.error("Error deleting item:", error);
-        toast.error("Failed to delete item");
+        toast.error(error instanceof Error ? error.message : "Failed to delete item");
       }
     }
   };
@@ -174,7 +157,7 @@ export default function LostFound() {
                 <li key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)] gap-5 py-8 md:grid-cols-[96px_minmax(0,1fr)_220px] md:gap-8">
                   <DateBlock date={item.created_at} />
                   <div className="min-w-0">
-                    <StatusDot tone={item.item_type === "found" ? "resolved" : "open"} className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8d857c]">
+                    <StatusDot tone={item.item_type === "found" ? "resolved" : "open"} className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       {item.item_type === "found" ? "Found" : "Lost"}
                     </StatusDot>
                     <h3 className="mt-2.5 font-display text-[26px] font-normal leading-[1.2]">{item.title}</h3>
@@ -194,7 +177,8 @@ export default function LostFound() {
                         Call {item.contact_number}
                       </a>
                     )}
-                    {item.user_id === "current-user-id" && (
+                    {!item.is_mine && <ReportButton board="lost-found" rowId={item.id} />}
+                    {item.can_delete && (
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
                         <Trash2 aria-hidden="true" /> Delete
                       </Button>
@@ -220,13 +204,13 @@ export default function LostFound() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
-                <label className="block text-sm font-medium mb-1">Type *</label>
+                <label htmlFor="lostfound-type" className="block text-sm font-medium mb-1">Type *</label>
                 <Select 
                   value={formData.type}
                   onValueChange={(value) => setFormData({...formData, type: value as "lost" | "found"})}
                   disabled={isLoading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="lostfound-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -237,8 +221,8 @@ export default function LostFound() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Title *</label>
-                <Input
+                <label htmlFor="lostfound-title" className="block text-sm font-medium mb-1">Title *</label>
+                <Input id="lostfound-title"
                   placeholder="Item name or brief description"
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
@@ -247,8 +231,8 @@ export default function LostFound() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Location *</label>
-                <Input
+                <label htmlFor="lostfound-location" className="block text-sm font-medium mb-1">Location *</label>
+                <Input id="lostfound-location"
                   placeholder="Where was it lost/found?"
                   value={formData.location}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
@@ -257,8 +241,8 @@ export default function LostFound() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description *</label>
-                <Textarea
+                <label htmlFor="lostfound-description" className="block text-sm font-medium mb-1">Description *</label>
+                <Textarea id="lostfound-description"
                   placeholder="Describe the item in detail..."
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -268,18 +252,8 @@ export default function LostFound() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Your Name</label>
-                <Input
-                  placeholder="Your name (optional)"
-                  value={formData.posted_by}
-                  onChange={(e) => setFormData({...formData, posted_by: e.target.value})}
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Contact Number *</label>
-                <Input
+                <label htmlFor="lostfound-contact-number" className="block text-sm font-medium mb-1">Contact Number *</label>
+                <Input id="lostfound-contact-number"
                   placeholder="Your contact number"
                   value={formData.contact_number}
                   onChange={(e) => setFormData({...formData, contact_number: e.target.value})}

@@ -1,4 +1,5 @@
 import { API_URL } from "@/lib/api-url";
+import { useModules } from "@/lib/modules";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -99,6 +100,7 @@ const launchFacts: { icon: LucideIcon; value: string; label: string }[] = [
 ];
 
 export default function Index() {
+  const { enabled } = useModules();
   const stats = useCampusStats();
   const ready = stats.status === "ready" ? stats.stats : null;
   // Show live counts only once at least two of them have something to report.
@@ -106,7 +108,7 @@ export default function Index() {
   const showLive = stats.status === "loading" || nonZero.length >= 2;
 
   return (
-    <div className="min-h-screen bg-[#07070d] text-[#f4efe8]">
+    <div className="theme-dark min-h-screen bg-[#07070d] text-[#f4efe8]">
       <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden lg:min-h-[max(720px,min(100svh,960px))]">
         {/* Campus photograph, graded down so the type sits on a dusk-toned field */}
         <picture>
@@ -127,7 +129,7 @@ export default function Index() {
               <span className="text-sm font-medium uppercase tracking-[0.22em]">CSB 2.0</span>
             </Link>
             <nav aria-label="Primary" className="hidden items-center gap-9 lg:flex">
-              {navLinks.map((link) =>
+              {navLinks.filter((link) => enabled(link.href)).map((link) =>
                 link.href.startsWith("#") ? (
                   <a key={link.label} href={link.href} className="landing-nav-link">{link.label}</a>
                 ) : (
@@ -218,7 +220,7 @@ export default function Index() {
             </div>
 
             <ul className="grid border-t border-[#f4efe8]/10 sm:grid-cols-2">
-              {modules.map((module) => (
+              {modules.filter((module) => enabled(module.href)).map((module) => (
                 <li key={module.href} className="border-b border-[#f4efe8]/10 sm:odd:border-r sm:odd:border-r-[#f4efe8]/10">
                   <Link to={module.href} className="group flex h-full items-start gap-4 p-5 transition-colors hover:bg-[#f4efe8]/[0.04] sm:p-6">
                     <module.icon className="mt-0.5 h-5 w-5 shrink-0 text-[#f2a93b]" strokeWidth={1.5} aria-hidden="true" />
@@ -238,7 +240,10 @@ export default function Index() {
       <footer className="border-t border-[#f4efe8]/10 px-5 py-6 text-sm text-[#b7aea4] sm:px-10">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="uppercase tracking-[0.18em] text-[11px]">CSB 2.0</span>
-          <span>Starting at BUET. More campuses later.</span>
+          <span className="flex items-center gap-5">
+            <span>Starting at BUET. More campuses later.</span>
+            <Link to="/privacy" className="text-[#d6cec5] underline-offset-4 hover:underline">Privacy</Link>
+          </span>
         </div>
       </footer>
     </div>

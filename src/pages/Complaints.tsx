@@ -1,16 +1,13 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { EmptyState, FilterBar, Kicker, RowList } from "@/components/editorial";
+import { AnonymousToggle, EmptyState, FilterBar, Kicker, ReportButton, RowList } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { shortDate } from "@/lib/dates";
 import { statusLabel, toneFor } from "@/lib/status";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -25,32 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Plus, 
-  Search, 
-  Clock, 
-  Building2,
-  GraduationCap,
-  Utensils,
-  Monitor,
-  Users,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  Trash2
-} from "lucide-react";
-import { complaintService } from "@/services/database.service";
+import { Plus, Clock, Building2, GraduationCap, Utensils, Monitor, Users, CheckCircle, AlertCircle, Loader2, Trash2 } from "lucide-react";
+import { BoardRow, complaintService } from "@/services/database.service";
 import { toast } from "sonner";
 
-interface Complaint {
-  id: string;
+interface Complaint extends BoardRow {
   title: string;
   description: string;
   category: "hall" | "dining" | "lab" | "academic" | "administration";
   status: "pending" | "in_progress" | "resolved";
   posted_by: string;
-  user_id: string;
-  created_at: string;
 }
 
 const categoryConfig = {
@@ -68,7 +49,6 @@ const statusConfig = {
 };
 
 export default function Complaints() {
-  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -78,7 +58,7 @@ export default function Complaints() {
     title: "",
     description: "",
     category: "hall" as Complaint["category"],
-    posted_by: "Anonymous",
+    anonymous: false,
   });
 
   useEffect(() => {
@@ -88,7 +68,7 @@ export default function Complaints() {
   const loadComplaints = async () => {
     try {
       setIsLoading(true);
-      const data = await complaintService.getComplaints();
+      const data = await complaintService.list<Complaint>();
       setComplaints(data);
     } catch (error) {
       console.error("Error loading complaints:", error);
@@ -107,22 +87,18 @@ export default function Complaints() {
 
     try {
       setIsLoading(true);
-      await complaintService.createComplaint({
-        ...formData,
-        user_id: user?.id || "anonymous",
-      });
+      await complaintService.create(formData);
       toast.success("Complaint posted successfully!");
       setFormData({
         title: "",
         description: "",
         category: "hall",
-        posted_by: "Anonymous",
+        anonymous: false,
       });
       setIsDialogOpen(false);
       await loadComplaints();
     } catch (error) {
-      console.error("Error creating complaint:", error);
-      toast.error("Failed to post complaint");
+      toast.error(error instanceof Error ? error.message : "Failed to post complaint");
     } finally {
       setIsLoading(false);
     }
@@ -138,12 +114,11 @@ export default function Complaints() {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this complaint?")) {
       try {
-        await complaintService.deleteComplaint(id);
+        await complaintService.remove(id);
         toast.success("Complaint deleted successfully!");
         await loadComplaints();
       } catch (error) {
-        console.error("Error deleting complaint:", error);
-        toast.error("Failed to delete complaint");
+        toast.error(error instanceof Error ? error.message : "Failed to delete complaint");
       }
     }
   };
@@ -195,7 +170,8 @@ export default function Complaints() {
                       <span>
                         {shortDate(complaint.created_at)} · {complaint.posted_by}
                       </span>
-                      {complaint.user_id === user?.id && (
+                      {!complaint.is_mine && <ReportButton board="complaints" rowId={complaint.id} />}
+                    {complaint.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(complaint.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>
@@ -222,8 +198,8 @@ export default function Complaints() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
-                <label className="block text-sm font-medium mb-1">Title *</label>
-                <Input
+                <label htmlFor="complaints-title" className="block text-sm font-medium mb-1">Title *</label>
+                <Input id="complaints-title"
                   placeholder="Brief title of your complaint"
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
@@ -232,13 +208,13 @@ export default function Complaints() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Category *</label>
+                <label htmlFor="complaints-category" className="block text-sm font-medium mb-1">Category *</label>
                 <Select 
                   value={formData.category}
                   onValueChange={(value) => setFormData({...formData, category: value as Complaint["category"]})}
                   disabled={isLoading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="complaints-category">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -252,8 +228,8 @@ export default function Complaints() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description *</label>
-                <Textarea
+                <label htmlFor="complaints-description" className="block text-sm font-medium mb-1">Description *</label>
+                <Textarea id="complaints-description"
                   placeholder="Describe your complaint in detail..."
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -262,15 +238,11 @@ export default function Complaints() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Your Name</label>
-                <Input
-                  placeholder="Your name (optional)"
-                  value={formData.posted_by}
-                  onChange={(e) => setFormData({...formData, posted_by: e.target.value})}
-                  disabled={isLoading}
-                />
-              </div>
+              <AnonymousToggle
+                checked={formData.anonymous}
+                onChange={(anonymous) => setFormData({ ...formData, anonymous })}
+                disabled={isLoading}
+              />
 
               <DialogFooter className="gap-2 pt-4">
                 <Button 

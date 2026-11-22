@@ -1,5 +1,19 @@
-// Using local API backend - No Supabase
-import { API_URL } from '@/lib/api-url';
+import { api } from "@/lib/http";
+
+// Every call carries the session cookie. Who posted, which university and
+// whether a delete is allowed are decided by the server, never sent from here.
+
+/** Fields the server adds to every board row. */
+export interface BoardRow {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  university_id: string | null;
+  /** The signed-in user posted this row. */
+  is_mine: boolean;
+  /** The signed-in user may delete it (their own post, or an admin). */
+  can_delete: boolean;
+}
 
 export interface LendingItem {
   id: string;
@@ -8,7 +22,7 @@ export interface LendingItem {
   category: string;
   item_condition: string;
   handoff_location: string;
-  status: 'available' | 'borrowed';
+  status: "available" | "borrowed";
   owner_id: string;
   owner_name: string;
   university_id: string | null;
@@ -21,291 +35,116 @@ export interface LendingRequest {
   item_id: string;
   requester_id: string;
   message: string | null;
-  status: 'pending' | 'approved' | 'declined' | 'returned';
+  status: "pending" | "approved" | "declined" | "returned";
   item_title: string;
   owner_id: string;
-  item_status: 'available' | 'borrowed';
+  item_status: "available" | "borrowed";
   owner_name: string;
   requester_name: string;
   created_at: string;
 }
 
-async function authenticatedRequest<T>(endpoint: string, init?: RequestInit): Promise<T> {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('Your session has expired. Please sign in again.');
-  }
-
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(init?.headers || {}),
-    },
-  });
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || `API Error: ${response.statusText}`);
-  }
-  return response.json();
+export interface DirectoryUser {
+  id: string;
+  name: string;
+  role: "admin" | "student";
+  department: string | null;
+  email?: string;
+  phone?: string;
 }
 
-// Helper function for API calls
-const api = {
-  async get(endpoint: string) {
-    const response = await fetch(`${API_URL}${endpoint}`);
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `API Error: ${response.statusText}`);
-    }
-    return response.json();
-  },
-  async post(endpoint: string, data: any) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `API Error: ${response.statusText}`);
-    }
-    return response.json();
-  },
-  async delete(endpoint: string, data?: any) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: data ? JSON.stringify(data) : undefined,
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `API Error: ${response.statusText}`);
-    }
-    return response.json();
+function board<TCreate>(path: string) {
+  return {
+    list: <T = BoardRow>(params: { limit?: number; before?: string } = {}) => {
+      const q = new URLSearchParams();
+      if (params.limit) q.set("limit", String(params.limit));
+      if (params.before) q.set("before", params.before);
+      const qs = q.toString();
+      return api<T[]>(`/${path}${qs ? `?${qs}` : ""}`);
+    },
+    create: <T = BoardRow>(body: TCreate) => api<T>(`/${path}`, { method: "POST", body }),
+    remove: (id: string) => api(`/${path}/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  };
+}
+
+export const noticeService = board<{ title: string; description: string; category: string }>("notices");
+export const complaintService = board<{ title: string; description: string; category: string; anonymous?: boolean }>("complaints");
+export const marketplaceService = board<{ title: string; description: string; price: number; category: string; phone?: string }>("marketplace");
+export const animalWelfareService = board<{ title: string; description: string; location: string; urgency: string }>("animal-welfare");
+export const facultySuggestionService = board<{
+  title: string; faculty_name: string; subject?: string; rating: number; feedback: string; anonymous?: boolean;
+}>("faculty-suggestions");
+export const bloodDonationService = board<{ blood_type: string; contact_number: string; location: string; available_date?: string; consent: true }>("blood-donation");
+export const bicycleService = board<{ brand: string; color?: string; location?: string; contact_number?: string; description?: string }>("bicycles");
+export const lostFoundService = board<{ title: string; description: string; item_type: "lost" | "found"; location: string; contact_number?: string }>("lost-found");
+
+export const directoryService = {
+  list: (params: { q?: string; limit?: number; offset?: number } = {}) => {
+    const q = new URLSearchParams();
+    if (params.q) q.set("q", params.q);
+    if (params.limit) q.set("limit", String(params.limit));
+    if (params.offset) q.set("offset", String(params.offset));
+    const qs = q.toString();
+    return api<{ users: DirectoryUser[] }>(`/students${qs ? `?${qs}` : ""}`).then((d) => d.users);
   },
 };
 
-export const complaintService = {
-  async getComplaints() {
-    return api.get('/complaints');
-  },
-  async createComplaint(complaint: any) {
-    return api.post('/complaints', complaint);
-  },
-  async deleteComplaint(id: string) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not authenticated. Please login to delete complaints.');
-    }
-    const user = JSON.parse(userStr);
-    if (!user.id || !user.role) {
-      throw new Error('Invalid user session. Please login again.');
-    }
-    return api.delete(`/complaints/${id}`, {
-      userId: user.id,
-      userRole: user.role
-    });
-  },
-};
+export interface OverviewFigure {
+  value: number;
+  previous: number;
+}
 
-export const noticeService = {
-  async getNotices() {
-    return api.get('/notices');
-  },
-  async createNotice(notice: any) {
-    return api.post('/notices', notice);
-  },
-  async deleteNotice(id: string) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not authenticated. Please login to delete notices.');
-    }
-    const user = JSON.parse(userStr);
-    if (!user.id || !user.role) {
-      throw new Error('Invalid user session. Please login again.');
-    }
-    return api.delete(`/notices/${id}`, {
-      userId: user.id,
-      userRole: user.role
-    });
-  },
-};
+export interface AdminOverview {
+  months: 3 | 6 | 12;
+  from: string;
+  kpis: {
+    students: OverviewFigure & { total: number };
+    posts: OverviewFigure;
+    activePosters: OverviewFigure;
+    reports: { value: number; handled: number; open: number };
+  };
+  series: {
+    month: string;
+    signups: number;
+    signupsPrev: number;
+    posts: number;
+    postsPrev: number;
+    reports: number;
+    reportsPrev: number;
+  }[];
+  boards: {
+    board: string;
+    posts: number;
+    previous: number;
+    allTime: number;
+    lastPostAt: string | null;
+    openReports: number;
+    spark: number[];
+  }[];
+  /** 0 = Sunday … 6 = Saturday, in Bangladesh time. */
+  weekdays: { dow: number; posts: number }[];
+}
 
-export const marketplaceService = {
-  async getItems() {
-    return api.get('/marketplace');
-  },
-  async createItem(item: any) {
-    return api.post('/marketplace', item);
-  },
-  async deleteItem(id: string) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not authenticated. Please login to delete items.');
-    }
-    const user = JSON.parse(userStr);
-    if (!user.id || !user.role) {
-      throw new Error('Invalid user session. Please login again.');
-    }
-    return api.delete(`/marketplace/${id}`, {
-      userId: user.id,
-      userRole: user.role
-    });
-  },
-};
-
-export const animalWelfareService = {
-  async getReports() {
-    return api.get('/animal-welfare');
-  },
-  async createReport(report: any) {
-    return api.post('/animal-welfare', report);
-  },
-  async deleteReport(id: string) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not authenticated. Please login to delete reports.');
-    }
-    const user = JSON.parse(userStr);
-    if (!user.id || !user.role) {
-      throw new Error('Invalid user session. Please login again.');
-    }
-    return api.delete(`/animal-welfare/${id}`, {
-      userId: user.id,
-      userRole: user.role
-    });
-  },
-};
-
-export const facultySuggestionService = {
-  async getSuggestions() {
-    return api.get('/faculty-suggestions');
-  },
-  async createSuggestion(suggestion: any) {
-    return api.post('/faculty-suggestions', suggestion);
-  },
-  async deleteSuggestion(id: string) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not authenticated. Please login to delete suggestions.');
-    }
-    const user = JSON.parse(userStr);
-    if (!user.id || !user.role) {
-      throw new Error('Invalid user session. Please login again.');
-    }
-    return api.delete(`/faculty-suggestions/${id}`, {
-      userId: user.id,
-      userRole: user.role
-    });
-  },
-};
-
-export const bloodDonationService = {
-  async getDonors() {
-    return api.get('/blood-donation');
-  },
-  async createDonor(donor: any) {
-    return api.post('/blood-donation', donor);
-  },
-  async deleteDonor(id: string) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not authenticated. Please login to delete donor entries.');
-    }
-    const user = JSON.parse(userStr);
-    if (!user.id || !user.role) {
-      throw new Error('Invalid user session. Please login again.');
-    }
-    return api.delete(`/blood-donation/${id}`, {
-      userId: user.id,
-      userRole: user.role
-    });
-  },
-};
-
-export const bicycleService = {
-  async getReports() {
-    return api.get('/bicycles');
-  },
-  async createReport(report: any) {
-    return api.post('/bicycles', report);
-  },
-  async deleteReport(id: string) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not authenticated. Please login to delete bicycle entries.');
-    }
-    const user = JSON.parse(userStr);
-    if (!user.id || !user.role) {
-      throw new Error('Invalid user session. Please login again.');
-    }
-    return api.delete(`/bicycles/${id}`, {
-      userId: user.id,
-      userRole: user.role
-    });
-  },
-};
-
-export const lostFoundService = {
-  async getItems() {
-    return api.get('/lost-found');
-  },
-  async createItem(item: any) {
-    return api.post('/lost-found', item);
-  },
-  async deleteItem(id: string) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      throw new Error('User not authenticated. Please login to delete items.');
-    }
-    const user = JSON.parse(userStr);
-    if (!user.id || !user.role) {
-      throw new Error('Invalid user session. Please login again.');
-    }
-    return api.delete(`/lost-found/${id}`, {
-      userId: user.id,
-      userRole: user.role
-    });
-  },
+export const adminService = {
+  overview: (months: 3 | 6 | 12) => api<AdminOverview>(`/admin/overview?months=${months}`),
+  removed: () => api<{ board: "notices" | "complaints"; id: string; title: string; deleted_at: string; deleted_by: string | null }[]>("/admin/removed"),
+  restore: (boardName: "notices" | "complaints", id: string) =>
+    api(`/${boardName}/${encodeURIComponent(id)}/restore`, { method: "POST", body: {} }),
 };
 
 export const lendingService = {
-  getItems(): Promise<LendingItem[]> {
-    return authenticatedRequest('/lend-borrow/items');
-  },
-  getRequests(): Promise<LendingRequest[]> {
-    return authenticatedRequest('/lend-borrow/requests');
-  },
-  createItem(item: {
-    title: string;
-    description: string;
-    category: string;
-    itemCondition: string;
-    handoffLocation: string;
-  }): Promise<LendingItem> {
-    return authenticatedRequest('/lend-borrow/items', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item),
-    });
-  },
-  requestToBorrow(itemId: string, message: string): Promise<{ success: boolean; id: string; status: string }> {
-    return authenticatedRequest(`/lend-borrow/items/${encodeURIComponent(itemId)}/requests`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
-    });
-  },
-  updateRequest(
-    requestId: string,
-    action: 'approve' | 'decline' | 'return',
-  ): Promise<{ success: boolean; status: string }> {
-    return authenticatedRequest(`/lend-borrow/requests/${encodeURIComponent(requestId)}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
-    });
-  },
+  getItems: () => api<LendingItem[]>("/lend-borrow/items"),
+  getRequests: () => api<LendingRequest[]>("/lend-borrow/requests"),
+  createItem: (item: { title: string; description: string; category: string; itemCondition: string; handoffLocation: string }) =>
+    api<LendingItem>("/lend-borrow/items", { method: "POST", body: item }),
+  requestToBorrow: (itemId: string, message: string) =>
+    api<{ success: boolean; id: string; status: string }>(`/lend-borrow/items/${encodeURIComponent(itemId)}/requests`, {
+      method: "POST",
+      body: { message },
+    }),
+  updateRequest: (requestId: string, action: "approve" | "decline" | "return") =>
+    api<{ success: boolean; status: string }>(`/lend-borrow/requests/${encodeURIComponent(requestId)}`, {
+      method: "PATCH",
+      body: { action },
+    }),
 };
-

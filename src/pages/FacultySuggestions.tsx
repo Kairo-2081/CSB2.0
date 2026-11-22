@@ -1,36 +1,25 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { EmptyState, FilterBar, RowList } from "@/components/editorial";
+import { AnonymousToggle, EmptyState, FilterBar, ReportButton, RowList } from "@/components/editorial";
 import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { 
-  Plus, 
-  Search, 
-  User,
-  MessageSquare,
-  Clock,
-  Star,
-  Trash2
-} from "lucide-react";
-import { facultySuggestionService } from "@/services/database.service";
+import { Plus, Trash2 } from "lucide-react";
+import { BoardRow, facultySuggestionService } from "@/services/database.service";
 
-interface Suggestion {
-  id: string;
+interface Suggestion extends BoardRow {
   title: string;
   feedback: string;
   faculty_name: string;
+  subject: string | null;
   rating: number;
-  user_id: string;
-  created_at: string;
+  posted_by: string | null;
 }
 
 
@@ -45,7 +34,7 @@ export default function FacultySuggestions() {
     faculty_name: "",
     subject: "",
     rating: 5,
-    posted_by: "",
+    anonymous: true,
   });
 
   useEffect(() => {
@@ -54,7 +43,7 @@ export default function FacultySuggestions() {
 
   const loadSuggestions = async () => {
     try {
-      const data = await facultySuggestionService.getSuggestions();
+      const data = await facultySuggestionService.list<Suggestion>();
       setSuggestions(data);
     } catch (error) {
       console.error("Error loading suggestions:", error);
@@ -65,21 +54,20 @@ export default function FacultySuggestions() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.faculty_name || !formData.posted_by) {
+    if (!formData.title || !formData.description || !formData.faculty_name) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     setIsLoading(true);
     try {
-      await facultySuggestionService.createSuggestion({
+      await facultySuggestionService.create({
         title: formData.title,
         faculty_name: formData.faculty_name,
         subject: formData.subject,
         rating: parseInt(formData.rating.toString()),
         feedback: formData.description,
-        posted_by: formData.posted_by,
-        user_id: "current-user-id",
+        anonymous: formData.anonymous,
       });
       toast.success("Suggestion submitted successfully!");
       setIsDialogOpen(false);
@@ -89,12 +77,11 @@ export default function FacultySuggestions() {
         faculty_name: "",
         subject: "",
         rating: 5,
-        posted_by: "",
+        anonymous: true,
       });
       await loadSuggestions();
     } catch (error) {
-      console.error("Error submitting suggestion:", error);
-      toast.error("Failed to submit suggestion");
+      toast.error(error instanceof Error ? error.message : "Failed to submit suggestion");
     } finally {
       setIsLoading(false);
     }
@@ -108,12 +95,11 @@ export default function FacultySuggestions() {
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this suggestion?")) {
       try {
-        await facultySuggestionService.deleteSuggestion(id);
+        await facultySuggestionService.remove(id);
         toast.success("Suggestion deleted successfully!");
         await loadSuggestions();
       } catch (error) {
-        console.error("Error deleting suggestion:", error);
-        toast.error("Failed to delete suggestion");
+        toast.error(error instanceof Error ? error.message : "Failed to delete suggestion");
       }
     }
   };
@@ -206,15 +192,11 @@ export default function FacultySuggestions() {
                   placeholder="Share your constructive feedback..."
                 />
               </div>
-              <div>
-                <Label htmlFor="posted_by">Your Name</Label>
-                <Input
-                  id="posted_by"
-                  value={formData.posted_by}
-                  onChange={(e) => setFormData({...formData, posted_by: e.target.value})}
-                  disabled={isLoading}
-                />
-              </div>
+              <AnonymousToggle
+                checked={formData.anonymous}
+                onChange={(anonymous) => setFormData({ ...formData, anonymous })}
+                disabled={isLoading}
+              />
               <DialogFooter className="gap-2 pt-4">
                 <Button 
                   type="button" 
@@ -258,7 +240,8 @@ export default function FacultySuggestions() {
                   </div>
                   <div className="flex items-center justify-between gap-3 text-[13px] text-muted-foreground md:flex-col md:items-end">
                     <span>{shortDate(suggestion.created_at)}</span>
-                    {suggestion.user_id === "current-user-id" && (
+                    {!suggestion.is_mine && <ReportButton board="faculty-suggestions" rowId={suggestion.id} />}
+                    {suggestion.can_delete && (
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(suggestion.id)} className="text-destructive hover:text-destructive">
                         <Trash2 aria-hidden="true" /> Delete
                       </Button>

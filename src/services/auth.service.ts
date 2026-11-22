@@ -1,18 +1,19 @@
-import { toast } from "sonner";
-
-import { API_URL } from '@/lib/api-url';
+import { api } from "@/lib/http";
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'student';
+  role: "admin" | "student";
   phone?: string;
   department?: string;
   universityId?: string;
   universityName?: string;
   homeDistrict?: string;
   currentResidence?: string;
+  showContact?: boolean;
+  emailVerified?: boolean;
+  mustChangePassword?: boolean;
 }
 
 export interface University {
@@ -38,320 +39,105 @@ export interface CentralAdminMetrics {
   universities: UniversityMetrics[];
 }
 
-export interface LoginResponse {
+export interface RegisterInput {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  department: string;
+  universityName: string;
+  homeDistrict: string;
+  currentResidence: string;
+  consent?: boolean;
+}
+
+interface UserResponse {
   success: boolean;
   user: User;
-  token: string;
   message?: string;
 }
 
-export interface RegisterResponse {
-  success: boolean;
-  user: User;
-  token: string;
-  message?: string;
-}
-
-/**
- * Check if server is running and database is ready
- */
-async function checkServerHealth(): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_URL}/health`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(5000),
-    });
-    const data = await response.json();
-    return data.success && data.database === 'ready';
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * Parse fetch error response as JSON or text
- */
-async function parseErrorResponse(response: Response): Promise<string> {
-  try {
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      const data = await response.json();
-      return data.error || 'An error occurred';
-    } else {
-      const text = await response.text();
-      if (text.includes('<!DOCTYPE') || text.includes('<html')) {
-        return `Server returned an HTML error page. Is the backend reachable at ${API_URL}?`;
-      }
-      return text || 'An error occurred';
-    }
-  } catch {
-    return 'Failed to parse server response';
-  }
-}
+// Only the profile is kept in the browser, for instant rendering. It is not a
+// credential: the session itself is an HttpOnly cookie the page cannot read.
+const USER_KEY = "user";
 
 class AuthService {
   async getUniversities(): Promise<University[]> {
-    const response = await fetch(`${API_URL}/universities`);
-    if (!response.ok) {
-      throw new Error(await parseErrorResponse(response));
-    }
-
-    const data = await response.json();
-    if (!data.success || !Array.isArray(data.universities)) {
-      throw new Error(data.error || 'Failed to load universities');
-    }
+    const data = await api<{ universities: University[] }>("/universities");
     return data.universities;
   }
 
-  async getCentralAdminMetrics(): Promise<CentralAdminMetrics> {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      throw new Error('Your session has expired. Please sign in again.');
-    }
-
-    const response = await fetch(`${API_URL}/admin/metrics`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(await parseErrorResponse(response));
-    }
-
-    const data = await response.json();
-    if (!data.success || !Array.isArray(data.universities)) {
-      throw new Error(data.error || 'Failed to load university metrics');
-    }
-    return data as CentralAdminMetrics;
+  getCentralAdminMetrics(): Promise<CentralAdminMetrics> {
+    return api<CentralAdminMetrics>("/admin/metrics");
   }
 
-  /**
-   * Login user with email and password
-   */
-  async login(email: string, password: string): Promise<LoginResponse> {
-    try {
-      // Check server health first
-      const isHealthy = await checkServerHealth();
-      if (!isHealthy) {
-        throw new Error('Backend server is not responding. Make sure to run: node server.js');
-      }
-
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const error = await parseErrorResponse(response);
-        throw new Error(error);
-      }
-
-      const data = await response.json();
-      
-      if (data.success && data.user && data.token) {
-        // Store user in localStorage
-        this.setCurrentUser(data.user, data.token);
-        return data;
-      } else {
-        throw new Error(data.error || 'Login failed');
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An error occurred during login';
-      throw new Error(message);
-    }
+  async login(email: string, password: string): Promise<UserResponse> {
+    const data = await api<UserResponse>("/auth/login", { method: "POST", body: { email, password } });
+    this.setCurrentUser(data.user);
+    return data;
   }
 
-  /**
-   * Register a new user
-   */
-  async register(userData: {
-    name: string;
-    email: string;
-    password: string;
-    phone: string;
-    department: string;
-    universityName: string;
-    homeDistrict: string;
-    currentResidence: string;
-  }): Promise<RegisterResponse> {
-    try {
-      // Check server health first
-      const isHealthy = await checkServerHealth();
-      if (!isHealthy) {
-        throw new Error('Backend server is not responding. Make sure to run: node server.js');
-      }
-
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        const error = await parseErrorResponse(response);
-        throw new Error(error);
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.user && data.token) {
-        this.setCurrentUser(data.user, data.token);
-        return data;
-      } else {
-        throw new Error(data.error || 'Registration failed');
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An error occurred during registration';
-      throw new Error(message);
-    }
+  async register(input: RegisterInput): Promise<UserResponse> {
+    const data = await api<UserResponse>("/auth/register", { method: "POST", body: input });
+    this.setCurrentUser(data.user);
+    return data;
   }
 
-  /**
-   * Logout user
-   */
   logout(): void {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      // End the session on the server too; signing out locally never waits on it.
-      fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
-    }
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem("authToken"); // left over from before cookie sessions
+    api("/auth/logout", { method: "POST", body: {} }).catch(() => {});
   }
 
-  /**
-   * Get current user from localStorage
-   */
   getCurrentUser(): User | null {
     try {
-      const user = localStorage.getItem('user');
+      const user = localStorage.getItem(USER_KEY);
       return user ? JSON.parse(user) : null;
     } catch {
       return null;
     }
   }
 
-  /**
-   * Set current user in localStorage
-   */
-  setCurrentUser(user: User, token?: string): void {
-    localStorage.setItem('user', JSON.stringify(user));
-    if (token) {
-      localStorage.setItem('authToken', token);
-    }
+  setCurrentUser(user: User): void {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 
-  /**
-   * Check if user is authenticated
-   */
-  isAuthenticated(): boolean {
-    return this.getCurrentUser() !== null;
+  clearCurrentUser(): void {
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem("authToken");
   }
 
-  /**
-   * Check if user is admin
-   */
-  isAdmin(): boolean {
-    const user = this.getCurrentUser();
-    return user?.role === 'admin';
-  }
-
-  /**
-   * Verify token (optional - for additional security)
-   */
-  async verifyAuth(): Promise<boolean> {
+  /** The server's view of the session: the user, or null when signed out. */
+  async fetchCurrentUser(): Promise<User | null> {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token || !this.getCurrentUser()) return false;
-
-      const response = await fetch(`${API_URL}/auth/verify`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      return response.ok;
+      const data = await api<UserResponse>("/auth/verify");
+      this.setCurrentUser(data.user);
+      return data.user;
     } catch {
-      return false;
+      this.clearCurrentUser();
+      return null;
     }
   }
 
-  /**
-   * Update user profile
-   */
-  async updateProfile(userId: string, updates: Partial<User>): Promise<User> {
-    try {
-      const isHealthy = await checkServerHealth();
-      if (!isHealthy) {
-        throw new Error('Backend server is not responding. Make sure to run: node server.js');
-      }
-
-      const response = await fetch(`${API_URL}/auth/profile/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (!response.ok) {
-        const error = await parseErrorResponse(response);
-        throw new Error(error);
-      }
-
-      const data = await response.json();
-      
-      if (data.success && data.user) {
-        this.setCurrentUser(data.user);
-        return data.user;
-      } else {
-        throw new Error(data.error || 'Profile update failed');
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An error occurred updating profile';
-      throw new Error(message);
-    }
+  async updateProfile(
+    userId: string,
+    updates: { name?: string; phone?: string; department?: string; showContact?: boolean },
+  ): Promise<User> {
+    const data = await api<UserResponse>(`/auth/profile/${encodeURIComponent(userId)}`, {
+      method: "PUT",
+      body: updates,
+    });
+    const current = this.getCurrentUser();
+    if (current?.id === data.user.id) this.setCurrentUser(data.user);
+    return data.user;
   }
 
-  /**
-   * Change password
-   */
-  async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<boolean> {
-    try {
-      const isHealthy = await checkServerHealth();
-      if (!isHealthy) {
-        throw new Error('Backend server is not responding. Make sure to run: node server.js');
-      }
-
-      const response = await fetch(`${API_URL}/auth/change-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, oldPassword, newPassword }),
-      });
-
-      if (!response.ok) {
-        const error = await parseErrorResponse(response);
-        throw new Error(error);
-      }
-
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An error occurred changing password';
-      throw new Error(message);
-    }
+  async changePassword(oldPassword: string, newPassword: string): Promise<string> {
+    const data = await api<{ message: string }>("/auth/change-password", {
+      method: "POST",
+      body: { oldPassword, newPassword },
+    });
+    return data.message;
   }
 }
 

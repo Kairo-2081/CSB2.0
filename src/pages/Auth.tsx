@@ -2,24 +2,37 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService, University } from "@/services/auth.service";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  Mail, 
-  Lock, 
-  User,
-  AlertCircle,
-  Loader2,
-  Eye,
-  EyeOff,
-  Check,
-  X
-} from "lucide-react";
+import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, Check, X } from "lucide-react";
 import { toast } from "sonner";
+
+// BUET's departments, for the sign-up form.
+const BUET_DEPARTMENTS = [
+  "Architecture",
+  "Biomedical Engineering",
+  "Chemical Engineering",
+  "Chemistry",
+  "Civil Engineering",
+  "Computer Science and Engineering",
+  "Electrical and Electronic Engineering",
+  "Humanities",
+  "Industrial and Production Engineering",
+  "Materials and Metallurgical Engineering",
+  "Mathematics",
+  "Mechanical Engineering",
+  "Nanomaterials and Ceramic Engineering",
+  "Naval Architecture and Marine Engineering",
+  "Petroleum and Mineral Resources Engineering",
+  "Physics",
+  "Urban and Regional Planning",
+  "Water Resources Engineering",
+];
 
 interface PasswordValidation {
   hasMinLength: boolean;
@@ -52,6 +65,7 @@ export default function Auth() {
   const [registerUniversityName, setRegisterUniversityName] = useState("");
   const [registerHomeDistrict, setRegisterHomeDistrict] = useState("");
   const [registerCurrentResidence, setRegisterCurrentResidence] = useState("");
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [universities, setUniversities] = useState<University[]>([]);
   const [universityLoadError, setUniversityLoadError] = useState("");
 
@@ -154,6 +168,11 @@ export default function Auth() {
       return;
     }
 
+    if (!privacyAccepted) {
+      setError("Read and accept the privacy notice to create an account");
+      return;
+    }
+
     setIsLoading(true);
     try {
       await contextRegister({
@@ -165,6 +184,7 @@ export default function Auth() {
         universityName: registerUniversityName,
         homeDistrict: registerHomeDistrict,
         currentResidence: registerCurrentResidence,
+        consent: true,
       });
       toast.success("Account created successfully! 🎉");
       setRegisterName("");
@@ -190,7 +210,7 @@ export default function Auth() {
   const isPasswordValid = Object.values(passwordValidation).every(v => v);
 
   return (
-    <div className="grid min-h-screen bg-[#07070d] lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)]">
+    <div className="theme-dark grid min-h-screen bg-[#07070d] lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)]">
       <aside className="relative isolate hidden overflow-hidden lg:flex lg:flex-col lg:justify-between">
         <img
           src="/campus/buet-hero.webp"
@@ -263,7 +283,7 @@ export default function Auth() {
                           <Input
                             id="login-email"
                             type="email"
-                            placeholder="you@university.edu"
+                            placeholder="you@ugrad.cse.buet.ac.bd"
                             value={loginEmail}
                             onChange={(e) => setLoginEmail(e.target.value)}
                             className="pl-10"
@@ -341,7 +361,7 @@ export default function Auth() {
                           <Input
                             id="email"
                             type="email"
-                            placeholder="you@university.edu"
+                            placeholder="you@ugrad.cse.buet.ac.bd"
                             value={registerEmail}
                             onChange={(e) => setRegisterEmail(e.target.value)}
                             className="pl-10"
@@ -385,13 +405,9 @@ export default function Auth() {
                           disabled={isLoading}
                         >
                           <option value="">Select a department</option>
-                          <option value="Computer Science">Computer Science</option>
-                          <option value="Engineering">Engineering</option>
-                          <option value="Business">Business</option>
-                          <option value="Medical">Medical</option>
-                          <option value="Science">Science</option>
-                          <option value="Arts">Arts</option>
-                          <option value="Law">Law</option>
+                          {BUET_DEPARTMENTS.map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
                         </select>
                       </div>
 
@@ -523,11 +539,28 @@ export default function Auth() {
                         </Alert>
                       )}
 
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id="privacy-consent"
+                          checked={privacyAccepted}
+                          onCheckedChange={(v) => setPrivacyAccepted(v === true)}
+                          disabled={isLoading}
+                          className="mt-0.5"
+                        />
+                        <label data-plain htmlFor="privacy-consent" className="text-[13px] leading-5 text-muted-foreground">
+                          I have read the{" "}
+                          <Link to="/privacy" target="_blank" className="text-accent underline-offset-4 hover:underline">
+                            privacy notice
+                          </Link>{" "}
+                          and agree to how CSB 2.0 uses my details.
+                        </label>
+                      </div>
+
                       <Button
                         type="submit"
                         className="w-full"
                         size="lg"
-                        disabled={isLoading || !isPasswordValid || registerPassword !== registerConfirmPassword}
+                        disabled={isLoading || !isPasswordValid || registerPassword !== registerConfirmPassword || !privacyAccepted}
                       >
                         {isLoading ? (
                           <>
@@ -539,9 +572,6 @@ export default function Auth() {
                         )}
                       </Button>
 
-                      <p className="text-xs text-muted-foreground text-center">
-                        By registering, you agree to our Terms of Service
-                      </p>
                     </form>
                   </TabsContent>
                 </Tabs>
