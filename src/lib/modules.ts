@@ -14,26 +14,39 @@ export function moduleForPath(path: string): ModuleName | null {
   return (ALL_MODULES as readonly string[]).includes(first) ? (first as ModuleName) : null;
 }
 
-let cached: Promise<ModuleName[]> | null = null;
-function loadModules(): Promise<ModuleName[]> {
-  cached ??= api<{ modules: ModuleName[] }>("/modules")
-    .then((d) => d.modules)
-    .catch(() => [...ALL_MODULES]); // if the check fails, show everything; the API still enforces it
+interface SiteConfig {
+  modules: ModuleName[];
+  emailVerification: "required" | "off";
+}
+
+let cached: Promise<SiteConfig> | null = null;
+function loadConfig(): Promise<SiteConfig> {
+  cached ??= api<SiteConfig>("/modules").catch(() => ({
+    // If the check fails, show everything; the API still enforces it.
+    modules: [...ALL_MODULES],
+    emailVerification: "off" as const,
+  }));
   return cached;
 }
 
 /** The enabled modules; every module until the server has answered. */
-export function useModules(): { enabled: (path: string) => boolean; ready: boolean } {
-  const [modules, setModules] = useState<ModuleName[] | null>(null);
+export function useModules(): {
+  enabled: (path: string) => boolean;
+  ready: boolean;
+  emailVerificationRequired: boolean;
+} {
+  const [config, setConfig] = useState<SiteConfig | null>(null);
   useEffect(() => {
     let alive = true;
-    void loadModules().then((m) => alive && setModules(m));
+    void loadConfig().then((c) => alive && setConfig(c));
     return () => {
       alive = false;
     };
   }, []);
+  const modules = config?.modules ?? null;
   return {
-    ready: modules !== null,
+    ready: config !== null,
+    emailVerificationRequired: config?.emailVerification === "required",
     enabled: (path: string) => {
       const name = moduleForPath(path);
       return name === null || modules === null || modules.includes(name);
