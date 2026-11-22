@@ -161,7 +161,7 @@ export function ObjectTile({ title, category, index = 0 }: { title: string; cate
   return (
     <span
       className="lift group relative flex aspect-[4/3] items-end justify-end overflow-hidden rounded-md border border-foreground/[0.07] p-5"
-      style={{ background: `radial-gradient(120% 90% at 100% 100%, hsl(var(--primary) / ${tileTones[index % tileTones.length]}), hsl(var(--card)) 70%)` }}
+      style={{ background: `radial-gradient(120% 90% at 100% 100%, hsl(var(--primary) / calc(${tileTones[index % tileTones.length]} * var(--tile-boost))), hsl(var(--card)) 70%)` }}
     >
       <span aria-hidden="true" className="font-display text-8xl leading-none text-foreground/[0.18] transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-105">
         {title.trim().charAt(0).toUpperCase() || "·"}

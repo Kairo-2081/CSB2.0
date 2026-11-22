@@ -43,47 +43,61 @@
     --sidebar-ring: 36 88% 59%;
     --chart-grid: 30 8% 16%;
     --glow: 36 88% 59%;
+    --primary-ink: 36 88% 59%;
+    --tile-boost: 1;
     color-scheme: dark;
   }
 
-  /* Light: warm paper and ink, with a deeper saffron that holds contrast on white. */
+  /* Light: white surfaces on warm paper, the same bright saffron as dark mode
+     for buttons and fills, and a deeper amber "ink" for saffron text so small
+     words stay readable on white. */
   .light {
-    --background: 40 33% 97%;
-    --foreground: 28 18% 11%;
-    --card: 40 40% 99%;
-    --card-foreground: 28 18% 11%;
-    --popover: 40 40% 99%;
-    --popover-foreground: 28 18% 11%;
-    --primary: 29 88% 37%;
-    --primary-foreground: 40 60% 98%;
-    --secondary: 38 22% 91%;
-    --secondary-foreground: 28 18% 14%;
-    --muted: 38 22% 92%;
-    --muted-foreground: 28 9% 38%;
-    --accent: 30 85% 38%;
-    --accent-foreground: 40 60% 98%;
-    --destructive: 4 70% 46%;
+    --background: 40 30% 96.5%;
+    --foreground: 28 20% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 28 20% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 28 20% 10%;
+    --primary: 37 92% 52%;
+    --primary-foreground: 30 45% 8%;
+    --primary-ink: 30 90% 34%;
+    --secondary: 38 24% 92%;
+    --secondary-foreground: 28 20% 12%;
+    --muted: 38 24% 93%;
+    --muted-foreground: 28 9% 33%;
+    --accent: 30 90% 34%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 72% 45%;
     --destructive-foreground: 0 0% 100%;
-    --success: 152 52% 32%;
+    --success: 152 55% 30%;
     --success-foreground: 0 0% 100%;
-    --warning: 34 85% 38%;
+    --warning: 32 90% 36%;
     --warning-foreground: 0 0% 100%;
-    --info: 210 55% 42%;
+    --info: 210 58% 40%;
     --info-foreground: 0 0% 100%;
-    --border: 32 18% 84%;
-    --input: 32 18% 82%;
-    --ring: 29 88% 37%;
-    --sidebar-background: 38 30% 94%;
-    --sidebar-foreground: 28 14% 22%;
-    --sidebar-primary: 29 88% 37%;
-    --sidebar-primary-foreground: 40 60% 98%;
-    --sidebar-accent: 38 24% 89%;
-    --sidebar-accent-foreground: 28 18% 11%;
-    --sidebar-border: 32 18% 86%;
-    --sidebar-ring: 29 88% 37%;
-    --chart-grid: 32 16% 87%;
-    --glow: 36 92% 55%;
+    --border: 32 20% 85%;
+    --input: 32 20% 80%;
+    --ring: 32 92% 45%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 28 14% 20%;
+    --sidebar-primary: 30 90% 34%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 38 30% 94%;
+    --sidebar-accent-foreground: 28 20% 10%;
+    --sidebar-border: 32 20% 88%;
+    --sidebar-ring: 32 92% 45%;
+    --chart-grid: 32 18% 89%;
+    --glow: 37 92% 52%;
+    --tile-boost: 1.9;
     color-scheme: light;
+  }
+
+  /* Saffron as text needs the deeper ink on white; fills keep the bright tone. */
+  .light .text-primary,
+  .light .text-accent,
+  .light .hover\:text-primary:hover,
+  .light .group:hover .group-hover\:text-primary {
+    color: hsl(var(--primary-ink));
   }
 
 
@@ -227,6 +241,36 @@
         linear-gradient(hsl(var(--background) / 0.12), hsl(var(--background) / 0.12)),
         linear-gradient(0deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.55) 20%, hsl(var(--background) / 0) 45%);
     }
+  }
+
+  /* Light mode: the photo stays crisp and only fades out at the edges where
+     the text sits, instead of sitting under a milky veil. */
+  .light .page-band-photo {
+    filter: saturate(1.05) contrast(1.04);
+  }
+
+  .light .page-band-shade {
+    background:
+      linear-gradient(0deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.94) 50%, hsl(var(--background) / 0.62) 74%, hsl(var(--background) / 0.3) 100%);
+  }
+
+  @media (min-width: 1024px) {
+    .light .page-band-shade {
+      background:
+        linear-gradient(90deg, hsl(var(--background)) 22%, hsl(var(--background) / 0.75) 38%, transparent 58%),
+        linear-gradient(0deg, hsl(var(--background)) 0%, transparent 26%);
+    }
+  }
+
+  /* Raised surfaces: hairline only in dark, a soft warm shadow in light. */
+  .surface {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--foreground) / 0.08);
+  }
+
+  .light .surface {
+    border-color: hsl(var(--border));
+    box-shadow: 0 1px 2px hsl(30 40% 20% / 0.04), 0 10px 30px -14px hsl(30 40% 20% / 0.14);
   }
 
   /* Form labels inside the side panel: small spaced capitals, as designed. */
