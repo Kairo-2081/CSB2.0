@@ -454,3 +454,85 @@ LANGUAGE sql STABLE AS $$
     ) ORDER BY created_at), '[]'::jsonb))
   FROM users;
 $$;
+
+-- =============================================================================
+-- Universities and stats
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION list_open_universities(p_open_slugs text[]) RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT jsonb_build_object('success', true, 'universities', COALESCE(jsonb_agg(
+    jsonb_build_object('id', id, 'name', name, 'shortName', short_name, 'division', division)
+    ORDER BY lower(name)), '[]'::jsonb))
+  FROM universities
+  WHERE is_active AND slug = ANY (p_open_slugs);
+$$;
+
+-- Public, aggregate-only counts for the landing page. Notices and lost & found
+-- rows carry no university yet; while BUET is the only campus they are BUET's.
+CREATE OR REPLACE FUNCTION campus_stats(p_slug text) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  v_campus universities;
+BEGIN
+  SELECT * INTO v_campus FROM universities WHERE slug = p_slug;
+  IF NOT FOUND THEN
+    PERFORM api_error(404, 'Campus not found');
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'campus', jsonb_build_object('id', v_campus.id, 'name', v_campus.name, 'shortName', v_campus.short_name),
+    'stats', jsonb_build_object(
+      'members',       (SELECT count(*)::int FROM users WHERE university_id = v_campus.id),
+      'notices',       (SELECT count(*)::int FROM notices),
+      'openLostItems', (SELECT count(*)::int FROM lost_found WHERE status = 'lost'),
+      'itemsToBorrow', (SELECT count(*)::int FROM lending_items
+                        WHERE university_id = v_campus.id AND status = 'available')
+    )
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION admin_metrics(p_actor_id text) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  v_role text;
+  v_rows jsonb;
+BEGIN
+  IF p_actor_id IS NULL THEN
+    PERFORM api_error(401, 'Authentication is required');
+  END IF;
+  SELECT role INTO v_role FROM users WHERE id = p_actor_id;
+  IF NOT FOUND THEN
+    PERFORM api_error(401, 'User not found');
+  END IF;
+  IF v_role <> 'admin' THEN
+    PERFORM api_error(403, 'Central administrator access is required');
+  END IF;
+
+  WITH per_university AS (
+    SELECT un.id, un.name, un.short_name, un.division,
+           count(u.id) FILTER (WHERE u.role = 'student')::int AS student_count,
+           count(u.id) FILTER (WHERE u.role = 'student'
+             AND date_trunc('month', u.created_at) = date_trunc('month', now()))::int AS this_month
+    FROM universities un
+    LEFT JOIN users u ON u.university_id = un.id
+    WHERE un.is_active
+    GROUP BY un.id
+  )
+  SELECT jsonb_build_object(
+    'success',           true,
+    'universityCount',   count(*)::int,
+    'studentCount',      COALESCE(sum(student_count), 0)::int,
+    'studentsThisMonth', COALESCE(sum(this_month), 0)::int,
+    'universities',      COALESCE(jsonb_agg(jsonb_build_object(
+                           'id', id, 'name', name, 'shortName', short_name, 'division', division,
+                           'studentCount', student_count, 'studentsThisMonth', this_month)
+                           ORDER BY student_count DESC, lower(name)), '[]'::jsonb)
+  ) INTO v_rows
+  FROM per_university;
+
+  RETURN v_rows;
+END;
+$$;
