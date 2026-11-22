@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { DateBlock, EmptyState, FilterBar, Kicker, RowList } from "@/components/editorial";
+import { DateBlock, EmptyState, FilterBar, Kicker, ReportButton, RowList } from "@/components/editorial";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -168,7 +168,8 @@ export default function Notices() {
                     </div>
                     <div className="hidden flex-col items-end gap-4 text-right md:flex">
                       <span className="text-[13px] leading-5 text-muted-foreground">{notice.posted_by}</span>
-                      {notice.can_delete && (
+                      {!notice.is_mine && <ReportButton board="notices" rowId={notice.id} />}
+                    {notice.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(notice.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>

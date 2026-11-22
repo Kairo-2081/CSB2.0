@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { DateBlock, EmptyState, FilterBar, RowList } from "@/components/editorial";
+import { DateBlock, EmptyState, FilterBar, ReportButton, RowList } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -177,6 +177,7 @@ export default function LostFound() {
                         Call {item.contact_number}
                       </a>
                     )}
+                    {!item.is_mine && <ReportButton board="lost-found" rowId={item.id} />}
                     {item.can_delete && (
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive">
                         <Trash2 aria-hidden="true" /> Delete

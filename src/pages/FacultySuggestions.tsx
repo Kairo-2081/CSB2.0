@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { AnonymousToggle, EmptyState, FilterBar, RowList } from "@/components/editorial";
+import { AnonymousToggle, EmptyState, FilterBar, ReportButton, RowList } from "@/components/editorial";
 import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -240,6 +240,7 @@ export default function FacultySuggestions() {
                   </div>
                   <div className="flex items-center justify-between gap-3 text-[13px] text-muted-foreground md:flex-col md:items-end">
                     <span>{shortDate(suggestion.created_at)}</span>
+                    {!suggestion.is_mine && <ReportButton board="faculty-suggestions" rowId={suggestion.id} />}
                     {suggestion.can_delete && (
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(suggestion.id)} className="text-destructive hover:text-destructive">
                         <Trash2 aria-hidden="true" /> Delete

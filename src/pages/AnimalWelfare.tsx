@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { DateBlock, EmptyState, FilterBar, Kicker, RowList, SectionTitle } from "@/components/editorial";
+import { DateBlock, EmptyState, FilterBar, Kicker, ReportButton, RowList, SectionTitle } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -223,7 +223,8 @@ export default function AnimalWelfare() {
                       <StatusDot tone={report.urgency === "high" ? "urgent" : report.urgency === "medium" ? "progress" : "open"}>
                         {statusConfig[report.urgency]?.label ?? "Reported"}
                       </StatusDot>
-                      {report.can_delete && (
+                      {!report.is_mine && <ReportButton board="animal-welfare" rowId={report.id} />}
+                    {report.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(report.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>

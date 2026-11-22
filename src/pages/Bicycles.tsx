@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { CountStrip, EmptyState, FilterBar, RowList } from "@/components/editorial";
+import { CountStrip, EmptyState, FilterBar, ReportButton, RowList } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { toneFor } from "@/lib/status";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -200,7 +200,8 @@ export default function Bicycles() {
                     </div>
                     <StatusDot tone={toneFor(bicycle.status === "rented" ? "in_use" : bicycle.status)}>{bicycle.status ? status.label : "Status unknown"}</StatusDot>
                     <div className="col-span-2 flex items-center justify-end gap-2 md:col-span-1">
-                      {bicycle.can_delete && (
+                      {!bicycle.is_mine && <ReportButton board="bicycles" rowId={bicycle.id} />}
+                    {bicycle.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(bicycle.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>
