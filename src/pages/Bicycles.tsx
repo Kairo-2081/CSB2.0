@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { CountStrip, EmptyState, FilterBar, RowList } from "@/components/editorial";
+import { StatusDot } from "@/components/ui/status-dot";
+import { toneFor } from "@/lib/status";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,13 +51,13 @@ const statusConfig = {
     color: "text-success"
   },
   rented: { 
-    label: "In Use", 
+    label: "In use", 
     variant: "warning" as const, 
     icon: Clock,
     color: "text-warning"
   },
   maintenance: { 
-    label: "Maintenance", 
+    label: "In repair", 
     variant: "destructive" as const, 
     icon: XCircle,
     color: "text-destructive"
@@ -169,180 +172,83 @@ export default function Bicycles() {
           eyebrow="Getting around"
           title="Bicycles"
           accent="on campus."
-          description="Book and manage campus bicycles."
+          description="Book a campus bicycle for a ride between buildings."
           actions={
             <>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  className="gap-2"
-                  onClick={() => setIsDialogOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Bicycle
-                </Button>
-                <Button variant="outline" className="gap-2">
-                  <History className="h-4 w-4" />
-                  Booking History
-                </Button>
-              </div>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus aria-hidden="true" />
+                Add a bicycle
+              </Button>
             </>
           }
         />
 
-        {/* Stats */}
-        <div className="grid gap-4 sm:grid-cols-4">
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-accent">
-                <Bike className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">Total Bicycles</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
-                <CheckCircle className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.available}</p>
-                <p className="text-xs text-muted-foreground">Available</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.rented}</p>
-                <p className="text-xs text-muted-foreground">In Use</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
-                <XCircle className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.maintenance}</p>
-                <p className="text-xs text-muted-foreground">Maintenance</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <CountStrip
+          label="Bicycles right now"
+          items={[
+            { value: stats.total, label: "Total", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" /> },
+            { value: stats.available, label: "Available", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-success" /> },
+            { value: stats.rented, label: "In use", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warning" /> },
+            { value: stats.maintenance, label: "In repair", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#6f685f]" /> },
+          ]}
+        />
 
-        {/* Status Filter */}
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant={filter === "all" ? "default" : "secondary"}
-            size="sm"
-            onClick={() => setFilter("all")}
-          >
-            All
-          </Button>
-          {Object.entries(statusConfig).map(([key, config]) => (
-            <Button
-              key={key}
-              variant={filter === key ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setFilter(key)}
-              className="gap-1.5"
-            >
-              <config.icon className="h-3.5 w-3.5" />
-              {config.label}
-            </Button>
-          ))}
-        </div>
+        <section aria-label="Bicycles">
+          <FilterBar
+            label="Filter bicycles"
+            tabs={[
+              { value: "all", label: "All" },
+              { value: "available", label: "Available" },
+              { value: "rented", label: "In use" },
+              { value: "maintenance", label: "In repair" },
+            ]}
+            value={filter}
+            onChange={setFilter}
+          />
 
-        {/* Bicycles Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredBicycles.map((bicycle, index) => {
-            const status = getBicycleStatus(bicycle.status);
-            const StatusIcon = status.icon;
-            
-            return (
-              <Card 
-                key={bicycle.id} 
-                className=""
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-foreground">{bicycle.brand} - {bicycle.color}</h3>
-                        <p className="text-sm text-muted-foreground">{bicycle.id}</p>
-                      </div>
-                      <Badge variant={status.variant} className="gap-1">
-                        <StatusIcon className="h-3 w-3" />
-                        {status.label}
-                      </Badge>
+          {filteredBicycles.length > 0 ? (
+            <RowList label="Bicycles">
+              {filteredBicycles.map((bicycle) => {
+                const status = getBicycleStatus(bicycle.status);
+                return (
+                  <li key={bicycle.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-3 py-6 md:grid-cols-[minmax(0,1fr)_180px_160px] md:gap-8">
+                    <div className="min-w-0">
+                      <p className="font-display text-[26px] leading-tight">{bicycle.brand}</p>
+                      <p className="mt-1 text-[13px] text-muted-foreground">
+                        {[bicycle.color !== "Unknown" ? bicycle.color : null, bicycle.location, bicycle.rented_by ? `With ${bicycle.rented_by}` : null]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
                     </div>
-
-                    {bicycle.rented_by && (
-                      <div className="text-sm text-muted-foreground">
-                        Currently with: <span className="font-medium text-foreground">{bicycle.rented_by}</span>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 pt-2 border-t border-border">
+                    <StatusDot tone={toneFor(bicycle.status === "rented" ? "in_use" : bicycle.status)}>{bicycle.status ? status.label : "Status unknown"}</StatusDot>
+                    <div className="col-span-2 flex items-center justify-end gap-2 md:col-span-1">
                       {bicycle.user_id === "current-user-id" && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDelete(bicycle.id)}
-                          className="gap-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(bicycle.id)} className="text-destructive hover:text-destructive">
+                          <Trash2 aria-hidden="true" /> Delete
                         </Button>
                       )}
-                      {bicycle.status === "available" ? (
-                        <Button variant="default" size="sm" className="flex-1">
-                          Book Now
-                        </Button>
-                      ) : bicycle.status === "rented" ? (
-                        <Button variant="outline" size="sm" className="flex-1" disabled>
-                          In Use
-                        </Button>
-                      ) : bicycle.status === "maintenance" ? (
-                        <Button variant="destructive" size="sm" className="flex-1" disabled>
-                          Maintenance
-                        </Button>
-                      ) : (
-                        <Button variant="outline" size="sm" className="flex-1" disabled>
-                          Status unavailable
-                        </Button>
-                      )}
+                      {bicycle.status === "available" && <Button variant="outline" size="sm">Book</Button>}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {filteredBicycles.length === 0 && (
-          <Card className="p-12 text-center">
-            <Bike className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No bicycles found</h3>
-            <p className="text-muted-foreground mt-1">Try adjusting your filters</p>
-          </Card>
-        )}
+                  </li>
+                );
+              })}
+            </RowList>
+          ) : (
+            <EmptyState
+              title={bicycles.length === 0 ? "No bicycles yet." : "None in this state."}
+              text={bicycles.length === 0 ? "Register a campus bicycle so students can book it." : "Try another tab."}
+              action={bicycles.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Add a bicycle</Button> : undefined}
+            />
+          )}
+        </section>
 
         {/* Add Bicycle Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[400px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Bicycle</DialogTitle>
+              <DialogTitle>Add a bicycle.</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
                 <label className="block text-sm font-medium mb-1">Registration Number *</label>
                 <Input

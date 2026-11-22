@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { DateBlock, EmptyState, FilterBar, Kicker, RowList, SectionTitle } from "@/components/editorial";
+import { StatusDot } from "@/components/ui/status-dot";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,9 +42,9 @@ const zoneConfig = {
 };
 
 const statusConfig = {
-  low: { label: "Low Priority", variant: "success" as const },
-  medium: { label: "Medium Priority", variant: "warning" as const },
-  high: { label: "High Priority", variant: "destructive" as const },
+  low: { label: "Low priority" },
+  medium: { label: "Medium priority" },
+  high: { label: "High priority" },
 };
 
 
@@ -129,15 +131,16 @@ export default function AnimalWelfare() {
     <MainLayout>
       <div className="page-container">
         <PageHeader
+          photo={{ src: "/campus/bands/campus-cats.webp", alt: "Three campus cats resting together on sandy ground" }}
           eyebrow="Community"
           title="Animal welfare."
           accent="Look out for them."
-          description="Report and track animal welfare issues on campus."
+          description="Report a cat or dog on campus that is hurt, sick or needs feeding."
           actions={
             <>
-              <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4" />
-                Report Issue
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus aria-hidden="true" />
+                Report an animal
               </Button>
             </>
           }
@@ -145,11 +148,11 @@ export default function AnimalWelfare() {
 
         {/* Dialog Form */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Report Animal Welfare Issue</DialogTitle>
+              <DialogTitle>Report an animal.</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="title">Title</Label>
@@ -225,114 +228,64 @@ export default function AnimalWelfare() {
           </DialogContent>
         </Dialog>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Reports Section */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant={urgencyFilter === "all" ? "default" : "secondary"}
-                size="sm"
-                onClick={() => setUrgencyFilter("all")}
-              >
-                All Reports
-              </Button>
-              {Object.entries(zoneConfig).map(([key, config]) => (
-                <Button
-                  key={key}
-                  variant={urgencyFilter === key ? "default" : "secondary"}
-                  size="sm"
-                  onClick={() => setUrgencyFilter(key)}
-                >
-                  {config.label}
-                </Button>
-              ))}
-            </div>
-
-            {filteredReports.length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
-                  No reports found
-                </CardContent>
-              </Card>
+        <div className="grid gap-14 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <section aria-label="Reports">
+            <FilterBar
+              label="Filter by priority"
+              tabs={[{ value: "all", label: "All" }, ...Object.entries(zoneConfig).map(([value, c]) => ({ value, label: c.label }))]}
+              value={urgencyFilter}
+              onChange={setUrgencyFilter}
+            />
+            {filteredReports.length > 0 ? (
+              <RowList label="Animal reports">
+                {filteredReports.map((report) => (
+                  <li key={report.id} className="grid grid-cols-[64px_minmax(0,1fr)] gap-5 py-8 md:grid-cols-[88px_minmax(0,1fr)_150px] md:gap-7">
+                    <DateBlock date={report.created_at} />
+                    <div className="min-w-0">
+                      <Kicker>{report.location}</Kicker>
+                      {report.title && <h3 className="mt-2.5 font-display text-[26px] font-normal leading-[1.2]">{report.title}</h3>}
+                      <p className="mt-2 text-[15px] leading-[26px] text-muted-foreground">{report.description}</p>
+                      <p className="mt-2 text-[13px] text-muted-foreground">Reported by {report.posted_by || "Anonymous"}</p>
+                    </div>
+                    <div className="col-span-2 flex items-center justify-between gap-3 md:col-span-1 md:flex-col md:items-end">
+                      <StatusDot tone={report.urgency === "high" ? "urgent" : report.urgency === "medium" ? "progress" : "open"}>
+                        {statusConfig[report.urgency]?.label ?? "Reported"}
+                      </StatusDot>
+                      {report.user_id === "current-user-id" && (
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(report.id)} className="text-destructive hover:text-destructive">
+                          <Trash2 aria-hidden="true" /> Delete
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </RowList>
             ) : (
-              filteredReports.map((report, index) => {
-                const urgencyConfig = zoneConfig[report.urgency];
-                const statusBadge = statusConfig[report.urgency];
-                
-                return (
-                  <Card 
-                    key={report.id} 
-                    className=""
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${urgencyConfig.color}`}>
-                          <Heart className="h-6 w-6" />
-                        </div>
-                        <div className="flex-1 space-y-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
-                          </div>
-                          {report.title && <h3 className="font-semibold text-foreground">{report.title}</h3>}
-                          <p className="text-sm text-foreground">{report.description}</p>
-                          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {report.location}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {new Date(report.created_at).toLocaleDateString()}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {report.posted_by}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex-col gap-2 hidden sm:flex">
-                          {report.user_id === "current-user-id" && (
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDelete(report.id)}
-                              className="gap-1"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
+              <EmptyState
+                title={reports.length === 0 ? "No reports yet." : "Nothing at this priority."}
+                text={reports.length === 0 ? "Seen a cat or dog on campus that is hurt, sick or needs feeding? Report it here." : "Try another tab."}
+                action={reports.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Report an animal</Button> : undefined}
+              />
             )}
-          </div>
+          </section>
 
-          {/* Info Section */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">How to Report</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm text-muted-foreground">
-                <p>
-                  Click the "Report Issue" button to submit a report about any animal welfare concerns on campus.
-                </p>
-                <div className="space-y-2">
-                  <p className="font-semibold text-foreground">Priority Levels:</p>
-                  <ul className="space-y-1 ml-4">
-                    <li>• <span className="text-success">Low</span>: General welfare observations</li>
-                    <li>• <span className="text-warning">Medium</span>: Animal shows signs of distress</li>
-                    <li>• <span className="text-destructive">High</span>: Immediate medical attention needed</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <aside aria-labelledby="how-to-report">
+            <SectionTitle id="how-to-report">How to report</SectionTitle>
+            <dl className="divide-y divide-white/[0.07]">
+              <div className="py-5">
+                <dt><StatusDot tone="urgent">High</StatusDot></dt>
+                <dd className="mt-1.5 text-sm leading-6 text-muted-foreground">Needs a vet now: bleeding, can't stand, or hit by a vehicle.</dd>
+              </div>
+              <div className="py-5">
+                <dt><StatusDot tone="progress">Medium</StatusDot></dt>
+                <dd className="mt-1.5 text-sm leading-6 text-muted-foreground">Shows signs of distress, an injury or an infection.</dd>
+              </div>
+              <div className="py-5">
+                <dt><StatusDot tone="open">Low</StatusDot></dt>
+                <dd className="mt-1.5 text-sm leading-6 text-muted-foreground">General welfare, such as needing food or shelter.</dd>
+              </div>
+            </dl>
+          </aside>
         </div>
       </div>
     </MainLayout>

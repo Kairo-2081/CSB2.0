@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { BloodMotif } from "./BloodMotif";
 
 export interface PageHeaderPhoto {
   /** A band photo from public/campus/bands (graded, 1100×520, with grain). */
@@ -19,6 +20,10 @@ interface PageHeaderProps {
   actions?: ReactNode;
   /** A campus photograph that fills the band behind the title. */
   photo?: PageHeaderPhoto;
+  /** Glow colour for a band without a photo. */
+  glow?: "sand" | "oxblood";
+  /** Decorative motif drawn in a band without a photo. */
+  motif?: "blood";
   className?: string;
 }
 
@@ -27,7 +32,7 @@ interface PageHeaderProps {
  * smaller scale: a graded campus photograph bleeding to the edges and fading
  * into the page from the left, with the serif headline set over it.
  */
-export function PageHeader({ eyebrow, title, accent, description, actions, photo, className }: PageHeaderProps) {
+export function PageHeader({ eyebrow, title, accent, description, actions, photo, glow = "sand", motif, className }: PageHeaderProps) {
   return (
     <header
       className={cn(
@@ -48,7 +53,10 @@ export function PageHeader({ eyebrow, title, accent, description, actions, photo
           <div aria-hidden="true" className="page-band-shade absolute inset-0 -z-10" />
         </>
       ) : (
-        <div aria-hidden="true" className="page-band-glow absolute inset-0 -z-10" />
+        <>
+          <div aria-hidden="true" className={cn("absolute inset-0 -z-10", glow === "oxblood" ? "page-band-glow-red" : "page-band-glow")} />
+          {motif === "blood" && <BloodMotif />}
+        </>
       )}
 
       <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">

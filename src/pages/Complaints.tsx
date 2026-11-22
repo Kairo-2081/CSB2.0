@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { EmptyState, FilterBar, Kicker, RowList } from "@/components/editorial";
+import { StatusDot } from "@/components/ui/status-dot";
+import { shortDate } from "@/lib/dates";
+import { statusLabel, toneFor } from "@/lib/status";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,7 +77,7 @@ export default function Complaints() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "hall" as const,
+    category: "hall" as Complaint["category"],
     posted_by: "Anonymous",
   });
 
@@ -152,135 +156,71 @@ export default function Complaints() {
           eyebrow="Campus issues"
           title="Complaints,"
           accent="heard and tracked."
-          description="Submit an issue and follow its status until it is resolved."
+          description="Report a problem in your hall, a lab or on campus, and follow it until it's fixed."
           actions={
             <>
-              <Button 
-             
-                className="gap-2"
-                onClick={() => setIsDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                New Complaint
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus aria-hidden="true" />
+                New complaint
               </Button>
             </>
           }
         />
 
-        {/* Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search complaints..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={categoryFilter === "all" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setCategoryFilter("all")}
-            >
-              All
-            </Button>
-            {Object.entries(categoryConfig).map(([key, config]) => (
-              <Button
-                key={key}
-                variant={categoryFilter === key ? "default" : "secondary"}
-                size="sm"
-                onClick={() => setCategoryFilter(key)}
-                className="gap-1.5"
-              >
-                <config.icon className="h-3.5 w-3.5" />
-                {config.label}
-              </Button>
-            ))}
-          </div>
-        </div>
+        <section aria-label="Complaints">
+          <FilterBar
+            label="Filter complaints"
+            tabs={[{ value: "all", label: "All" }, ...Object.entries(categoryConfig).map(([value, c]) => ({ value, label: c.label }))]}
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            search={searchQuery}
+            onSearch={setSearchQuery}
+            searchLabel="Search complaints"
+          />
 
-        {/* Complaints List */}
-        <div className="space-y-4">
-          {filteredComplaints.map((complaint, index) => {
-            const category = categoryConfig[complaint.category];
-            const status = statusConfig[complaint.status];
-            const StatusIcon = status.icon;
-            
-            return (
-              <Card 
-                key={complaint.id} 
-                className=""
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex gap-4">
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary ${category.color}`}>
-                        <category.icon className="h-6 w-6" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold text-foreground">{complaint.title}</h3>
-                          <Badge variant={status.variant} className="gap-1">
-                            <StatusIcon className="h-3 w-3" />
-                            {status.label}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{complaint.description}</p>
-                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-xs">
-                              {category.label}
-                            </Badge>
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(complaint.created_at).toLocaleDateString()}
-                          </span>
-                          <span>By {complaint.posted_by}</span>
-                        </div>
-                      </div>
+          {filteredComplaints.length > 0 ? (
+            <RowList label="Complaints">
+              {filteredComplaints.map((complaint) => {
+                const category = categoryConfig[complaint.category];
+                const status = statusConfig[complaint.status];
+                return (
+                  <li key={complaint.id} className="grid gap-4 py-7 md:grid-cols-[minmax(0,1fr)_180px_150px] md:items-center md:gap-8">
+                    <div className="min-w-0">
+                      <Kicker>{category?.label ?? complaint.category}</Kicker>
+                      <h3 className="mt-2 font-display text-2xl font-normal leading-[1.25]">{complaint.title}</h3>
+                      <p className="mt-2 max-w-2xl text-[15px] leading-[26px] text-muted-foreground">{complaint.description}</p>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
+                    <StatusDot tone={toneFor(complaint.status)}>{status?.label ?? statusLabel(complaint.status)}</StatusDot>
+                    <div className="flex items-center justify-between gap-3 text-[13px] text-muted-foreground md:flex-col md:items-end">
+                      <span>
+                        {shortDate(complaint.created_at)} · {complaint.posted_by}
+                      </span>
                       {complaint.user_id === user?.id && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDelete(complaint.id)}
-                          className="gap-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(complaint.id)} className="text-destructive hover:text-destructive">
+                          <Trash2 aria-hidden="true" /> Delete
                         </Button>
                       )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {filteredComplaints.length === 0 && (
-          <Card className="p-12 text-center">
-            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No complaints found</h3>
-            <p className="text-muted-foreground mt-1">Try adjusting your search or filters</p>
-          </Card>
-        )}
+                  </li>
+                );
+              })}
+            </RowList>
+          ) : (
+            <EmptyState
+              title={complaints.length === 0 ? "No complaints yet." : "Nothing matches."}
+              text={complaints.length === 0 ? "Report a problem in your hall, a lab or on campus, and follow it until it's fixed." : "Try another category or a different search."}
+              action={complaints.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Report the first issue</Button> : undefined}
+            />
+          )}
+        </section>
 
         {/* New Complaint Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Submit New Complaint</DialogTitle>
+              <DialogTitle>Report an issue.</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
                 <label className="block text-sm font-medium mb-1">Title *</label>
                 <Input
@@ -295,7 +235,7 @@ export default function Complaints() {
                 <label className="block text-sm font-medium mb-1">Category *</label>
                 <Select 
                   value={formData.category}
-                  onValueChange={(value) => setFormData({...formData, category: value as any})}
+                  onValueChange={(value) => setFormData({...formData, category: value as Complaint["category"]})}
                   disabled={isLoading}
                 >
                   <SelectTrigger>

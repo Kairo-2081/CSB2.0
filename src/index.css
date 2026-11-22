@@ -169,6 +169,23 @@
     }
   }
 
+  /* Form labels inside the side panel: small spaced capitals, as designed. */
+  [role="dialog"] form label:not([data-plain]) {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .page-band-glow-red {
+    background:
+      radial-gradient(65% 95% at 82% 10%, rgba(110, 22, 30, 0.32), rgba(60, 12, 18, 0.12) 45%, transparent 75%),
+      linear-gradient(0deg, #07070d 0%, transparent 60%);
+  }
+
   .page-band-glow {
     background:
       radial-gradient(70% 90% at 85% 0%, rgba(168, 141, 118, 0.12), transparent 70%),

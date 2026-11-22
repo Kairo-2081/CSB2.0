@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { EmptyState, FilterBar, RowList } from "@/components/editorial";
 
 interface DirectoryUser {
   id: string;
@@ -33,7 +30,7 @@ export default function Students() {
   }, []);
 
   const filtered = users.filter((user) => {
-    const matchesText = `${user.name} ${user.email} ${user.department || ""}`
+    const matchesText = `${user.name} ${user.department || ""}`
       .toLowerCase()
       .includes(search.toLowerCase());
     return matchesText && (role === "all" || user.role === role);
@@ -42,47 +39,48 @@ export default function Students() {
   return (
     <MainLayout>
       <div className="page-container">
-        <PageHeader eyebrow="People" title="Student directory." description="People registered on CSB 2.0." />
+        <PageHeader
+          photo={{ src: "/campus/bands/buet-corridor.webp", alt: "A shaded BUET corridor with one person walking at the far end" }}
+          eyebrow="People"
+          title="Student directory."
+          accent="Your campus, by name."
+          description="People registered on CSB 2.0. Contact details are not shown here."
+        />
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-64 flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Search name, email or department" value={search} onChange={(event) => setSearch(event.target.value)} />
-          </div>
-          {["all", "student", "admin"].map((filter) => (
-            <Button key={filter} size="sm" variant={role === filter ? "default" : "secondary"} onClick={() => setRole(filter)}>
-              {filter === "all" ? "All" : filter === "admin" ? "Admins" : "Students"}
-            </Button>
-          ))}
-        </div>
-
-        {error && <p className="text-sm text-destructive">{error}</p>}
-
-        <div className="glass-panel overflow-hidden rounded-xl">
-          <table className="w-full text-sm">
-            <thead className="bg-white/[0.035] text-left">
-              <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Department</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-              </tr>
-            </thead>
-            <tbody>
+        <section aria-label="Directory">
+          <FilterBar
+            label="Show"
+            tabs={[
+              { value: "all", label: "Everyone", count: users.length },
+              { value: "student", label: "Students" },
+              { value: "admin", label: "Admins" },
+            ]}
+            value={role}
+            onChange={setRole}
+            search={search}
+            onSearch={setSearch}
+            searchLabel="Search by name or department"
+          />
+          {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
+          {filtered.length > 0 ? (
+            <RowList label="People">
               {filtered.map((user) => (
-                <tr key={user.id} className="border-t border-white/8 transition-colors hover:bg-white/[0.035]">
-                  <td className="px-4 py-3 font-medium">{user.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{user.department || "-"}</td>
-                  <td className="px-4 py-3"><Badge variant="secondary">{user.role === "admin" ? "Admin" : "Student"}</Badge></td>
-                </tr>
+                <li key={user.id} className="grid grid-cols-[44px_minmax(0,1fr)] items-center gap-x-5 gap-y-1 py-4 md:grid-cols-[44px_minmax(0,1.3fr)_minmax(0,1fr)_120px] md:gap-6">
+                  <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/45 font-display text-lg text-accent">
+                    {user.name.trim().charAt(0).toUpperCase()}
+                  </span>
+                  <span className="font-display text-xl">{user.name}</span>
+                  <span className="col-start-2 text-sm text-[#d6cec5] md:col-start-auto">{user.department || "Department not set"}</span>
+                  <span className="col-start-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground md:col-start-auto md:text-right">
+                    {user.role === "admin" ? "Admin" : "Student"}
+                  </span>
+                </li>
               ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-10 text-center text-muted-foreground">No users found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            </RowList>
+          ) : (
+            <EmptyState title={users.length === 0 ? "No one here yet." : "No one matches."} text={users.length === 0 ? undefined : "Try another name or department."} />
+          )}
+        </section>
       </div>
     </MainLayout>
   );

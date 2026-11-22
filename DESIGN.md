@@ -73,3 +73,16 @@ so type always sits on a dark, warm field.
 Use short transitions for hover and user-triggered state changes. Keep the
 ambient background still, respect reduced motion, preserve visible keyboard
 focus, and maintain readable text contrast on translucent surfaces.
+
+## Building blocks (match the design canvas)
+
+- `PageHeader` (`src/components/layout`): the band at the top of every signed-in page. A graded photo from `public/campus/bands`, or no photo with `glow="sand"` (default) or `glow="oxblood"`. Blood donation adds `motif="blood"`: small flat drops and one thin heartbeat line, hidden on phones.
+- `src/components/editorial.tsx`: `DateBlock`, `Kicker`, `RowList`, `FilterBar` (underline tabs and search), `CountStrip`, `ObjectTile` (a warm tile with a serif initial for listings without a photo), `EmptyState`, `SectionTitle`.
+- `StatusDot` (`src/components/ui/status-dot.tsx`) with `toneFor` and `statusLabel` in `src/lib/status.ts`: status is a dot and a word. Red only for urgent and delete.
+- Dialogs open as a full-height panel from the right, with the title in the serif and small-capital labels.
+- Prices are shown in taka (`৳ 4,500`).
+
+## Photos
+
+Run new photos through `scripts/grade-photos.py --band 1100x520 --grain` into `public/campus/bands`. Prefer real photos; drawn or rendered stand-ins for a page read as AI art next to photographs.
+
