@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import { ZodError } from 'zod';
 import { schemas } from './schemas.js';
 import { config } from './config.js';
+import { mailEnabled, sendVerificationCode } from './mailer.js';
 
 // The database lives entirely in schema.sql. This file checks who is asking,
 // validates the body, calls one function, and passes the result through.
@@ -134,6 +135,7 @@ export function createApp({ pool, log = console }) {
   app.use('/api', limiter(60_000, config.rateLimit.general, 'Too many requests. Try again in a minute.'));
   app.use(['/api/auth/login', '/api/auth/change-password'],
     limiter(15 * 60_000, config.rateLimit.login, 'Too many attempts. Try again in 15 minutes.'));
+  app.use('/api/auth/email', limiter(15 * 60_000, 6, 'Too many code requests. Try again in 15 minutes.'));
   app.use('/api/auth/register', limiter(60 * 60_000, config.rateLimit.register, 'Too many sign-ups from here. Try again later.'));
 
   // ---- Health (before the auth gate; checks the database) ----------------------
@@ -155,7 +157,11 @@ export function createApp({ pool, log = console }) {
   });
 
   // ---- Module flags -------------------------------------------------------------
-  app.get('/api/modules', (req, res) => res.json({ success: true, modules: config.modules }));
+  app.get('/api/modules', (req, res) => res.json({
+    success: true,
+    modules: config.modules,
+    emailVerification: config.requireEmailVerification ? 'required' : 'off',
+  }));
   app.use((req, res, next) => {
     for (const [name, prefix] of Object.entries(MODULE_PREFIXES)) {
       if (req.path.startsWith(prefix) && !config.modules.includes(name)) {
@@ -189,6 +195,14 @@ export function createApp({ pool, log = console }) {
   app.use('/api', (req, res, next) => {
     const key = `${req.method} /api${req.path}`.replace(/\/$/, '');
     return PUBLIC_ROUTES.has(key) ? next() : requireAuth(req, res, next);
+  });
+
+  // Once email verification is on, unverified accounts can read but not post.
+  app.use('/api', (req, res, next) => {
+    if (!config.requireEmailVerification || !req.user || req.user.emailVerified) return next();
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+    if (req.path.startsWith('/auth/') || req.path.startsWith('/account')) return next();
+    return res.status(403).json({ success: false, error: 'Verify your university email before posting. Check your inbox for the code.' });
   });
 
   // ---- Helpers ------------------------------------------------------------------
@@ -234,11 +248,33 @@ export function createApp({ pool, log = console }) {
     }
     const result = await call(
       'register_user', b.name, b.email, b.password, b.phone, b.department, b.universityName,
-      b.homeDistrict, b.currentResidence, config.openUniversities, req.get('user-agent') || null,
+      b.homeDistrict, b.currentResidence, config.openUniversities, req.get('user-agent') || null, true,
     );
     setSessionCookie(res, result.token);
+    if (mailEnabled) {
+      // A failed email must not fail the sign-up; the student can resend.
+      sendCode(result.user.id).catch((error) => log.error(JSON.stringify({
+        level: 'error', msg: 'verification email failed', requestId: req.id, error: error.message,
+      })));
+    }
     return withoutToken(result);
   }, 201));
+
+  async function sendCode(userId) {
+    const { code, email, name } = await call('create_email_code', userId);
+    await sendVerificationCode({ email, name, code });
+  }
+
+  app.post('/api/auth/email/send', route(async (req) => {
+    if (!mailEnabled) throw new AppError(503, 'Email is not set up on this server yet');
+    await sendCode(req.user.id);
+    return { success: true, message: 'Code sent. It works for 15 minutes.' };
+  }));
+
+  app.post('/api/auth/email/verify', route((req) => {
+    const b = parse(schemas.emailCode, req.body);
+    return call('verify_email_code', req.user.id, b.code);
+  }));
 
   app.post('/api/auth/logout', route(async (req, res) => {
     const token = sessionToken(req);
@@ -299,6 +335,31 @@ export function createApp({ pool, log = console }) {
   }
   app.post('/api/notices/:id/restore', route((req) => call('restore_board_row', 'notices', req.user.id, req.params.id)));
   app.post('/api/complaints/:id/restore', route((req) => call('restore_board_row', 'complaints', req.user.id, req.params.id)));
+
+  // ---- Reports and moderation -----------------------------------------------------
+  const tableFor = (pathName) => boards[pathName][0];
+  app.post('/api/reports', route((req) => {
+    const b = parse(schemas.report, req.body);
+    return call('report_post', req.user.id, tableFor(b.board), b.row_id, b.reason, b.details ?? null);
+  }, 201));
+  app.get('/api/admin/reports', route((req) => call('list_reports', req.user.id)));
+  app.post('/api/admin/reports/resolve', route((req) => {
+    const b = parse(schemas.resolveReport, req.body);
+    return call('resolve_reports', req.user.id, b.board, b.row_id, b.action);
+  }));
+
+  // ---- Your data ------------------------------------------------------------------
+  app.get('/api/account/export', route(async (req, res) => {
+    const data = await call('export_account', req.user.id);
+    res.setHeader('Content-Disposition', 'attachment; filename="csb2-my-data.json"');
+    return data;
+  }));
+  app.delete('/api/account', route(async (req, res) => {
+    const b = parse(schemas.deleteAccount, req.body);
+    const result = await call('delete_account', req.user.id, b.password);
+    res.clearCookie(SESSION_COOKIE, { path: '/' });
+    return result;
+  }));
 
   // ---- Lend & borrow ------------------------------------------------------------
   app.get('/api/lend-borrow/items', route((req) => call('list_lending_items', req.user.id, ...page(req))));
