@@ -3,25 +3,14 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { DateBlock, EmptyState, FilterBar, Kicker, RowList, SectionTitle } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { 
-  Plus, 
-  MapPin, 
-  Clock, 
-  User,
-  AlertTriangle,
-  CheckCircle,
-  Heart,
-  Trash2
-} from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { BoardRow, animalWelfareService } from "@/services/database.service";
 
 interface AnimalReport extends BoardRow {

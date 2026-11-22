@@ -3,9 +3,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { EmptyState, FilterBar, ObjectTile } from "@/components/editorial";
 import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -15,17 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { 
-  Plus, 
-  Search, 
-  Phone, 
-  User,
-  DollarSign,
-  Tag,
-  Loader2,
-  Trash2,
-  ArrowUpRight,
-} from "lucide-react";
+import { Plus, Loader2, Trash2, ArrowUpRight } from "lucide-react";
 import { BoardRow, marketplaceService } from "@/services/database.service";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";

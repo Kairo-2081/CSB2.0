@@ -1,4 +1,5 @@
 import { api } from "@/lib/http";
+import { useModules } from "@/lib/modules";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, Search } from "lucide-react";
@@ -44,6 +45,7 @@ function getTimeOfDay(date = new Date()) {
 }
 
 export default function Dashboard() {
+  const { enabled } = useModules();
   const { user } = useAuth();
   const timeOfDay = getTimeOfDay();
   const firstName = user?.name?.trim().split(/\s+/)[0];
@@ -94,7 +96,7 @@ export default function Dashboard() {
         />
 
         <ul aria-label="Open on campus" className="grid grid-cols-2 border-y border-white/10 lg:grid-cols-4">
-          {counts.map((c, i) => (
+          {counts.filter((c) => enabled(c.href)).map((c, i) => (
             <li key={c.label} className={["border-white/10", i % 2 ? "border-l" : "", i >= 2 ? "border-t lg:border-t-0" : "", i === 2 ? "lg:border-l" : ""].join(" ")}>
               <Link to={c.href} className="group flex h-full flex-col gap-3.5 px-5 py-7 transition-colors hover:bg-white/[0.025] sm:px-6">
                 <span className="flex items-start justify-between">

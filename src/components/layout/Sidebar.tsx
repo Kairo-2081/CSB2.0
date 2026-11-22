@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useModules } from "@/lib/modules";
 import {
   LayoutDashboard,
   Search,
@@ -47,10 +48,11 @@ export function Sidebar() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const visibleNavItems: NavItem[] =
-    user?.role === "admin"
-      ? [...navItems, { title: "University network", href: "/central-admin", icon: Building2 }]
-      : navItems;
+  const { enabled } = useModules();
+  const visibleNavItems: NavItem[] = [
+    ...navItems.filter((item) => enabled(item.href)),
+    ...(user?.role === "admin" ? [{ title: "University network", href: "/central-admin", icon: Building2 }] : []),
+  ];
   const activeTitle = visibleNavItems.find((item) => item.href === location.pathname)?.title ?? "Campus services";
 
   const handleLogout = () => {

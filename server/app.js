@@ -216,7 +216,7 @@ export function createApp({ pool, log = console }) {
     });
   }
   // The token goes only into the HttpOnly cookie, never into the response body.
-  const withoutToken = ({ token, ...rest }) => rest; // eslint-disable-line no-unused-vars
+  const withoutToken = ({ token: _token, ...rest }) => rest;
 
   // ---- Auth routes --------------------------------------------------------------
   app.post('/api/auth/login', route(async (req, res) => {
@@ -335,8 +335,7 @@ export function createApp({ pool, log = console }) {
   // ---- Errors (after every route) -------------------------------------------------
   // Deliberate errors keep their message; anything else becomes a generic 500
   // with a request id, and the full error goes to the log under the same id.
-  // eslint-disable-next-line no-unused-vars
-  app.use((error, req, res, next) => {
+  app.use((error, req, res, _next) => {
     if (error instanceof ZodError) {
       const issue = error.issues[0];
       const field = issue?.path?.join('.') || 'request';

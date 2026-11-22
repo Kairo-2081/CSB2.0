@@ -3,11 +3,8 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { EmptyState, FilterBar, Kicker, RowList, SectionTitle } from "@/components/editorial";
 import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -22,17 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Plus, 
-  Droplets, 
-  MapPin, 
-  Phone, 
-  Clock,
-  AlertTriangle,
-  Heart,
-  Loader2,
-  Trash2
-} from "lucide-react";
+import { Plus, MapPin, Loader2, Trash2 } from "lucide-react";
 import { BoardRow, bloodDonationService } from "@/services/database.service";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";

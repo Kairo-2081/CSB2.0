@@ -2,23 +2,13 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService, University } from "@/services/auth.service";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  Mail, 
-  Lock, 
-  User,
-  AlertCircle,
-  Loader2,
-  Eye,
-  EyeOff,
-  Check,
-  X
-} from "lucide-react";
+import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 // BUET's departments, for the sign-up form.
