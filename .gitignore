@@ -26,3 +26,12 @@ dist-ssr
 # Local database files are never committed
 *.db
 *.db-journal
+
+# Environment files hold secrets; only the example is committed
+.env
+.env.*
+!.env.local.example
+
+# Test output
+test-results/
+playwright-report/
