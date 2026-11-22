@@ -12,24 +12,31 @@ cp .env.local.example .env.local     # set DATABASE_URL
 npm run dev                          # runs schema.sql, then starts the API
 ```
 
-## Supabase (or any hosted Postgres)
+## Neon (production)
 
-Use the project's connection string (Settings → Database) as `DATABASE_URL`.
-The server applies `schema.sql` on start. You can also paste the file into the
-SQL editor and run it; it is safe to run more than once.
+1. In the Neon console, create a project (PostgreSQL 16 or 17, region close to
+   Bangladesh such as Singapore).
+2. Click **Connect** and copy the connection string. It ends in
+   `?sslmode=require`; keep that.
+3. Put it in Render as `DATABASE_URL`. The server runs `schema.sql` on start,
+   which creates every table and function. `pgcrypto` is available on Neon.
 
-`pgcrypto` must be available. It is on Supabase and in every standard
-PostgreSQL install.
+Neon's free plan pauses an idle database and wakes it on the next request, so
+the first request after a quiet spell is slower.
 
 ## Render
 
-One web service serves the site and the API; `render.yaml` describes it.
+`render.yaml` creates one web service that serves the site and the API.
 
 - Build command: `npm ci --include=dev && npm run build`
 - Start command: `npm start`
-- Environment: `DATABASE_URL` = the database's **Internal** connection string.
-  If you use the External one instead, also set `DATABASE_SSL=true`.
+- Environment: `DATABASE_URL` = the Neon connection string.
 - Do not set `VITE_API_URL`. The built site calls `/api` on its own domain.
+
+## Other hosted Postgres
+
+Any PostgreSQL 14+ works. If the connection string has no `sslmode=require`
+but the host needs TLS, also set `DATABASE_SSL=true`.
 
 ## Changing the schema
 
