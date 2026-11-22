@@ -1,3 +1,4 @@
+import { API_URL as baseUrl } from "@/lib/api-url";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, Search } from "lucide-react";
@@ -27,7 +28,6 @@ interface Feeds {
   marketplace: Row[];
 }
 
-const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 function getTimeOfDay(date = new Date()) {
   const hour = date.getHours();
