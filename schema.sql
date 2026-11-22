@@ -746,6 +746,114 @@ BEGIN
 END;
 $$;
 
+-- Admin overview: the charts on /admin. Everything is scoped to the admin's
+-- university and bucketed in Bangladesh time. p_months is 3, 6 or 12; each
+-- figure comes with the same figure for the period just before it.
+CREATE OR REPLACE FUNCTION admin_overview(p_actor_id text, p_months int) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  a        users := require_admin(p_actor_id);
+  v_months int := CASE WHEN p_months IN (3, 6, 12) THEN p_months ELSE 12 END;
+  v_shift  interval;
+  v_now    timestamp := now() AT TIME ZONE 'Asia/Dhaka';
+  v_start  timestamp;
+  v_prev   timestamp;
+  v_out    jsonb;
+BEGIN
+  v_shift := make_interval(months => v_months);
+  v_start := date_trunc('month', v_now) - make_interval(months => v_months - 1);
+  v_prev  := v_start - v_shift;
+
+  WITH posts AS (
+    SELECT 'notices'::text AS board, created_at AT TIME ZONE 'Asia/Dhaka' AS at, user_id
+      FROM notices WHERE university_id IS NOT DISTINCT FROM a.university_id
+    UNION ALL SELECT 'complaints', created_at AT TIME ZONE 'Asia/Dhaka', user_id
+      FROM complaints WHERE university_id IS NOT DISTINCT FROM a.university_id
+    UNION ALL SELECT 'faculty_suggestions', created_at AT TIME ZONE 'Asia/Dhaka', user_id
+      FROM faculty_suggestions WHERE university_id IS NOT DISTINCT FROM a.university_id
+    UNION ALL SELECT 'marketplace', created_at AT TIME ZONE 'Asia/Dhaka', user_id
+      FROM marketplace WHERE university_id IS NOT DISTINCT FROM a.university_id
+    UNION ALL SELECT 'lost_found', created_at AT TIME ZONE 'Asia/Dhaka', user_id
+      FROM lost_found WHERE university_id IS NOT DISTINCT FROM a.university_id
+    UNION ALL SELECT 'bicycles', created_at AT TIME ZONE 'Asia/Dhaka', user_id
+      FROM bicycles WHERE university_id IS NOT DISTINCT FROM a.university_id
+    UNION ALL SELECT 'blood_donation', created_at AT TIME ZONE 'Asia/Dhaka', user_id
+      FROM blood_donation WHERE university_id IS NOT DISTINCT FROM a.university_id
+    UNION ALL SELECT 'animal_welfare', created_at AT TIME ZONE 'Asia/Dhaka', user_id
+      FROM animal_welfare WHERE university_id IS NOT DISTINCT FROM a.university_id
+    UNION ALL SELECT 'lending_items', created_at AT TIME ZONE 'Asia/Dhaka', owner_id
+      FROM lending_items WHERE university_id IS NOT DISTINCT FROM a.university_id
+  ),
+  students AS (
+    SELECT created_at AT TIME ZONE 'Asia/Dhaka' AS at FROM users
+     WHERE role = 'student' AND university_id IS NOT DISTINCT FROM a.university_id
+  ),
+  reps AS (
+    SELECT board, status, created_at AT TIME ZONE 'Asia/Dhaka' AS at FROM reports
+     WHERE university_id IS NOT DISTINCT FROM a.university_id
+  ),
+  months AS (
+    SELECT generate_series(v_start, date_trunc('month', v_now), interval '1 month') AS m
+  ),
+  series AS (
+    SELECT m,
+      (SELECT count(*) FROM students s WHERE date_trunc('month', s.at) = m)::int            AS signups,
+      (SELECT count(*) FROM students s WHERE date_trunc('month', s.at) = m - v_shift)::int  AS signups_prev,
+      (SELECT count(*) FROM posts p WHERE date_trunc('month', p.at) = m)::int               AS posts,
+      (SELECT count(*) FROM posts p WHERE date_trunc('month', p.at) = m - v_shift)::int     AS posts_prev,
+      (SELECT count(*) FROM reps r WHERE date_trunc('month', r.at) = m)::int                AS reports,
+      (SELECT count(*) FROM reps r WHERE date_trunc('month', r.at) = m - v_shift)::int      AS reports_prev
+    FROM months
+  ),
+  boards AS (
+    SELECT b.board,
+      (SELECT count(*) FROM posts p WHERE p.board = b.board AND p.at >= v_start)::int AS posts,
+      (SELECT count(*) FROM posts p WHERE p.board = b.board AND p.at >= v_prev AND p.at < v_start)::int AS previous,
+      (SELECT count(*) FROM posts p WHERE p.board = b.board)::int AS all_time,
+      (SELECT max(p.at) FROM posts p WHERE p.board = b.board) AS last_post,
+      (SELECT count(*) FROM reps r WHERE r.board = b.board AND r.status = 'open')::int AS open_reports,
+      (SELECT jsonb_agg((SELECT count(*) FROM posts p WHERE p.board = b.board AND date_trunc('month', p.at) = mm.m) ORDER BY mm.m)
+         FROM months mm) AS spark
+    FROM unnest(board_tables() || ARRAY['lending_items']) AS b(board)
+  ),
+  weekdays AS (
+    SELECT d.dow, (SELECT count(*) FROM posts p WHERE p.at >= v_start AND extract(dow FROM p.at) = d.dow)::int AS posts
+    FROM generate_series(0, 6) AS d(dow)
+  )
+  SELECT jsonb_build_object(
+    'success', true,
+    'months', v_months,
+    'from', v_start::date,
+    'kpis', jsonb_build_object(
+      'students', jsonb_build_object(
+        'total',    (SELECT count(*) FROM students)::int,
+        'value',    (SELECT count(*) FROM students WHERE at >= v_start)::int,
+        'previous', (SELECT count(*) FROM students WHERE at >= v_prev AND at < v_start)::int),
+      'posts', jsonb_build_object(
+        'value',    (SELECT count(*) FROM posts WHERE at >= v_start)::int,
+        'previous', (SELECT count(*) FROM posts WHERE at >= v_prev AND at < v_start)::int),
+      'activePosters', jsonb_build_object(
+        'value',    (SELECT count(DISTINCT user_id) FROM posts WHERE at >= v_start)::int,
+        'previous', (SELECT count(DISTINCT user_id) FROM posts WHERE at >= v_prev AND at < v_start)::int),
+      'reports', jsonb_build_object(
+        'value',    (SELECT count(*) FROM reps WHERE at >= v_start)::int,
+        'handled',  (SELECT count(*) FROM reps WHERE at >= v_start AND status <> 'open')::int,
+        'open',     (SELECT count(*) FROM reps WHERE status = 'open')::int)),
+    'series', (SELECT jsonb_agg(jsonb_build_object(
+        'month', to_char(m, 'YYYY-MM'),
+        'signups', signups, 'signupsPrev', signups_prev,
+        'posts', posts, 'postsPrev', posts_prev,
+        'reports', reports, 'reportsPrev', reports_prev) ORDER BY m) FROM series),
+    'boards', (SELECT jsonb_agg(jsonb_build_object(
+        'board', board, 'posts', posts, 'previous', previous, 'allTime', all_time,
+        'lastPostAt', last_post, 'openReports', open_reports, 'spark', spark)
+        ORDER BY posts DESC, all_time DESC, board) FROM boards),
+    'weekdays', (SELECT jsonb_agg(jsonb_build_object('dow', dow, 'posts', posts) ORDER BY dow) FROM weekdays)
+  ) INTO v_out;
+  RETURN v_out;
+END;
+$$;
+
 -- =============================================================================
 -- Campus boards
 --

@@ -159,4 +159,7 @@ export const schemas = {
     limit: z.coerce.number().int().min(1).max(100).optional(),
     offset: z.coerce.number().int().min(0).max(100_000).optional(),
   }),
+  overviewQuery: z.object({
+    months: z.coerce.number().int().refine((n) => [3, 6, 12].includes(n), 'months must be 3, 6 or 12').optional(),
+  }),
 };
