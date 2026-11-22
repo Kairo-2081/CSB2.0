@@ -240,7 +240,10 @@ export default function Index() {
       <footer className="border-t border-[#f4efe8]/10 px-5 py-6 text-sm text-[#b7aea4] sm:px-10">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="uppercase tracking-[0.18em] text-[11px]">CSB 2.0</span>
-          <span>Starting at BUET. More campuses later.</span>
+          <span className="flex items-center gap-5">
+            <span>Starting at BUET. More campuses later.</span>
+            <Link to="/privacy" className="text-[#d6cec5] underline-offset-4 hover:underline">Privacy</Link>
+          </span>
         </div>
       </footer>
     </div>

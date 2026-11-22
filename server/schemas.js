@@ -32,7 +32,29 @@ export const schemas = {
     universityName: text(2, 120),
     homeDistrict: text(2, 60),
     currentResidence: text(2, 120),
-    consent: z.literal(true).optional(),
+    // Accepted the privacy notice.
+    consent: z.literal(true, { error: 'Read and accept the privacy notice to create an account' }),
+  }),
+
+  emailCode: z.object({
+    code: z.string().trim().regex(/^\d{6}$/, { error: 'Enter the 6-digit code from the email' }),
+  }),
+
+  report: z.object({
+    board: z.enum(['notices', 'complaints', 'faculty-suggestions', 'marketplace', 'lost-found', 'bicycles', 'blood-donation', 'animal-welfare']),
+    row_id: z.string().trim().min(1).max(64),
+    reason: z.enum(['spam', 'harassment', 'personal_info', 'false', 'inappropriate', 'other']),
+    details: z.string().trim().max(500).optional().nullable(),
+  }),
+
+  resolveReport: z.object({
+    board: z.enum(['notices', 'complaints', 'faculty_suggestions', 'marketplace', 'lost_found', 'bicycles', 'blood_donation', 'animal_welfare']),
+    row_id: z.string().trim().min(1).max(64),
+    action: z.enum(['dismiss', 'remove']),
+  }),
+
+  deleteAccount: z.object({
+    password: z.string().min(1).max(128),
   }),
 
   profile: z

@@ -322,6 +322,47 @@ BEGIN
 END;
 $$;
 
+-- 3: email verification codes, reports and moderation, privacy consent.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM schema_migrations WHERE version = 3) THEN
+    RETURN;
+  END IF;
+
+  -- When the student accepted the privacy notice at sign-up.
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy_accepted_at timestamptz;
+
+  -- One live code per user; only its hash is stored.
+  CREATE TABLE email_verifications (
+    user_id     text PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    code_hash   text NOT NULL,
+    expires_at  timestamptz NOT NULL,
+    attempts    int NOT NULL DEFAULT 0,
+    sent_at     timestamptz NOT NULL DEFAULT now()
+  );
+
+  CREATE TABLE reports (
+    id           text PRIMARY KEY DEFAULT new_id(),
+    board        text NOT NULL,
+    row_id       text NOT NULL,
+    reporter_id  text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    university_id text REFERENCES universities (id),
+    reason       text NOT NULL CHECK (reason IN ('spam', 'harassment', 'personal_info', 'false', 'inappropriate', 'other')),
+    details      text CHECK (length(details) <= 500),
+    status       text NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'dismissed', 'removed')),
+    resolved_by  text REFERENCES users (id) ON DELETE SET NULL,
+    resolved_at  timestamptz,
+    created_at   timestamptz NOT NULL DEFAULT now()
+  );
+  -- A student can report a post once.
+  CREATE UNIQUE INDEX idx_reports_once ON reports (board, row_id, reporter_id);
+  CREATE INDEX idx_reports_open ON reports (university_id, status, created_at DESC);
+
+  INSERT INTO schema_migrations (version, name)
+  VALUES (3, 'email verification, reports, privacy consent');
+END;
+$$;
+
 -- Keep updated_at current on every UPDATE.
 DO $$
 DECLARE
@@ -426,7 +467,8 @@ LANGUAGE sql STABLE AS $$
     'currentResidence',   u.current_residence,
     'showContact',        u.show_contact,
     'emailVerified',      u.email_verified_at IS NOT NULL,
-    'mustChangePassword', u.must_change_password
+    'mustChangePassword', u.must_change_password,
+    'privacyAccepted',    u.privacy_accepted_at IS NOT NULL
   )
   FROM users u
   LEFT JOIN universities un ON un.id = u.university_id
@@ -449,7 +491,8 @@ $$;
 -- the token is unknown, expired or revoked.
 CREATE OR REPLACE FUNCTION session_user_info(p_token text) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
-  SELECT jsonb_build_object('id', u.id, 'name', u.name, 'role', u.role, 'universityId', u.university_id)
+  SELECT jsonb_build_object('id', u.id, 'name', u.name, 'role', u.role, 'universityId', u.university_id,
+                            'emailVerified', u.email_verified_at IS NOT NULL)
   FROM auth_sessions s
   JOIN users u ON u.id = s.user_id
   WHERE s.token_hash = token_hash(p_token)
@@ -494,7 +537,8 @@ CREATE OR REPLACE FUNCTION register_user(
   p_home_district      text,
   p_current_residence  text,
   p_open_slugs         text[],
-  p_user_agent         text
+  p_user_agent         text,
+  p_privacy_accepted   boolean
 ) RETURNS jsonb
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -516,11 +560,12 @@ BEGIN
 
   INSERT INTO users (
     name, email, password_hash, role, phone, department,
-    university_id, home_district, current_residence
+    university_id, home_district, current_residence, privacy_accepted_at
   ) VALUES (
     trim(p_name), lower(trim(p_email)), crypt(p_password, gen_salt('bf', 12)), 'student',
     trim(p_phone), trim(p_department),
-    v_university_id, trim(p_home_district), trim(p_current_residence)
+    v_university_id, trim(p_home_district), trim(p_current_residence),
+    CASE WHEN p_privacy_accepted THEN now() END
   )
   RETURNING id INTO v_id;
 
@@ -1077,3 +1122,201 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- =============================================================================
+-- Email verification
+-- =============================================================================
+
+-- A fresh 6-digit code for the signed-in user, valid 15 minutes. The server
+-- emails it; only a hash is stored. One code a minute at most.
+CREATE OR REPLACE FUNCTION create_email_code(p_actor_id text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  a      users := actor(p_actor_id);
+  v_code text := lpad(((('x' || encode(gen_random_bytes(4), 'hex'))::bit(32)::bigint) % 1000000)::text, 6, '0');
+BEGIN
+  IF a.email_verified_at IS NOT NULL THEN
+    PERFORM api_error(409, 'Your email is already verified');
+  END IF;
+  IF EXISTS (SELECT 1 FROM email_verifications WHERE user_id = a.id AND sent_at > now() - interval '60 seconds') THEN
+    PERFORM api_error(429, 'A code was sent less than a minute ago. Check your inbox and spam folder.');
+  END IF;
+  INSERT INTO email_verifications (user_id, code_hash, expires_at)
+  VALUES (a.id, token_hash(a.id || ':' || v_code), now() + interval '15 minutes')
+  ON CONFLICT (user_id) DO UPDATE
+    SET code_hash = EXCLUDED.code_hash, expires_at = EXCLUDED.expires_at, attempts = 0, sent_at = now();
+  RETURN jsonb_build_object('code', v_code, 'email', a.email, 'name', a.name);
+END;
+$$;
+
+-- Five tries per code.
+CREATE OR REPLACE FUNCTION verify_email_code(p_actor_id text, p_code text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  a users := actor(p_actor_id);
+  v email_verifications;
+BEGIN
+  SELECT * INTO v FROM email_verifications WHERE user_id = a.id FOR UPDATE;
+  IF NOT FOUND OR v.expires_at < now() THEN
+    PERFORM api_error(400, 'That code has expired. Send a new one.');
+  END IF;
+  IF v.attempts >= 5 THEN
+    PERFORM api_error(429, 'Too many wrong codes. Send a new one.');
+  END IF;
+  IF v.code_hash <> token_hash(a.id || ':' || trim(p_code)) THEN
+    UPDATE email_verifications SET attempts = attempts + 1 WHERE user_id = a.id;
+    PERFORM api_error(400, 'That code is not right');
+  END IF;
+  UPDATE users SET email_verified_at = now() WHERE id = a.id;
+  DELETE FROM email_verifications WHERE user_id = a.id;
+  RETURN jsonb_build_object('success', true, 'user', user_json(a.id));
+END;
+$$;
+
+-- =============================================================================
+-- Reports and moderation
+-- =============================================================================
+
+-- The short label of a board row, for the moderation queue.
+CREATE OR REPLACE FUNCTION board_row_label(p_row jsonb) RETURNS text
+LANGUAGE sql IMMUTABLE AS $$
+  SELECT left(COALESCE(p_row->>'title', p_row->>'brand', p_row->>'name' || ' · ' || (p_row->>'blood_type')), 140);
+$$;
+
+CREATE OR REPLACE FUNCTION report_post(
+  p_actor_id text, p_board text, p_row_id text, p_reason text, p_details text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  a       users := actor(p_actor_id);
+  v_owner text;
+  v_uni   text;
+BEGIN
+  IF NOT p_board = ANY (board_tables()) THEN
+    PERFORM api_error(404, 'Unknown board');
+  END IF;
+  EXECUTE format('SELECT user_id, university_id FROM %I WHERE id = $1', p_board)
+    INTO v_owner, v_uni USING p_row_id;
+  IF v_owner IS NULL OR v_uni IS DISTINCT FROM a.university_id THEN
+    PERFORM api_error(404, 'Not found');
+  END IF;
+  IF v_owner = a.id THEN
+    PERFORM api_error(400, 'You cannot report your own post. Delete it instead.');
+  END IF;
+  INSERT INTO reports (board, row_id, reporter_id, university_id, reason, details)
+  VALUES (p_board, p_row_id, a.id, v_uni, p_reason, NULLIF(trim(p_details), ''));
+  RETURN jsonb_build_object('success', true, 'message', 'Thanks. An administrator will review it.');
+EXCEPTION
+  WHEN unique_violation THEN
+    PERFORM api_error(409, 'You have already reported this post');
+END;
+$$;
+
+-- Open reports at the admin's university, one entry per reported post.
+CREATE OR REPLACE FUNCTION list_reports(p_actor_id text) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  a     users := require_admin(p_actor_id);
+  r     record;
+  v_row jsonb;
+  v_out jsonb := '[]'::jsonb;
+BEGIN
+  FOR r IN
+    SELECT board, row_id, count(*)::int AS reports, min(created_at) AS first_reported,
+           jsonb_agg(DISTINCT reason) AS reasons,
+           jsonb_agg(details ORDER BY created_at) FILTER (WHERE details IS NOT NULL) AS details
+    FROM reports
+    WHERE status = 'open' AND university_id IS NOT DISTINCT FROM a.university_id
+    GROUP BY board, row_id
+    ORDER BY count(*) DESC, min(created_at)
+    LIMIT 100
+  LOOP
+    EXECUTE format('SELECT to_jsonb(t) FROM %I t WHERE id = $1', r.board) INTO v_row USING r.row_id;
+    v_out := v_out || jsonb_build_object(
+      'board', r.board, 'row_id', r.row_id, 'reports', r.reports, 'reasons', r.reasons,
+      'details', COALESCE(r.details, '[]'::jsonb), 'first_reported', r.first_reported,
+      'label', board_row_label(v_row),
+      'excerpt', left(COALESCE(v_row->>'description', v_row->>'feedback', ''), 280),
+      'posted_by', COALESCE(v_row->>'posted_by', v_row->>'seller', v_row->>'name'),
+      'gone', v_row IS NULL OR (v_row ? 'deleted_at' AND v_row->>'deleted_at' IS NOT NULL)
+    );
+  END LOOP;
+  RETURN v_out;
+END;
+$$;
+
+-- p_action: 'dismiss' keeps the post; 'remove' deletes it (soft for notices
+-- and complaints). Either way the post's open reports are closed.
+CREATE OR REPLACE FUNCTION resolve_reports(p_actor_id text, p_board text, p_row_id text, p_action text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE a users := require_admin(p_actor_id);
+BEGIN
+  IF p_action NOT IN ('dismiss', 'remove') THEN
+    PERFORM api_error(400, 'Choose dismiss or remove');
+  END IF;
+  IF p_action = 'remove' THEN
+    BEGIN
+      PERFORM delete_board_row(p_board, a.id, p_row_id);
+    EXCEPTION WHEN SQLSTATE 'CS404' THEN
+      NULL; -- already gone
+    END;
+  END IF;
+  UPDATE reports SET status = CASE WHEN p_action = 'remove' THEN 'removed' ELSE 'dismissed' END,
+                     resolved_by = a.id, resolved_at = now()
+  WHERE board = p_board AND row_id = p_row_id AND status = 'open';
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- =============================================================================
+-- Your data: export and account deletion
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION export_account(p_actor_id text) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  a     users := actor(p_actor_id);
+  t     text;
+  v     jsonb;
+  posts jsonb := '{}'::jsonb;
+BEGIN
+  FOREACH t IN ARRAY board_tables() LOOP
+    EXECUTE format('SELECT COALESCE(jsonb_agg(to_jsonb(x) - ''user_id'' ORDER BY x.created_at), ''[]''::jsonb)
+                      FROM %I x WHERE user_id = $1', t)
+      INTO v USING a.id;
+    posts := posts || jsonb_build_object(t, v);
+  END LOOP;
+  RETURN jsonb_build_object(
+    'exported_at', now(),
+    'account', user_json(a.id) || jsonb_build_object(
+      'created_at', a.created_at, 'email_verified_at', a.email_verified_at,
+      'privacy_accepted_at', a.privacy_accepted_at),
+    'posts', posts,
+    'lending_items', COALESCE((SELECT jsonb_agg(to_jsonb(i) ORDER BY i.created_at) FROM lending_items i WHERE owner_id = a.id), '[]'::jsonb),
+    'borrow_requests', COALESCE((SELECT jsonb_agg(to_jsonb(r) ORDER BY r.created_at) FROM lending_requests r WHERE requester_id = a.id), '[]'::jsonb),
+    'reports_made', COALESCE((SELECT jsonb_agg(jsonb_build_object('board', board, 'reason', reason, 'details', details,
+                               'status', status, 'created_at', created_at) ORDER BY created_at)
+                             FROM reports WHERE reporter_id = a.id), '[]'::jsonb),
+    'sessions', COALESCE((SELECT jsonb_agg(jsonb_build_object('created_at', created_at, 'expires_at', expires_at,
+                           'revoked_at', revoked_at, 'user_agent', user_agent) ORDER BY created_at)
+                         FROM auth_sessions WHERE user_id = a.id), '[]'::jsonb)
+  );
+END;
+$$;
+
+-- Deletes the account and everything it posted. Needs the password.
+CREATE OR REPLACE FUNCTION delete_account(p_actor_id text, p_password text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE a users := actor(p_actor_id);
+BEGIN
+  IF a.password_hash <> crypt(p_password, a.password_hash) THEN
+    PERFORM api_error(401, 'Password is incorrect');
+  END IF;
+  IF a.role = 'admin' AND NOT EXISTS (SELECT 1 FROM users WHERE role = 'admin' AND id <> a.id) THEN
+    PERFORM api_error(409, 'You are the only administrator. Make someone else an admin first.');
+  END IF;
+  DELETE FROM users WHERE id = a.id;
+  RETURN jsonb_build_object('success', true, 'message', 'Your account and everything you posted have been deleted.');
+END;
+$$;
+

@@ -1,5 +1,16 @@
-import type { ReactNode } from "react";
-import { Search } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Flag, Search } from "lucide-react";
+import { toast } from "sonner";
+import { api } from "@/lib/http";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { monthFmt } from "@/lib/dates";
@@ -213,5 +224,77 @@ export function AnonymousToggle({
         <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{hint}</p>
       </div>
     </div>
+  );
+}
+
+const REPORT_REASONS: [string, string][] = [
+  ["spam", "Spam or repeated posting"],
+  ["harassment", "Harassment or bullying"],
+  ["personal_info", "Shares someone's personal details"],
+  ["false", "False or misleading"],
+  ["inappropriate", "Inappropriate content"],
+  ["other", "Something else"],
+];
+
+/** "Report" on a post that is not yours. Sends it to the admins' moderation queue. */
+export function ReportButton({ board, rowId }: { board: string; rowId: string }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("spam");
+  const [details, setDetails] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const res = await api<{ message: string }>("/reports", {
+        method: "POST",
+        body: { board, row_id: rowId, reason, details: details.trim() || undefined },
+      });
+      toast.success(res.message);
+      setOpen(false);
+      setDetails("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not send the report");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <Button variant="ghost" size="sm" onClick={() => setOpen(true)} aria-label="Report this post"
+        className="text-muted-foreground hover:text-foreground">
+        <Flag className="h-4 w-4" aria-hidden="true" />
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report this post</DialogTitle>
+            <DialogDescription>An administrator at your university will review it. The poster is not told who reported.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submit} className="flex flex-col gap-4">
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-2 text-sm font-medium">Why?</legend>
+              {REPORT_REASONS.map(([value, label]) => (
+                <label key={value} data-plain className="flex items-center gap-3 text-[15px]">
+                  <input type="radio" name="reason" value={value} checked={reason === value}
+                    onChange={() => setReason(value)} className="accent-[hsl(var(--primary))]" />
+                  {label}
+                </label>
+              ))}
+            </fieldset>
+            <div>
+              <label htmlFor="report-details" className="mb-1 block text-sm font-medium">Anything else (optional)</label>
+              <Textarea id="report-details" maxLength={500} rows={3} value={details} onChange={(e) => setDetails(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={busy}>{busy ? "Sending…" : "Send report"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

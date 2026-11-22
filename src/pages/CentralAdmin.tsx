@@ -7,6 +7,7 @@ import { authService, CentralAdminMetrics } from "@/services/auth.service";
 import { Button } from "@/components/ui/button";
 import { SectionTitle } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
+import { ModerationQueue } from "@/components/admin/ModerationQueue";
 
 const numberFormat = new Intl.NumberFormat("en-BD");
 // Registration is limited by OPEN_UNIVERSITIES on the server; BUET is the launch campus.
@@ -44,9 +45,9 @@ export default function CentralAdmin() {
           <PageHeader
             photo={{ src: "/campus/bands/buet-hero.webp", alt: "A BUET building with a concrete block cantilevered above red brick" }}
             eyebrow="Central administration"
-            title="The university network."
+            title="Network and moderation."
             accent="BUET first."
-            description="Student registrations by university. CSB 2.0 opens at BUET first; other public universities follow later."
+            description="Student registrations by university, reported posts, and removed posts you can restore."
             actions={
               <Button type="button" variant="outline" onClick={() => void loadMetrics()} disabled={isLoading}>
                 <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
@@ -104,6 +105,8 @@ export default function CentralAdmin() {
               <p className="py-12 text-[15px] text-muted-foreground">No universities in the registry yet.</p>
             ) : null}
           </section>
+
+          <ModerationQueue />
         </div>
       </div>
     </MainLayout>

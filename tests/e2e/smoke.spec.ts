@@ -74,4 +74,15 @@ test("another student cannot delete those posts", async ({ page }) => {
   const row = page.getByRole("listitem").filter({ hasText: bottle });
   await expect(row).toBeVisible();
   await expect(row.getByRole("button", { name: /delete/i })).toHaveCount(0);
+
+  // ...but can report it to the admins.
+  await row.getByRole("button", { name: /report this post/i }).click();
+  await page.getByLabel("Spam or repeated posting").check();
+  await page.getByRole("button", { name: "Send report" }).click();
+  await expect(page.getByText(/an administrator will review it/i)).toBeVisible();
+});
+
+test("the privacy notice is public", async ({ page }) => {
+  await page.goto("/privacy");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Your details");
 });

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, Check, X } from "lucide-react";
@@ -64,6 +65,7 @@ export default function Auth() {
   const [registerUniversityName, setRegisterUniversityName] = useState("");
   const [registerHomeDistrict, setRegisterHomeDistrict] = useState("");
   const [registerCurrentResidence, setRegisterCurrentResidence] = useState("");
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [universities, setUniversities] = useState<University[]>([]);
   const [universityLoadError, setUniversityLoadError] = useState("");
 
@@ -166,6 +168,11 @@ export default function Auth() {
       return;
     }
 
+    if (!privacyAccepted) {
+      setError("Read and accept the privacy notice to create an account");
+      return;
+    }
+
     setIsLoading(true);
     try {
       await contextRegister({
@@ -177,6 +184,7 @@ export default function Auth() {
         universityName: registerUniversityName,
         homeDistrict: registerHomeDistrict,
         currentResidence: registerCurrentResidence,
+        consent: true,
       });
       toast.success("Account created successfully! 🎉");
       setRegisterName("");
@@ -531,11 +539,28 @@ export default function Auth() {
                         </Alert>
                       )}
 
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id="privacy-consent"
+                          checked={privacyAccepted}
+                          onCheckedChange={(v) => setPrivacyAccepted(v === true)}
+                          disabled={isLoading}
+                          className="mt-0.5"
+                        />
+                        <label data-plain htmlFor="privacy-consent" className="text-[13px] leading-5 text-muted-foreground">
+                          I have read the{" "}
+                          <Link to="/privacy" target="_blank" className="text-accent underline-offset-4 hover:underline">
+                            privacy notice
+                          </Link>{" "}
+                          and agree to how CSB 2.0 uses my details.
+                        </label>
+                      </div>
+
                       <Button
                         type="submit"
                         className="w-full"
                         size="lg"
-                        disabled={isLoading || !isPasswordValid || registerPassword !== registerConfirmPassword}
+                        disabled={isLoading || !isPasswordValid || registerPassword !== registerConfirmPassword || !privacyAccepted}
                       >
                         {isLoading ? (
                           <>
@@ -547,9 +572,6 @@ export default function Auth() {
                         )}
                       </Button>
 
-                      <p className="text-xs text-muted-foreground text-center">
-                        By registering, you agree to our Terms of Service
-                      </p>
                     </form>
                   </TabsContent>
                 </Tabs>

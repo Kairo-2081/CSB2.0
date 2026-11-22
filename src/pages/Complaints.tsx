@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { AnonymousToggle, EmptyState, FilterBar, Kicker, RowList } from "@/components/editorial";
+import { AnonymousToggle, EmptyState, FilterBar, Kicker, ReportButton, RowList } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { shortDate } from "@/lib/dates";
 import { statusLabel, toneFor } from "@/lib/status";
@@ -170,7 +170,8 @@ export default function Complaints() {
                       <span>
                         {shortDate(complaint.created_at)} · {complaint.posted_by}
                       </span>
-                      {complaint.can_delete && (
+                      {!complaint.is_mine && <ReportButton board="complaints" rowId={complaint.id} />}
+                    {complaint.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(complaint.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>

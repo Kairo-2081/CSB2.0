@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { EmptyState, FilterBar, Kicker, RowList, SectionTitle } from "@/components/editorial";
+import { EmptyState, FilterBar, Kicker, ReportButton, RowList, SectionTitle } from "@/components/editorial";
 import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -171,7 +171,8 @@ export default function BloodDonation() {
                           Call {request.contact_number}
                         </a>
                       )}
-                      {request.can_delete && (
+                      {!request.is_mine && <ReportButton board="blood-donation" rowId={request.id} />}
+                    {request.can_delete && (
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)} className="text-destructive hover:text-destructive">
                           <Trash2 aria-hidden="true" /> Delete
                         </Button>

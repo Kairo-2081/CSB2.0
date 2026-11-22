@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "@/lib/http";
 import { toast } from "sonner";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -10,7 +12,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/auth.service";
 
 export default function Profile() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [savingContact, setSavingContact] = useState(false);
   const [passwords, setPasswords] = useState({ old: "", next: "", confirm: "" });
   const [changing, setChanging] = useState(false);
@@ -65,6 +70,35 @@ export default function Profile() {
       toast.error(error instanceof Error ? error.message : "Could not change your password");
     } finally {
       setChanging(false);
+    }
+  };
+
+  const downloadData = async () => {
+    try {
+      const data = await api("/account/export");
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "csb2-my-data.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not download your data");
+    }
+  };
+
+  const deleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!window.confirm("Delete your account and everything you posted? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      const res = await api<{ message: string }>("/account", { method: "DELETE", body: { password: deletePassword } });
+      toast.success(res.message);
+      logout();
+      navigate("/");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete your account");
+      setDeleting(false);
     }
   };
 
@@ -166,6 +200,35 @@ export default function Profile() {
                 {changing ? "Changing…" : "Change password"}
               </Button>
             </div>
+          </form>
+        </section>
+
+        <section aria-labelledby="your-data" className="mt-16 grid max-w-4xl gap-10 border-t border-white/[0.07] pt-12 md:grid-cols-2">
+          <div>
+            <SectionTitle id="your-data">Your data</SectionTitle>
+            <p className="text-[14px] leading-6 text-muted-foreground">
+              A JSON file with your account, everything you posted, your lending, the reports you made and your sign-in sessions.
+            </p>
+            <Button type="button" variant="outline" className="mt-4" onClick={downloadData}>Download my data</Button>
+          </div>
+          <form onSubmit={deleteAccount}>
+            <h3 className="font-display text-2xl">Delete account</h3>
+            <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
+              Deletes your account and everything you posted, straight away. Encrypted backups age out within 30 days.
+            </p>
+            <Input
+              type="password"
+              autoComplete="current-password"
+              placeholder="Your password"
+              aria-label="Password to confirm deletion"
+              className="mt-4"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              required
+            />
+            <Button type="submit" variant="destructive" className="mt-3" disabled={deleting || !deletePassword}>
+              {deleting ? "Deleting…" : "Delete my account"}
+            </Button>
           </form>
         </section>
       </div>

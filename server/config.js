@@ -34,6 +34,14 @@ export const config = {
   // First administrator, created once when the database has none.
   adminEmail: env.ADMIN_EMAIL || null,
   adminPassword: env.ADMIN_PASSWORD || null,
+  // Outgoing mail for verification codes. Verification is required whenever
+  // mail can be sent, unless REQUIRE_EMAIL_VERIFICATION=false.
+  smtpUrl: env.SMTP_URL || null,
+  mailFrom: env.MAIL_FROM || 'CSB 2.0 <no-reply@csb.local>',
+  get requireEmailVerification() {
+    if (env.REQUIRE_EMAIL_VERIFICATION !== undefined) return env.REQUIRE_EMAIL_VERIFICATION === 'true';
+    return Boolean(env.SMTP_URL);
+  },
   rateLimit: {
     general: Number(env.RATE_LIMIT_GENERAL) || 300,
     login: Number(env.RATE_LIMIT_LOGIN) || 8,
