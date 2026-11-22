@@ -34,13 +34,15 @@ export const config = {
   // First administrator, created once when the database has none.
   adminEmail: env.ADMIN_EMAIL || null,
   adminPassword: env.ADMIN_PASSWORD || null,
-  // Outgoing mail for verification codes. Verification is required whenever
-  // mail can be sent, unless REQUIRE_EMAIL_VERIFICATION=false.
+  // Outgoing mail for verification codes (server/mailer.js). Verification is
+  // required whenever mail can be sent, unless REQUIRE_EMAIL_VERIFICATION=false.
   smtpUrl: env.SMTP_URL || null,
+  // Brevo's HTTPS email API; preferred over SMTP_URL when both are set.
+  brevoApiKey: env.BREVO_API_KEY || null,
   mailFrom: env.MAIL_FROM || 'CSB 2.0 <no-reply@csb.local>',
   get requireEmailVerification() {
     if (env.REQUIRE_EMAIL_VERIFICATION !== undefined) return env.REQUIRE_EMAIL_VERIFICATION === 'true';
-    return Boolean(env.SMTP_URL);
+    return Boolean(env.BREVO_API_KEY || env.SMTP_URL);
   },
   rateLimit: {
     general: Number(env.RATE_LIMIT_GENERAL) || 300,

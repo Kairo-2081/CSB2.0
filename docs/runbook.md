@@ -80,6 +80,7 @@ Admin page → Reported posts → Remove post. Removed notices and complaints ca
 
 ## Turning things on
 
-- **Email verification**: set `SMTP_URL` and `MAIL_FROM` on the Render service. Gmail works with an app password: `smtps://you%40gmail.com:APP_PASSWORD@smtp.gmail.com:465`. From then on, unverified accounts can read but not post.
+- **Email verification**: set `BREVO_API_KEY` and `MAIL_FROM` on the Render service. `MAIL_FROM` must be a sender verified in Brevo. From then on, unverified accounts can read but not post. Render's free plan blocks the SMTP ports (25, 465, 587), so `SMTP_URL` only works after upgrading to a paid instance.
+- **Codes not arriving**: Render → Logs, search `Brevo refused`. The message says why (unverified sender, unknown IP, bad key). In Brevo, turn off "Authorised IPs" blocking, since Render's outgoing IPs change.
 - **Fewer modules**: set `MODULES` to the ones you want, for example `notices,lost-found,lend-borrow,marketplace`.
 - **Another university**: add its slug to `OPEN_UNIVERSITIES` and its email domain to `ALLOWED_EMAIL_DOMAINS`.

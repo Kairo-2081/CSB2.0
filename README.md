@@ -70,8 +70,9 @@ All settings are environment variables (`server/config.js`). The useful ones:
 | `OPEN_UNIVERSITIES` | `buet` | University slugs that may register |
 | `ALLOWED_EMAIL_DOMAINS` | `buet.ac.bd` | Email domains allowed at sign-up |
 | `MODULES` | all ten | Comma-separated modules to switch on |
-| `SMTP_URL`, `MAIL_FROM` | | Outgoing mail; setting `SMTP_URL` turns on email verification |
-| `REQUIRE_EMAIL_VERIFICATION` | on when `SMTP_URL` is set | Override the above |
+| `BREVO_API_KEY`, `MAIL_FROM` | | Outgoing mail through Brevo's HTTPS API; turns on email verification. Use this on Render's free plan, which blocks SMTP ports |
+| `SMTP_URL` | | Outgoing mail over SMTP instead (needs a host that allows SMTP) |
+| `REQUIRE_EMAIL_VERIFICATION` | on when mail is configured | Override the above |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | | Create the first administrator once |
 | `CORS_ORIGINS` | none in production | Other origins allowed to call the API |
 | `DATABASE_SSL` | | `true` to force TLS when the URL lacks `sslmode` |
