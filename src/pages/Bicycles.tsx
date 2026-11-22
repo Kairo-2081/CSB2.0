@@ -4,9 +4,7 @@ import { CountStrip, EmptyState, FilterBar, RowList } from "@/components/editori
 import { StatusDot } from "@/components/ui/status-dot";
 import { toneFor } from "@/lib/status";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -15,18 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { 
-  Bike, 
-  MapPin, 
-  Clock, 
-  CheckCircle, 
-  XCircle,
-  AlertTriangle,
-  History,
-  Plus,
-  Loader2,
-  Trash2
-} from "lucide-react";
+import { Clock, CheckCircle, XCircle, AlertTriangle, Plus, Loader2, Trash2 } from "lucide-react";
 import { BoardRow, bicycleService } from "@/services/database.service";
 import { toast } from "sonner";
 

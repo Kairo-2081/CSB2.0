@@ -5,9 +5,7 @@ import { StatusDot } from "@/components/ui/status-dot";
 import { shortDate } from "@/lib/dates";
 import { statusLabel, toneFor } from "@/lib/status";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -24,20 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Plus, 
-  Search, 
-  Clock, 
-  Building2,
-  GraduationCap,
-  Utensils,
-  Monitor,
-  Users,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  Trash2
-} from "lucide-react";
+import { Plus, Clock, Building2, GraduationCap, Utensils, Monitor, Users, CheckCircle, AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { BoardRow, complaintService } from "@/services/database.service";
 import { toast } from "sonner";
 

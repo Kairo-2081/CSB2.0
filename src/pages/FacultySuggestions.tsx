@@ -3,24 +3,14 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { AnonymousToggle, EmptyState, FilterBar, RowList } from "@/components/editorial";
 import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { 
-  Plus, 
-  Search, 
-  User,
-  MessageSquare,
-  Clock,
-  Star,
-  Trash2
-} from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { BoardRow, facultySuggestionService } from "@/services/database.service";
 
 interface Suggestion extends BoardRow {

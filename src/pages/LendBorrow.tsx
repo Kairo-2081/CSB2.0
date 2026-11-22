@@ -1,6 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowUpRight, BookOpen, Check, Clock3, MapPin, Plus, Search, X } from "lucide-react";
+import { ArrowUpRight, Check, Clock3, MapPin, Plus, Search, X } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ObjectTile } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";

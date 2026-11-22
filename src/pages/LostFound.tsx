@@ -3,9 +3,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { DateBlock, EmptyState, FilterBar, RowList } from "@/components/editorial";
 import { StatusDot } from "@/components/ui/status-dot";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -22,16 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Plus, 
-  Search, 
-  MapPin, 
-  Clock, 
-  MessageCircle,
-  User,
-  Loader2,
-  Trash2
-} from "lucide-react";
+import { Plus, MapPin, Loader2, Trash2 } from "lucide-react";
 import { BoardRow, lostFoundService } from "@/services/database.service";
 import { toast } from "sonner";
 
