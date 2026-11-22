@@ -184,8 +184,8 @@ export default function LostFound() {
                       {item.location}
                     </p>
                   </div>
-                  <div className="col-span-2 flex items-center justify-between gap-3 md:col-span-1 md:flex-col md:items-end">
-                    <span className="text-[13px] text-muted-foreground">Posted by {item.posted_by}</span>
+                  <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 md:col-span-1 md:flex-col md:items-end">
+                    {item.posted_by && <span className="text-[13px] text-muted-foreground">Posted by {item.posted_by}</span>}
                     {item.contact_number && (
                       <a
                         href={`tel:${item.contact_number}`}
