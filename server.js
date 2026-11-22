@@ -19,7 +19,13 @@ const OPEN_UNIVERSITY_SLUGS = (process.env.OPEN_UNIVERSITIES || 'buet')
   .map((slug) => slug.trim().toLowerCase())
   .filter(Boolean);
 
-const pool = new pg.Pool({ connectionString: DATABASE_URL });
+// Hosted Postgres (Render's external URL, Supabase) needs TLS; local and Render's
+// internal URL do not. Set DATABASE_SSL=true to force it on.
+const useSsl = process.env.DATABASE_SSL === 'true' || /sslmode=require/.test(DATABASE_URL);
+const pool = new pg.Pool({
+  connectionString: DATABASE_URL,
+  ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+});
 let dbReady = false;
 
 const app = express();
@@ -304,6 +310,28 @@ app.post('/api/lend-borrow/items/:id/requests', route('Failed to send borrow req
 
 app.patch('/api/lend-borrow/requests/:id', route('Failed to update borrow request', async (req) =>
   call('update_lending_request', await sessionUserId(req), req.params.id, text(req.body?.action))));
+
+// ========== FRONTEND ==========
+// In production the same service serves the built React app (npm run build -> dist/).
+// Unknown /api paths get a JSON 404; every other GET falls back to index.html so
+// client-side routes like /dashboard work on refresh.
+
+const DIST_DIR = path.join(__dirname, 'dist');
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, error: `No API route for ${req.method} ${req.originalUrl}` });
+});
+
+if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
+  app.use(express.static(DIST_DIR, { index: false, maxAge: '1h' }));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.type('text').send('CSB 2.0 API is running. The frontend is not built: run `npm run build`, or use `npm run dev` locally.');
+  });
+}
 
 // Error handling middleware (must come after the routes)
 app.use((err, req, res, next) => {
