@@ -71,7 +71,7 @@ const numberFormat = new Intl.NumberFormat("en-US");
 function Stat({ icon: Icon, value, label }: { icon: LucideIcon; value: number | string | null; label: string }) {
   return (
     <li className="flex min-w-0 items-center gap-4 py-5 sm:px-6 sm:first:pl-0">
-      <Icon className="h-7 w-7 shrink-0 text-[#d9c7b4]/70" strokeWidth={1.25} aria-hidden="true" />
+      <Icon className="h-7 w-7 shrink-0 text-[#f2a93b]/80" strokeWidth={1.25} aria-hidden="true" />
       <div className="min-w-0">
         <div className="font-display text-3xl leading-none text-[#f4efe8] tabular-nums">
           {value === null ? <span className="inline-block h-7 w-12 animate-pulse rounded bg-white/10 motion-reduce:animate-none" /> : typeof value === "number" ? numberFormat.format(value) : value}
@@ -157,7 +157,7 @@ export default function Index() {
               <br />
               in one place.
               <br />
-              <span className="text-[#cdb9a5]/80">Built for BUET.</span>
+              <span className="text-[#f2a93b]">Built for BUET.</span>
             </h1>
             <div aria-hidden="true" className="mt-8 h-px w-10 bg-[#f4efe8]/50" />
             <p className="mt-6 max-w-[440px] text-[15px] leading-7 text-[#d6cec5]">
@@ -166,7 +166,7 @@ export default function Index() {
             <div className="mt-9 flex flex-wrap items-center gap-6">
               <Link
                 to="/auth"
-                className="inline-flex items-center gap-3 rounded-md bg-[#a88d76] px-6 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#14110e] shadow-[0_12px_40px_rgba(168,141,118,0.25)] transition-colors hover:bg-[#bca08a]"
+                className="inline-flex items-center gap-3 rounded-md bg-[#f2a93b] px-6 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#140d04] shadow-[0_12px_40px_rgba(242,169,59,0.25)] transition-colors hover:bg-[#f6bb5c]"
               >
                 Get started
                 <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -210,7 +210,7 @@ export default function Index() {
               <h2 className="mt-4 font-display text-4xl font-normal leading-[1.05] tracking-[-0.015em] sm:text-5xl">
                 Everything on campus,
                 <br />
-                <span className="text-[#cdb9a5]/80">one sign-in.</span>
+                <span className="text-[#f2a93b]">one sign-in.</span>
               </h2>
               <p className="mt-5 max-w-sm text-[15px] leading-7 text-[#b7aea4]">
                 Choose a service to continue. You'll be asked to sign in first.
@@ -221,7 +221,7 @@ export default function Index() {
               {modules.map((module) => (
                 <li key={module.href} className="border-b border-[#f4efe8]/10 sm:odd:border-r sm:odd:border-r-[#f4efe8]/10">
                   <Link to={module.href} className="group flex h-full items-start gap-4 p-5 transition-colors hover:bg-[#f4efe8]/[0.04] sm:p-6">
-                    <module.icon className="mt-0.5 h-5 w-5 shrink-0 text-[#cdb9a5]" strokeWidth={1.5} aria-hidden="true" />
+                    <module.icon className="mt-0.5 h-5 w-5 shrink-0 text-[#f2a93b]" strokeWidth={1.5} aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block font-medium text-[#f4efe8]">{module.title}</span>
                       <span className="mt-1 block text-sm leading-6 text-[#b7aea4]">{module.description}</span>

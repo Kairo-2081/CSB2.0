@@ -11,13 +11,13 @@
     --card-foreground: 35 37% 93%;
     --popover: 30 12% 8%;
     --popover-foreground: 35 37% 93%;
-    --primary: 28 22% 56%;
-    --primary-foreground: 30 18% 7%;
+    --primary: 36 88% 59%;
+    --primary-foreground: 30 40% 7%;
     --secondary: 30 8% 13%;
     --secondary-foreground: 35 30% 90%;
     --muted: 30 6% 12%;
     --muted-foreground: 32 10% 68%;
-    --accent: 30 30% 73%;
+    --accent: 38 88% 69%;
     --accent-foreground: 30 18% 7%;
     --destructive: 4 70% 62%;
     --destructive-foreground: 0 0% 100%;
@@ -29,16 +29,16 @@
     --info-foreground: 210 40% 8%;
     --border: 30 8% 17%;
     --input: 30 8% 15%;
-    --ring: 28 35% 66%;
+    --ring: 36 88% 59%;
     --radius: 0.5rem;
     --sidebar-background: 30 12% 5%;
     --sidebar-foreground: 32 14% 80%;
-    --sidebar-primary: 28 22% 60%;
+    --sidebar-primary: 36 88% 59%;
     --sidebar-primary-foreground: 30 18% 7%;
     --sidebar-accent: 30 8% 12%;
     --sidebar-accent-foreground: 35 37% 93%;
     --sidebar-border: 30 8% 15%;
-    --sidebar-ring: 28 35% 66%;
+    --sidebar-ring: 36 88% 59%;
   }
 
 
@@ -52,10 +52,11 @@
 
   body {
     @apply antialiased;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: "Geist Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-feature-settings: "ss01", "cv11";
     background:
-      radial-gradient(ellipse at 88% -10%, rgba(168, 141, 118, 0.09), transparent 42rem),
-      radial-gradient(ellipse at 0% 100%, rgba(120, 82, 52, 0.06), transparent 40rem),
+      radial-gradient(ellipse at 88% -10%, rgba(242, 169, 59, 0.10), transparent 42rem),
+      radial-gradient(ellipse at 0% 100%, rgba(232, 120, 40, 0.06), transparent 40rem),
       hsl(var(--background));
     color: hsl(var(--foreground));
   }
@@ -68,11 +69,22 @@
 
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply tracking-tight;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6):not(.font-display) {
+    font-weight: 600;
+  }
+
+  /* Instrument Serif ships one weight; never let the browser fake a bold. */
+  .font-display {
+    font-weight: 400;
+    font-synthesis: none;
+    letter-spacing: -0.005em;
   }
 
   ::selection {
-    background: rgba(168, 141, 118, 0.42);
+    background: rgba(242, 169, 59, 0.38);
     color: white;
   }
 
@@ -82,7 +94,7 @@
   }
 
   code, pre {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
   }
 }
 
@@ -94,7 +106,7 @@
 
 
   .landing-photo {
-    filter: brightness(0.55) saturate(0.62) contrast(1.1) sepia(0.18);
+    filter: brightness(0.86) saturate(1.02) contrast(1.06);
   }
 
   @media (min-width: 1024px) {
@@ -106,9 +118,9 @@
 
   .landing-photo-shade {
     background:
-      linear-gradient(180deg, rgba(7, 7, 13, 0.7) 0%, rgba(7, 7, 13, 0.35) 18%, rgba(7, 7, 13, 0.55) 100%),
-      linear-gradient(0deg, #07070d 0%, rgba(7, 7, 13, 0.85) 32%, rgba(7, 7, 13, 0.25) 70%),
-      radial-gradient(90% 70% at 80% 40%, rgba(120, 82, 52, 0.18), transparent 70%);
+      linear-gradient(180deg, rgba(7, 7, 13, 0.6) 0%, rgba(7, 7, 13, 0.2) 18%, rgba(7, 7, 13, 0.4) 100%),
+      linear-gradient(0deg, #07070d 0%, rgba(7, 7, 13, 0.8) 32%, rgba(7, 7, 13, 0.1) 70%),
+      radial-gradient(90% 70% at 80% 40%, rgba(242, 169, 59, 0.14), transparent 70%);
   }
 
   @media (min-width: 1024px) {
@@ -117,12 +129,12 @@
         linear-gradient(180deg, rgba(7, 7, 13, 0.6) 0%, rgba(7, 7, 13, 0) 18%),
         linear-gradient(90deg, #07070d 18%, rgba(7, 7, 13, 0.72) 42%, rgba(7, 7, 13, 0.08) 70%),
         linear-gradient(0deg, #07070d 0%, rgba(7, 7, 13, 0.5) 16%, rgba(7, 7, 13, 0) 38%),
-        radial-gradient(60% 60% at 70% 45%, rgba(120, 82, 52, 0.16), transparent 70%);
+        radial-gradient(60% 60% at 70% 45%, rgba(242, 169, 59, 0.12), transparent 70%);
     }
   }
 
   .auth-photo {
-    filter: brightness(0.5) saturate(0.6) contrast(1.1) sepia(0.2);
+    filter: brightness(0.72) saturate(0.98) contrast(1.05);
   }
 
   .auth-photo-shade {
@@ -164,7 +176,8 @@
     .page-band-shade {
       background:
         linear-gradient(180deg, rgba(7, 7, 13, 0.55) 0%, rgba(7, 7, 13, 0) 24%),
-        linear-gradient(90deg, #07070d 20%, rgba(7, 7, 13, 0.7) 44%, rgba(7, 7, 13, 0.05) 72%),
+        linear-gradient(90deg, #07070d 24%, rgba(7, 7, 13, 0.82) 46%, rgba(7, 7, 13, 0.1) 76%),
+        linear-gradient(rgba(7, 7, 13, 0.12), rgba(7, 7, 13, 0.12)),
         linear-gradient(0deg, #07070d 0%, rgba(7, 7, 13, 0.55) 20%, rgba(7, 7, 13, 0) 45%);
     }
   }
@@ -188,7 +201,7 @@
 
   .page-band-glow {
     background:
-      radial-gradient(70% 90% at 85% 0%, rgba(168, 141, 118, 0.12), transparent 70%),
+      radial-gradient(70% 90% at 85% 0%, rgba(242, 169, 59, 0.14), transparent 70%),
       linear-gradient(0deg, #07070d 0%, transparent 60%);
   }
 
@@ -232,21 +245,21 @@
     border: 1px solid rgba(244, 239, 232, 0.7);
     border-radius: 0;
     color: #f4efe8;
-    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+    font-family: "Instrument Serif", Georgia, serif;
     font-weight: 400;
   }
 
   .button-primary {
-    border: 1px solid rgba(244, 239, 232, 0.12);
-    background: #a88d76;
-    color: #14110e;
-    box-shadow: 0 10px 30px rgba(168, 141, 118, 0.18);
+    border: 1px solid rgba(255, 214, 150, 0.35);
+    background: #f2a93b;
+    color: #140d04;
+    box-shadow: 0 10px 34px rgba(242, 169, 59, 0.28);
     transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
   }
 
   .button-primary:hover {
-    background: #bca08a;
-    box-shadow: 0 12px 34px rgba(168, 141, 118, 0.26);
+    background: #f6bb5c;
+    box-shadow: 0 12px 40px rgba(242, 169, 59, 0.4);
   }
 
   .button-primary:active {

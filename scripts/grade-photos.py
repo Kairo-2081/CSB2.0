@@ -1,92 +1,65 @@
-"""Grade CSB 2.0 campus photos to the obsidian / ivory / sand palette.
+"""Grade CSB 2.0 campus photos so they sit on the obsidian page and glow.
 
 Usage: python3 scripts/grade-photos.py SRC DST [--max-width N]
-       python3 scripts/grade-photos.py SRC DST --band 1100x520 [--focus-y 0.5] --grain
+       python3 scripts/grade-photos.py SRC DST --band 2200x1040 [--focus-y 0.5] [--grain]
 (needs Pillow and NumPy: pip install pillow numpy)
 
-The grade:
-1. Pull exposure down and roll off highlights so skies and white walls stop
-   glowing (nothing ends up brighter than warm stone).
-2. Desaturate heavily, keeping a little of the photo's own colour.
-3. Gradient-map luminance onto obsidian -> umber -> sand -> ivory, so every
-   photo shares the same shadows and highlights as the UI.
-4. A soft vignette, so edges fall away towards the page background.
+Sources are the small web-saved originals upscaled 4x with Real-ESRGAN
+(x4plus) first; bands are exported at 2x (2200x1040) for sharp retina screens.
+
+The grade keeps each photo's own colour and light:
+1. Normalise exposure so a sunlit gate and a building at night sit close,
+   without crushing either.
+2. A gentle S-curve for contrast, saturation kept at ~90 %.
+3. Split tone: shadows lean to the page's blue-black, highlights pick up a
+   little saffron (#F2A93B), the UI accent, so photo and page feel lit by
+   the same lamp.
+4. Blacks land exactly on the page colour (#07070d) and a soft vignette lets
+   the edges fall away into it.
 """
 import sys
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image
 
 OBSIDIAN = np.array([7, 7, 13]) / 255
-UMBER = np.array([52, 40, 33]) / 255
-SAND = np.array([168, 141, 118]) / 255
-IVORY = np.array([228, 216, 200]) / 255
+SAFFRON = np.array([242, 169, 59]) / 255
 
 
-def gradient_map(lum):
-    # stops: 0 -> obsidian, 0.35 -> umber, 0.75 -> sand, 1 -> ivory
-    stops = [(0.0, OBSIDIAN), (0.35, UMBER), (0.75, SAND), (1.0, IVORY)]
-    out = np.zeros(lum.shape + (3,))
-    for (p0, c0), (p1, c1) in zip(stops, stops[1:]):
-        m = (lum >= p0) & (lum <= p1)
-        t = ((lum[m] - p0) / (p1 - p0))[:, None]
-        out[m] = c0 * (1 - t) + c1 * t
-    return out
+def luminance(a):
+    return 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
 
 
 def grade(img: Image.Image) -> Image.Image:
     a = np.asarray(img.convert("RGB")).astype(np.float64) / 255
 
-    # 1. exposure and highlight roll-off (soft shoulder above 0.45)
-    a = a * 0.82
-    shoulder = 0.45
-    hi = a > shoulder
-    a[hi] = shoulder + (1 - shoulder) * np.tanh((a[hi] - shoulder) / (1 - shoulder) * 1.1) * 0.55
-    # gentle contrast around the mids
-    a = np.clip((a - 0.5) * 1.08 + 0.48, 0, 1)
+    # 1. exposure: pull every photo toward the same mid level, gently
+    m = luminance(a).mean()
+    a = np.clip(a * np.clip(0.36 / max(m, 1e-3), 0.7, 1.35), 0, 1)
+    lo, hi = np.percentile(luminance(a), 0.8), np.percentile(luminance(a), 99.6)
+    a = np.clip((a - lo) / max(hi - lo, 1e-3), 0, 1)
 
-    lum = 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
+    # 2. S-curve and saturation
+    a = a + 0.3 * (a * a * (3 - 2 * a) - a)  # blend 30 % toward smoothstep
+    grey = luminance(a)[..., None]
+    a = np.clip(grey + (a - grey) * 0.92, 0, 1)
 
-    # auto exposure: bring every photo to the same dim average, so a white
-    # gate in sunshine and a building at night sit at the same level
-    target = 0.25
-    gain = np.clip(target / max(lum.mean(), 1e-3), 0.4, 1.15)
-    a = np.clip(a * gain, 0, 1)
-    lum = np.clip(lum * gain, 0, 1)
+    # 3. split tone
+    lum = luminance(a)[..., None]
+    hi_w = np.clip((lum - 0.45) / 0.55, 0, 1) ** 1.3
+    sh_w = np.clip((0.35 - lum) / 0.35, 0, 1)
+    a = a * (1 - 0.14 * hi_w) + SAFFRON * lum * 0.14 * hi_w * 1.25
+    a = a * (1 - 0.35 * sh_w) + OBSIDIAN * 0.35 * sh_w
 
-    # levels: same black point and same brightest highlight for every photo
-    lo, hi_ = np.percentile(lum, 1.5), np.percentile(lum, 99.2)
-    black, white = 0.02, 0.68
-    scale = (white - black) / max(hi_ - lo, 1e-3)
-    a = np.clip((a - lo) * scale + black, 0, 1)
-    lum = np.clip((lum - lo) * scale + black, 0, 1)
+    # 4. black point to the page colour, highlights capped below pure white
+    a = OBSIDIAN + a * (0.97 - OBSIDIAN)
 
-    # 2. selective desaturation: keep warm light (brick, lamps, sand) at 60 %,
-    #    mute cool colour (sky, foliage) to 15 %
-    warmth = np.clip((a[..., 0] - a[..., 2]) * 3, 0, 1)[..., None]
-    keep = 0.15 + 0.45 * warmth
-    grey = lum[..., None].repeat(3, axis=2)
-    desat = grey + (a - grey) * keep
-
-    # 3. gradient map, blended with the desaturated photo
-    mapped = gradient_map(np.clip(lum * 1.05, 0, 1))
-    out = mapped * 0.5 + desat * 0.5
-
-    # high-key photos (white walls in sun) still sit brighter than the rest:
-    # bend the mids down with a gamma until the average matches the others
-    m = float((0.2126 * out[..., 0] + 0.7152 * out[..., 1] + 0.0722 * out[..., 2]).mean())
-    if m > 0.2:
-        out = np.clip(out, 1e-4, 1) ** (np.log(0.2) / np.log(m))
-
-    # 4. vignette
-    h, w = lum.shape
+    h, w = a.shape[:2]
     yy, xx = np.mgrid[0:h, 0:w]
     d = np.sqrt(((xx - w / 2) / (w / 2)) ** 2 + ((yy - h / 2) / (h / 2)) ** 2) / np.sqrt(2)
-    vignette = 1 - 0.45 * np.clip(d - 0.25, 0, 1) ** 1.4
-    out = out * vignette[..., None] + OBSIDIAN * (1 - vignette[..., None])
+    v = (1 - 0.32 * np.clip(d - 0.3, 0, 1) ** 1.5)[..., None]
+    a = a * v + OBSIDIAN * (1 - v)
 
-    res = Image.fromarray((np.clip(out, 0, 1) * 255).round().astype(np.uint8))
-    # a whisper of softening hides upscale and JPEG artefacts on these small sources
-    return res.filter(ImageFilter.GaussianBlur(0.35))
+    return Image.fromarray((np.clip(a, 0, 1) * 255).round().astype(np.uint8))
 
 
 def band(img: Image.Image, width: int, height: int, focus_y: float) -> Image.Image:
@@ -104,7 +77,7 @@ def band(img: Image.Image, width: int, height: int, focus_y: float) -> Image.Ima
     return img.resize((width, height), Image.LANCZOS)
 
 
-def add_grain(img: Image.Image, amount: float = 0.035, seed: int = 7) -> Image.Image:
+def add_grain(img: Image.Image, amount: float = 0.012, seed: int = 7) -> Image.Image:
     """Monochrome film grain. It reads as texture and hides upscaling softness."""
     a = np.asarray(img).astype(np.float64) / 255
     rng = np.random.default_rng(seed)
@@ -120,12 +93,11 @@ if __name__ == "__main__":
     if "--band" in args:
         bw, bh = (int(v) for v in opt("--band").split("x"))
         im = band(im, bw, bh, float(opt("--focus-y", "0.5")))
-        im = im.filter(ImageFilter.GaussianBlur(0.6))
     elif opt("--max-width") and im.width > int(opt("--max-width")):
         mw = int(opt("--max-width"))
         im = im.resize((mw, round(im.height * mw / im.width)), Image.LANCZOS)
     out = grade(im)
     if "--grain" in args:
         out = add_grain(out)
-    out.save(dst, "WEBP", quality=84, method=6)
+    out.save(dst, "WEBP", quality=82, method=6)
     print(dst, out.size)
