@@ -1,4 +1,4 @@
-import { API_URL as baseUrl } from "@/lib/api-url";
+import { api } from "@/lib/http";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, Search } from "lucide-react";
@@ -50,7 +50,8 @@ export default function Dashboard() {
   const [feeds, setFeeds] = useState<Feeds | null>(null);
 
   useEffect(() => {
-    const get = (path: string) => fetch(`${baseUrl}/${path}`).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+    // Lists come back 100 at a time at most; the counts below show "100+" past that.
+    const get = (path: string) => api<Row[]>(`/${path}?limit=100`).catch(() => [] as Row[]);
     Promise.all([get("complaints"), get("notices"), get("lost-found"), get("marketplace")]).then(
       ([complaints, notices, lostFound, marketplace]) => setFeeds({ complaints, notices, lostFound, marketplace }),
     );
@@ -97,7 +98,7 @@ export default function Dashboard() {
             <li key={c.label} className={["border-white/10", i % 2 ? "border-l" : "", i >= 2 ? "border-t lg:border-t-0" : "", i === 2 ? "lg:border-l" : ""].join(" ")}>
               <Link to={c.href} className="group flex h-full flex-col gap-3.5 px-5 py-7 transition-colors hover:bg-white/[0.025] sm:px-6">
                 <span className="flex items-start justify-between">
-                  <span className="font-display text-5xl leading-none tabular-nums">{c.value ?? "—"}</span>
+                  <span className="font-display text-5xl leading-none tabular-nums">{c.value === null ? "—" : c.value >= 100 ? "100+" : c.value}</span>
                   <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
                 </span>
                 <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{c.label}</span>

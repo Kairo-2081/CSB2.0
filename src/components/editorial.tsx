@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 import { monthFmt } from "@/lib/dates";
 
 /**
@@ -176,6 +177,41 @@ export function SectionTitle({ id, children, action }: { id: string; children: R
         {children}
       </h2>
       {action}
+    </div>
+  );
+}
+
+/**
+ * "Post anonymously" for forms where the poster's name is shown. The server
+ * still records who posted, for ownership and moderation; only the shown
+ * name changes.
+ */
+export function AnonymousToggle({
+  checked,
+  onChange,
+  disabled,
+  hint = "Other students see “Anonymous”. Your account is still recorded, so administrators can act on abuse.",
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  disabled?: boolean;
+  hint?: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-md border border-border px-4 py-3">
+      <Checkbox
+        id="post-anonymously"
+        checked={checked}
+        onCheckedChange={(v) => onChange(v === true)}
+        disabled={disabled}
+        className="mt-0.5"
+      />
+      <div>
+        <label data-plain htmlFor="post-anonymously" className="text-sm font-medium">
+          Post anonymously
+        </label>
+        <p className="mt-1 text-[13px] leading-5 text-muted-foreground">{hint}</p>
+      </div>
     </div>
   );
 }
