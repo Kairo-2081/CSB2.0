@@ -176,7 +176,8 @@
     .page-band-shade {
       background:
         linear-gradient(180deg, rgba(7, 7, 13, 0.55) 0%, rgba(7, 7, 13, 0) 24%),
-        linear-gradient(90deg, #07070d 20%, rgba(7, 7, 13, 0.7) 44%, rgba(7, 7, 13, 0.05) 72%),
+        linear-gradient(90deg, #07070d 24%, rgba(7, 7, 13, 0.82) 46%, rgba(7, 7, 13, 0.1) 76%),
+        linear-gradient(rgba(7, 7, 13, 0.12), rgba(7, 7, 13, 0.12)),
         linear-gradient(0deg, #07070d 0%, rgba(7, 7, 13, 0.55) 20%, rgba(7, 7, 13, 0) 45%);
     }
   }
