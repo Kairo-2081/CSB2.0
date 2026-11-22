@@ -5,7 +5,7 @@ import { z } from 'zod';
 const text = (min, max) => z.string().trim().min(min).max(max);
 const optionalText = (max) => z.string().trim().max(max).optional().nullable();
 
-export const emailSchema = z.string().trim().toLowerCase().email().max(254);
+export const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
 
 // At least 8 characters with upper case, lower case, a digit and a symbol.
 export const passwordSchema = z
@@ -42,7 +42,7 @@ export const schemas = {
       department: z.string().trim().max(80).optional(),
       showContact: z.boolean().optional(),
     })
-    .refine((v) => Object.values(v).some((x) => x !== undefined), 'No supported profile fields were provided'),
+    .refine((v) => Object.values(v).some((x) => x !== undefined), { error: 'No supported profile fields were provided' }),
 
   changePassword: z.object({
     oldPassword: z.string().min(1).max(128),
@@ -101,7 +101,7 @@ export const schemas = {
     location: text(1, 120),
     available_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
     // The donor agreed to show their blood group and phone number on campus.
-    consent: z.literal(true, { errorMap: () => ({ message: 'Agree to share your details before listing yourself' }) }),
+    consent: z.literal(true, { error: 'Agree to share your details before listing yourself' }),
   }),
 
   animalReport: z.object({
@@ -129,7 +129,7 @@ export const schemas = {
 
   page: z.object({
     limit: z.coerce.number().int().min(1).max(100).optional(),
-    before: z.string().datetime({ offset: true }).optional(),
+    before: z.iso.datetime({ offset: true }).optional(),
   }),
 
   directoryQuery: z.object({
