@@ -536,3 +536,263 @@ BEGIN
   RETURN v_rows;
 END;
 $$;
+
+-- =============================================================================
+-- Campus boards. list_* return newest first; create_* return the new row.
+-- =============================================================================
+
+-- Shared delete rule for boards that check ownership: admins delete anything,
+-- everyone else only their own rows.
+CREATE OR REPLACE FUNCTION check_can_delete(
+  p_owner_id text, p_user_id text, p_user_role text, p_what text
+) RETURNS void
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF COALESCE(p_user_role, '') <> 'admin' AND p_owner_id IS DISTINCT FROM p_user_id THEN
+    PERFORM api_error(403, 'Unauthorized: You can only delete your own ' || p_what);
+  END IF;
+END;
+$$;
+
+-- ---- Notices ----------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION list_notices() RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(n) ORDER BY n.created_at DESC), '[]'::jsonb) FROM notices n;
+$$;
+
+CREATE OR REPLACE FUNCTION create_notice(
+  p_title text, p_description text, p_category text, p_posted_by text, p_user_id text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE r notices;
+BEGIN
+  INSERT INTO notices (title, description, category, posted_by, user_id)
+  VALUES (p_title, p_description, p_category, p_posted_by, p_user_id)
+  RETURNING * INTO r;
+  RETURN to_jsonb(r);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delete_notice(p_id text) RETURNS jsonb
+LANGUAGE sql AS $$
+  DELETE FROM notices WHERE id = p_id;
+  SELECT jsonb_build_object('success', true, 'message', 'Notice deleted successfully');
+$$;
+
+-- ---- Complaints -------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION list_complaints() RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(c) ORDER BY c.created_at DESC), '[]'::jsonb) FROM complaints c;
+$$;
+
+CREATE OR REPLACE FUNCTION create_complaint(
+  p_title text, p_description text, p_category text, p_posted_by text, p_user_id text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE r complaints;
+BEGIN
+  INSERT INTO complaints (title, description, category, posted_by, user_id)
+  VALUES (p_title, p_description, p_category, p_posted_by, p_user_id)
+  RETURNING * INTO r;
+  RETURN to_jsonb(r);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delete_complaint(p_id text, p_user_id text, p_user_role text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE v_owner text;
+BEGIN
+  SELECT user_id INTO v_owner FROM complaints WHERE id = p_id;
+  IF NOT FOUND THEN
+    PERFORM api_error(404, 'Complaint not found');
+  END IF;
+  PERFORM check_can_delete(v_owner, p_user_id, p_user_role, 'complaints');
+  DELETE FROM complaints WHERE id = p_id;
+  RETURN jsonb_build_object('success', true, 'message', 'Complaint deleted successfully');
+END;
+$$;
+
+-- ---- Faculty suggestions ----------------------------------------------------
+
+CREATE OR REPLACE FUNCTION list_faculty_suggestions() RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(f) ORDER BY f.created_at DESC), '[]'::jsonb) FROM faculty_suggestions f;
+$$;
+
+CREATE OR REPLACE FUNCTION create_faculty_suggestion(
+  p_title text, p_faculty_name text, p_subject text, p_rating int,
+  p_feedback text, p_posted_by text, p_user_id text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE r faculty_suggestions;
+BEGIN
+  INSERT INTO faculty_suggestions (title, faculty_name, subject, rating, feedback, posted_by, user_id)
+  VALUES (p_title, p_faculty_name, NULLIF(trim(p_subject), ''), p_rating, p_feedback,
+          NULLIF(trim(p_posted_by), ''), p_user_id)
+  RETURNING * INTO r;
+  RETURN to_jsonb(r);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delete_faculty_suggestion(p_id text) RETURNS jsonb
+LANGUAGE sql AS $$
+  DELETE FROM faculty_suggestions WHERE id = p_id;
+  SELECT jsonb_build_object('success', true, 'message', 'Suggestion deleted successfully');
+$$;
+
+-- ---- Marketplace ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION list_marketplace() RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(m) ORDER BY m.created_at DESC), '[]'::jsonb) FROM marketplace m;
+$$;
+
+CREATE OR REPLACE FUNCTION create_marketplace_item(
+  p_title text, p_description text, p_price numeric, p_category text,
+  p_seller text, p_phone text, p_user_id text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE r marketplace;
+BEGIN
+  INSERT INTO marketplace (title, description, price, category, seller, phone, user_id)
+  VALUES (p_title, p_description, p_price, COALESCE(NULLIF(trim(p_category), ''), 'Other'),
+          p_seller, p_phone, p_user_id)
+  RETURNING * INTO r;
+  RETURN to_jsonb(r);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delete_marketplace_item(p_id text, p_user_id text, p_user_role text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE v_owner text;
+BEGIN
+  SELECT user_id INTO v_owner FROM marketplace WHERE id = p_id;
+  IF NOT FOUND THEN
+    PERFORM api_error(404, 'Item not found');
+  END IF;
+  PERFORM check_can_delete(v_owner, p_user_id, p_user_role, 'items');
+  DELETE FROM marketplace WHERE id = p_id;
+  RETURN jsonb_build_object('success', true, 'message', 'Item deleted successfully');
+END;
+$$;
+
+-- ---- Lost & found -----------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION list_lost_found() RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(l) ORDER BY l.created_at DESC), '[]'::jsonb) FROM lost_found l;
+$$;
+
+CREATE OR REPLACE FUNCTION create_lost_found_item(
+  p_title text, p_description text, p_item_type text, p_status text,
+  p_location text, p_contact_number text, p_posted_by text, p_user_id text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE r lost_found;
+BEGIN
+  INSERT INTO lost_found (title, description, item_type, status, location, contact_number, posted_by, user_id)
+  VALUES (p_title, p_description, p_item_type, COALESCE(p_status, p_item_type, 'lost'), p_location,
+          NULLIF(trim(p_contact_number), ''), NULLIF(trim(p_posted_by), ''), p_user_id)
+  RETURNING * INTO r;
+  RETURN to_jsonb(r);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delete_lost_found_item(p_id text) RETURNS jsonb
+LANGUAGE sql AS $$
+  DELETE FROM lost_found WHERE id = p_id;
+  SELECT jsonb_build_object('success', true, 'message', 'Item deleted successfully');
+$$;
+
+-- ---- Bicycles ---------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION list_bicycles() RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(b) ORDER BY b.created_at DESC), '[]'::jsonb) FROM bicycles b;
+$$;
+
+CREATE OR REPLACE FUNCTION create_bicycle(
+  p_brand text, p_color text, p_location text, p_contact_number text,
+  p_description text, p_user_id text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE r bicycles;
+BEGIN
+  INSERT INTO bicycles (brand, color, location, contact_number, description, user_id)
+  VALUES (p_brand, p_color, p_location, p_contact_number, p_description, p_user_id)
+  RETURNING * INTO r;
+  RETURN to_jsonb(r);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delete_bicycle(p_id text) RETURNS jsonb
+LANGUAGE sql AS $$
+  DELETE FROM bicycles WHERE id = p_id;
+  SELECT jsonb_build_object('success', true, 'message', 'Report deleted successfully');
+$$;
+
+-- ---- Blood donation ---------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION list_blood_donors() RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(d) ORDER BY d.created_at DESC), '[]'::jsonb) FROM blood_donation d;
+$$;
+
+CREATE OR REPLACE FUNCTION create_blood_donor(
+  p_name text, p_blood_type text, p_contact_number text, p_location text,
+  p_available_date date, p_user_id text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE r blood_donation;
+BEGIN
+  INSERT INTO blood_donation (name, blood_type, contact_number, location, available_date, user_id)
+  VALUES (p_name, p_blood_type, p_contact_number, p_location,
+          COALESCE(p_available_date, current_date), p_user_id)
+  RETURNING * INTO r;
+  RETURN to_jsonb(r);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delete_blood_donor(p_id text, p_user_id text, p_user_role text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE v_owner text;
+BEGIN
+  SELECT user_id INTO v_owner FROM blood_donation WHERE id = p_id;
+  IF NOT FOUND THEN
+    PERFORM api_error(404, 'Donor entry not found');
+  END IF;
+  PERFORM check_can_delete(v_owner, p_user_id, p_user_role, 'donor entries');
+  DELETE FROM blood_donation WHERE id = p_id;
+  RETURN jsonb_build_object('success', true, 'message', 'Donor entry deleted successfully');
+END;
+$$;
+
+-- ---- Animal welfare ---------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION list_animal_reports() RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(a) ORDER BY a.created_at DESC), '[]'::jsonb) FROM animal_welfare a;
+$$;
+
+CREATE OR REPLACE FUNCTION create_animal_report(
+  p_title text, p_description text, p_location text, p_urgency text,
+  p_posted_by text, p_user_id text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE r animal_welfare;
+BEGIN
+  INSERT INTO animal_welfare (title, description, location, urgency, posted_by, user_id)
+  VALUES (p_title, p_description, p_location, COALESCE(p_urgency, 'medium'),
+          NULLIF(trim(p_posted_by), ''), p_user_id)
+  RETURNING * INTO r;
+  RETURN to_jsonb(r);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delete_animal_report(p_id text) RETURNS jsonb
+LANGUAGE sql AS $$
+  DELETE FROM animal_welfare WHERE id = p_id;
+  SELECT jsonb_build_object('success', true, 'message', 'Report deleted successfully');
+$$;
