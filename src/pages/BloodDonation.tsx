@@ -178,7 +178,7 @@ export default function BloodDonation() {
                         {request.location}
                       </p>
                     </div>
-                    <div className="col-span-2 flex items-center justify-end gap-2 sm:col-span-1">
+                    <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:justify-end">
                       {request.contact_number && (
                         <a
                           href={`tel:${request.contact_number}`}
