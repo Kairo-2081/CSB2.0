@@ -355,6 +355,11 @@
   to   { transform: none; opacity: 1; }
 }
 
+@keyframes draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
 @keyframes shimmer {
   from { background-position: -200% 0; }
   to   { background-position: 200% 0; }
@@ -398,6 +403,7 @@
   .animate-grow-up { animation: grow-up 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: bottom; }
   .animate-grow-x { animation: grow-x 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: left; }
   .animate-band { animation: band-zoom 1600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .spark-draw { stroke-dasharray: 1; animation: draw 1200ms cubic-bezier(0.4, 0, 0.2, 1) 150ms both; }
   .animate-drift { animation: drift 7s ease-in-out infinite; }
 
   /* Cards and tiles lift a little under the pointer. */

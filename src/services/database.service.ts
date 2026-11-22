@@ -89,7 +89,44 @@ export const directoryService = {
   },
 };
 
+export interface OverviewFigure {
+  value: number;
+  previous: number;
+}
+
+export interface AdminOverview {
+  months: 3 | 6 | 12;
+  from: string;
+  kpis: {
+    students: OverviewFigure & { total: number };
+    posts: OverviewFigure;
+    activePosters: OverviewFigure;
+    reports: { value: number; handled: number; open: number };
+  };
+  series: {
+    month: string;
+    signups: number;
+    signupsPrev: number;
+    posts: number;
+    postsPrev: number;
+    reports: number;
+    reportsPrev: number;
+  }[];
+  boards: {
+    board: string;
+    posts: number;
+    previous: number;
+    allTime: number;
+    lastPostAt: string | null;
+    openReports: number;
+    spark: number[];
+  }[];
+  /** 0 = Sunday … 6 = Saturday, in Bangladesh time. */
+  weekdays: { dow: number; posts: number }[];
+}
+
 export const adminService = {
+  overview: (months: 3 | 6 | 12) => api<AdminOverview>(`/admin/overview?months=${months}`),
   removed: () => api<{ board: "notices" | "complaints"; id: string; title: string; deleted_at: string; deleted_by: string | null }[]>("/admin/removed"),
   restore: (boardName: "notices" | "complaints", id: string) =>
     api(`/${boardName}/${encodeURIComponent(id)}/restore`, { method: "POST", body: {} }),

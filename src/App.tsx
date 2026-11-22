@@ -23,6 +23,7 @@ const Students = lazy(() => import("./pages/Students"));
 const FacultySuggestions = lazy(() => import("./pages/FacultySuggestions"));
 const Profile = lazy(() => import("./pages/Profile"));
 const CentralAdmin = lazy(() => import("./pages/CentralAdmin"));
+const AdminOverview = lazy(() => import("./pages/AdminOverview"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Bicycles = lazy(() => import("./pages/Bicycles"));
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminOverview /></ProtectedRoute>} />
             <Route path="/central-admin" element={<ProtectedRoute requireAdmin><CentralAdmin /></ProtectedRoute>} />
             <Route path="/lost-found" element={<Module><LostFound /></Module>} />
             <Route path="/complaints" element={<Module><Complaints /></Module>} />
