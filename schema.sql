@@ -260,3 +260,197 @@ INSERT INTO universities (id, name, slug, short_name, division) VALUES
   ('duet', 'Dhaka University of Engineering and Technology',       'duet', 'DUET', 'Dhaka'),
   ('bau',  'Bangladesh Agricultural University',                   'bau',  'BAU',  'Mymensingh')
 ON CONFLICT (id) DO NOTHING;
+
+-- =============================================================================
+-- Accounts and sessions
+-- =============================================================================
+
+-- The user object every auth endpoint returns. Never includes the password.
+CREATE OR REPLACE FUNCTION user_json(p_user_id text) RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT jsonb_build_object(
+    'id',               u.id,
+    'name',             u.name,
+    'email',            u.email,
+    'role',             u.role,
+    'phone',            u.phone,
+    'department',       u.department,
+    'universityId',     u.university_id,
+    'universityName',   un.name,
+    'homeDistrict',     u.home_district,
+    'currentResidence', u.current_residence
+  )
+  FROM users u
+  LEFT JOIN universities un ON un.id = u.university_id
+  WHERE u.id = p_user_id;
+$$;
+
+CREATE OR REPLACE FUNCTION create_session(p_user_id text, p_days int DEFAULT 7) RETURNS text
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_token text := encode(gen_random_bytes(32), 'hex');
+BEGIN
+  DELETE FROM auth_sessions WHERE expires_at <= now();
+  INSERT INTO auth_sessions (token, user_id, expires_at)
+  VALUES (v_token, p_user_id, now() + make_interval(days => p_days));
+  RETURN v_token;
+END;
+$$;
+
+-- The signed-in user's id for a bearer token, or NULL if missing or expired.
+CREATE OR REPLACE FUNCTION session_user_id(p_token text) RETURNS text
+LANGUAGE sql STABLE AS $$
+  SELECT user_id FROM auth_sessions
+  WHERE token = p_token AND expires_at > now();
+$$;
+
+CREATE OR REPLACE FUNCTION end_session(p_token text) RETURNS void
+LANGUAGE sql AS $$
+  DELETE FROM auth_sessions WHERE token = p_token;
+$$;
+
+CREATE OR REPLACE FUNCTION login_user(p_email text, p_password text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_id text;
+BEGIN
+  SELECT id INTO v_id FROM users
+  WHERE lower(email) = lower(trim(p_email))
+    AND password_hash = crypt(p_password, password_hash);
+
+  IF v_id IS NULL THEN
+    PERFORM api_error(401, 'Invalid email or password');
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'token',   create_session(v_id),
+    'user',    user_json(v_id)
+  );
+END;
+$$;
+
+-- Format checks (email shape, password strength) happen in the server before
+-- this is called; this function enforces the rules that need the database.
+CREATE OR REPLACE FUNCTION register_user(
+  p_name               text,
+  p_email              text,
+  p_password           text,
+  p_phone              text,
+  p_department         text,
+  p_university_name    text,
+  p_home_district      text,
+  p_current_residence  text,
+  p_open_slugs         text[]
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_university_id text;
+  v_id            text;
+  v_uni_name      text := regexp_replace(trim(p_university_name), '\s+', ' ', 'g');
+BEGIN
+  SELECT id INTO v_university_id FROM universities
+  WHERE is_active
+    AND (lower(name) = lower(v_uni_name) OR lower(short_name) = lower(v_uni_name))
+    AND slug = ANY (p_open_slugs);
+
+  IF v_university_id IS NULL THEN
+    PERFORM api_error(403, 'CSB 2.0 is open to BUET students only for now. More universities are coming later.');
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM users WHERE lower(email) = lower(trim(p_email))) THEN
+    PERFORM api_error(409, 'Email already registered');
+  END IF;
+
+  INSERT INTO users (
+    name, email, password_hash, role, phone, department,
+    university_id, home_district, current_residence
+  ) VALUES (
+    trim(p_name), lower(trim(p_email)), crypt(p_password, gen_salt('bf', 10)), 'student',
+    trim(p_phone), trim(p_department),
+    v_university_id, trim(p_home_district), trim(p_current_residence)
+  )
+  RETURNING id INTO v_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'token',   create_session(v_id),
+    'user',    user_json(v_id),
+    'message', 'Account created successfully'
+  );
+EXCEPTION
+  WHEN unique_violation THEN   -- two sign-ups with one email at the same moment
+    PERFORM api_error(409, 'Email already registered');
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION verify_session(p_token text) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  v_user jsonb := user_json(session_user_id(p_token));
+BEGIN
+  IF v_user IS NULL THEN
+    PERFORM api_error(401, 'A valid session is required');
+  END IF;
+  RETURN jsonb_build_object('success', true, 'user', v_user);
+END;
+$$;
+
+-- NULL arguments leave a field unchanged.
+CREATE OR REPLACE FUNCTION update_profile(
+  p_actor_id    text,
+  p_user_id     text,
+  p_name        text,
+  p_phone       text,
+  p_department  text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+BEGIN
+  IF p_actor_id IS NULL THEN
+    PERFORM api_error(401, 'A valid session is required');
+  END IF;
+  IF p_actor_id <> p_user_id
+     AND NOT EXISTS (SELECT 1 FROM users WHERE id = p_actor_id AND role = 'admin') THEN
+    PERFORM api_error(403, 'You can only update your own profile');
+  END IF;
+
+  UPDATE users SET
+    name       = COALESCE(p_name, name),
+    phone      = COALESCE(p_phone, phone),
+    department = COALESCE(p_department, department)
+  WHERE id = p_user_id;
+
+  IF NOT FOUND THEN
+    PERFORM api_error(404, 'User not found');
+  END IF;
+  RETURN jsonb_build_object('success', true, 'user', user_json(p_user_id));
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION change_password(p_user_id text, p_old text, p_new text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_hash text;
+BEGIN
+  SELECT password_hash INTO v_hash FROM users WHERE id = p_user_id;
+  IF NOT FOUND THEN
+    PERFORM api_error(404, 'User not found');
+  END IF;
+  IF v_hash <> crypt(p_old, v_hash) THEN
+    PERFORM api_error(401, 'Current password is incorrect');
+  END IF;
+
+  UPDATE users SET password_hash = crypt(p_new, gen_salt('bf', 10)) WHERE id = p_user_id;
+  RETURN jsonb_build_object('success', true, 'message', 'Password changed successfully');
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION list_users() RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT jsonb_build_object('success', true, 'users', COALESCE(jsonb_agg(
+    jsonb_build_object(
+      'id', id, 'name', name, 'email', email, 'role', role,
+      'phone', phone, 'department', department
+    ) ORDER BY created_at), '[]'::jsonb))
+  FROM users;
+$$;
