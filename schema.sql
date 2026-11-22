@@ -796,3 +796,186 @@ LANGUAGE sql AS $$
   DELETE FROM animal_welfare WHERE id = p_id;
   SELECT jsonb_build_object('success', true, 'message', 'Report deleted successfully');
 $$;
+
+-- =============================================================================
+-- Lend & borrow (scoped to the signed-in student's university)
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION require_user_university(p_user_id text) RETURNS text
+LANGUAGE plpgsql STABLE AS $$
+DECLARE v_university text;
+BEGIN
+  IF p_user_id IS NULL THEN
+    PERFORM api_error(401, 'A valid session is required');
+  END IF;
+  SELECT university_id INTO v_university FROM users WHERE id = p_user_id;
+  IF NOT FOUND THEN
+    PERFORM api_error(401, 'User not found');
+  END IF;
+  RETURN v_university;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION lending_item_json(p_item_id text, p_viewer_id text) RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+  SELECT to_jsonb(i) || jsonb_build_object(
+    'owner_name', o.name,
+    'has_active_request', EXISTS (
+      SELECT 1 FROM lending_requests r
+      WHERE r.item_id = i.id AND r.requester_id = p_viewer_id
+        AND r.status IN ('pending', 'approved'))
+  )
+  FROM lending_items i
+  JOIN users o ON o.id = i.owner_id
+  WHERE i.id = p_item_id;
+$$;
+
+-- Available items at the student's university, plus the student's own items.
+CREATE OR REPLACE FUNCTION list_lending_items(p_user_id text) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE v_university text := require_user_university(p_user_id);
+BEGIN
+  RETURN COALESCE((
+    SELECT jsonb_agg(lending_item_json(i.id, p_user_id) ORDER BY i.created_at DESC)
+    FROM lending_items i
+    WHERE i.university_id IS NOT DISTINCT FROM v_university
+      AND (i.status = 'available' OR i.owner_id = p_user_id)
+  ), '[]'::jsonb);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION create_lending_item(
+  p_user_id text, p_title text, p_description text, p_category text,
+  p_item_condition text, p_handoff_location text
+) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_university text := require_user_university(p_user_id);
+  v_id text;
+BEGIN
+  IF COALESCE(trim(p_title), '') = '' OR COALESCE(trim(p_description), '') = ''
+     OR COALESCE(trim(p_category), '') = '' OR COALESCE(trim(p_item_condition), '') = ''
+     OR COALESCE(trim(p_handoff_location), '') = '' THEN
+    PERFORM api_error(400, 'Complete all listing fields before posting');
+  END IF;
+  IF length(trim(p_title)) > 100 OR length(trim(p_description)) > 1200
+     OR length(trim(p_handoff_location)) > 120 THEN
+    PERFORM api_error(400, 'One or more fields exceed the allowed length');
+  END IF;
+
+  INSERT INTO lending_items (title, description, category, item_condition, handoff_location, owner_id, university_id)
+  VALUES (trim(p_title), trim(p_description), trim(p_category), trim(p_item_condition),
+          trim(p_handoff_location), p_user_id, v_university)
+  RETURNING id INTO v_id;
+
+  RETURN lending_item_json(v_id, p_user_id);
+END;
+$$;
+
+-- Requests the student sent or received.
+CREATE OR REPLACE FUNCTION list_lending_requests(p_user_id text) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE v_university text := require_user_university(p_user_id);
+BEGIN
+  RETURN COALESCE((
+    SELECT jsonb_agg(to_jsonb(r) || jsonb_build_object(
+             'item_title',     i.title,
+             'owner_id',       i.owner_id,
+             'item_status',    i.status,
+             'owner_name',     o.name,
+             'requester_name', q.name)
+           ORDER BY r.created_at DESC)
+    FROM lending_requests r
+    JOIN lending_items i ON i.id = r.item_id
+    JOIN users o ON o.id = i.owner_id
+    JOIN users q ON q.id = r.requester_id
+    WHERE i.university_id IS NOT DISTINCT FROM v_university
+      AND (r.requester_id = p_user_id OR i.owner_id = p_user_id)
+  ), '[]'::jsonb);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION request_to_borrow(p_user_id text, p_item_id text, p_message text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_university text := require_user_university(p_user_id);
+  v_owner text;
+  v_id text;
+  v_message text := NULLIF(trim(COALESCE(p_message, '')), '');
+BEGIN
+  SELECT owner_id INTO v_owner FROM lending_items
+  WHERE id = p_item_id
+    AND university_id IS NOT DISTINCT FROM v_university
+    AND status = 'available';
+  IF NOT FOUND THEN
+    PERFORM api_error(404, 'This item is no longer available');
+  END IF;
+  IF v_owner = p_user_id THEN
+    PERFORM api_error(400, 'You cannot request to borrow your own item');
+  END IF;
+  IF length(v_message) > 500 THEN
+    PERFORM api_error(400, 'Request message must be 500 characters or fewer');
+  END IF;
+
+  INSERT INTO lending_requests (item_id, requester_id, message)
+  VALUES (p_item_id, p_user_id, v_message)
+  RETURNING id INTO v_id;
+
+  RETURN jsonb_build_object('success', true, 'id', v_id, 'status', 'pending');
+EXCEPTION
+  WHEN unique_violation THEN
+    PERFORM api_error(409, 'You already have an active request for this item');
+END;
+$$;
+
+-- p_action: 'approve' | 'decline' | 'return'. Only the lender may act.
+-- Approving lends the item and declines every other pending request for it.
+CREATE OR REPLACE FUNCTION update_lending_request(p_user_id text, p_request_id text, p_action text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_req   lending_requests;
+  v_item  lending_items;
+BEGIN
+  IF p_action IS NULL OR p_action NOT IN ('approve', 'decline', 'return') THEN
+    PERFORM api_error(400, 'Choose approve, decline, or return');
+  END IF;
+  IF p_user_id IS NULL THEN
+    PERFORM api_error(401, 'A valid session is required');
+  END IF;
+
+  SELECT * INTO v_req FROM lending_requests WHERE id = p_request_id FOR UPDATE;
+  IF NOT FOUND THEN
+    PERFORM api_error(404, 'Borrow request not found');
+  END IF;
+  SELECT * INTO v_item FROM lending_items WHERE id = v_req.item_id FOR UPDATE;
+  IF v_item.owner_id <> p_user_id THEN
+    PERFORM api_error(403, 'Only the lender can update this request');
+  END IF;
+
+  IF p_action = 'approve' THEN
+    IF v_req.status <> 'pending' OR v_item.status <> 'available' THEN
+      PERFORM api_error(409, 'This request can no longer be approved');
+    END IF;
+    UPDATE lending_items SET status = 'borrowed' WHERE id = v_item.id;
+    UPDATE lending_requests SET status = 'approved' WHERE id = v_req.id;
+    UPDATE lending_requests SET status = 'declined'
+    WHERE item_id = v_item.id AND id <> v_req.id AND status = 'pending';
+    RETURN jsonb_build_object('success', true, 'status', 'approved');
+
+  ELSIF p_action = 'decline' THEN
+    IF v_req.status <> 'pending' THEN
+      PERFORM api_error(409, 'Only pending requests can be declined');
+    END IF;
+    UPDATE lending_requests SET status = 'declined' WHERE id = v_req.id;
+    RETURN jsonb_build_object('success', true, 'status', 'declined');
+
+  ELSE
+    IF v_req.status <> 'approved' OR v_item.status <> 'borrowed' THEN
+      PERFORM api_error(409, 'This item is not currently lent through this request');
+    END IF;
+    UPDATE lending_items SET status = 'available' WHERE id = v_item.id;
+    UPDATE lending_requests SET status = 'returned' WHERE id = v_req.id;
+    RETURN jsonb_build_object('success', true, 'status', 'returned');
+  END IF;
+END;
+$$;
