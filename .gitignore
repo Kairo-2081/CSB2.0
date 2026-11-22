@@ -23,6 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Local SQLite database, built from schema.sql on server start
+# Local database files are never committed
 *.db
 *.db-journal
