@@ -720,13 +720,13 @@ app.get('/api/marketplace', async (req, res) => {
 
 app.post('/api/marketplace', async (req, res) => {
   try {
-    const { title, description, price, seller, phone, user_id } = req.body;
+    const { title, description, price, category, seller, phone, user_id } = req.body;
     const id = generateId();
     const created_at = new Date().toISOString();
 
     await db.run(
-      'INSERT INTO marketplace (id, title, description, price, seller, phone, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, parseFloat(price), seller, phone, user_id, created_at, created_at]
+      'INSERT INTO marketplace (id, title, description, price, category, seller, phone, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, title, description, parseFloat(price), category || 'Other', seller, phone, user_id, created_at, created_at]
     );
 
     const result = await db.get('SELECT * FROM marketplace WHERE id = ?', [id]);
@@ -772,13 +772,13 @@ app.get('/api/animal-welfare', async (req, res) => {
 
 app.post('/api/animal-welfare', async (req, res) => {
   try {
-    const { title, description, location, urgency, user_id } = req.body;
+    const { title, description, location, urgency, posted_by, user_id } = req.body;
     const id = generateId();
     const created_at = new Date().toISOString();
 
     await db.run(
-      'INSERT INTO animal_welfare (id, title, description, location, urgency, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, location, urgency, user_id, created_at, created_at]
+      'INSERT INTO animal_welfare (id, title, description, location, urgency, posted_by, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, title, description, location, urgency || 'medium', posted_by || null, user_id, created_at, created_at]
     );
 
     const result = await db.get('SELECT * FROM animal_welfare WHERE id = ?', [id]);
@@ -810,13 +810,13 @@ app.get('/api/faculty-suggestions', async (req, res) => {
 
 app.post('/api/faculty-suggestions', async (req, res) => {
   try {
-    const { title, faculty_name, rating, feedback, user_id } = req.body;
+    const { title, faculty_name, subject, rating, feedback, posted_by, user_id } = req.body;
     const id = generateId();
     const created_at = new Date().toISOString();
 
     await db.run(
-      'INSERT INTO faculty_suggestions (id, title, faculty_name, rating, feedback, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, faculty_name, parseInt(rating), feedback, user_id, created_at, created_at]
+      'INSERT INTO faculty_suggestions (id, title, faculty_name, subject, rating, feedback, posted_by, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, title, faculty_name, subject || null, parseInt(rating), feedback, posted_by || null, user_id, created_at, created_at]
     );
 
     const result = await db.get('SELECT * FROM faculty_suggestions WHERE id = ?', [id]);
@@ -1167,13 +1167,13 @@ app.get('/api/lost-found', async (req, res) => {
 
 app.post('/api/lost-found', async (req, res) => {
   try {
-    const { title, description, item_type, status, location, contact_number, user_id } = req.body;
+    const { title, description, item_type, status, location, contact_number, posted_by, user_id } = req.body;
     const id = generateId();
     const created_at = new Date().toISOString();
 
     await db.run(
-      'INSERT INTO lost_found (id, title, description, item_type, status, location, contact_number, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, title, description, item_type, status || 'lost', location, contact_number, user_id, created_at, created_at]
+      'INSERT INTO lost_found (id, title, description, item_type, status, location, contact_number, posted_by, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, title, description, item_type, status || item_type || 'lost', location, contact_number || null, posted_by || null, user_id, created_at, created_at]
     );
 
     const result = await db.get('SELECT * FROM lost_found WHERE id = ?', [id]);
