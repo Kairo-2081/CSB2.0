@@ -2,9 +2,12 @@
 # New deploy: Render dashboard → New → Blueprint → pick this repo.
 services:
   - type: web
-    name: csb2
+    name: csb2-sg
     runtime: node
     plan: free
+    # Render cannot move a service between regions. Singapore is closest to
+    # Bangladesh and is where the Neon database lives.
+    region: singapore
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
