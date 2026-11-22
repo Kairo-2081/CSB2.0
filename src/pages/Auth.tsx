@@ -210,7 +210,7 @@ export default function Auth() {
   const isPasswordValid = Object.values(passwordValidation).every(v => v);
 
   return (
-    <div className="grid min-h-screen bg-[#07070d] lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)]">
+    <div className="theme-dark grid min-h-screen bg-[#07070d] lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)]">
       <aside className="relative isolate hidden overflow-hidden lg:flex lg:flex-col lg:justify-between">
         <img
           src="/campus/buet-hero.webp"

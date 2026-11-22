@@ -122,16 +122,16 @@ export default function Profile() {
         <div className="grid gap-14 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
           <section aria-labelledby="details">
             <SectionTitle id="details">Details</SectionTitle>
-            <dl className="divide-y divide-white/[0.07] border-b border-white/[0.07]">
+            <dl className="divide-y divide-foreground/[0.07] border-b border-foreground/[0.07]">
               {details.map(([label, value]) => (
                 <div key={label} className="grid gap-1 py-4 sm:grid-cols-[180px_minmax(0,1fr)] sm:gap-6">
                   <dt className="pt-0.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</dt>
-                  <dd className={value ? "text-[15px]" : "text-[15px] text-[#8d857c]"}>{value || "Not provided"}</dd>
+                  <dd className={value ? "text-[15px]" : "text-[15px] text-muted-foreground"}>{value || "Not provided"}</dd>
                 </div>
               ))}
             </dl>
 
-            <div className="mt-8 flex items-start justify-between gap-6 border-b border-white/[0.07] pb-8">
+            <div className="mt-8 flex items-start justify-between gap-6 border-b border-foreground/[0.07] pb-8">
               <div>
                 <label data-plain htmlFor="show-contact" className="text-[15px]">
                   Show my phone and email in the student directory
@@ -151,7 +151,7 @@ export default function Profile() {
 
           <section aria-labelledby="visibility">
             <SectionTitle id="visibility">Who sees what</SectionTitle>
-            <dl className="divide-y divide-white/[0.07]">
+            <dl className="divide-y divide-foreground/[0.07]">
               {visibility.map(([title, text]) => (
                 <div key={title} className="py-5">
                   <dt className="text-[15px]">{title}</dt>
@@ -203,7 +203,7 @@ export default function Profile() {
           </form>
         </section>
 
-        <section aria-labelledby="your-data" className="mt-16 grid max-w-4xl gap-10 border-t border-white/[0.07] pt-12 md:grid-cols-2">
+        <section aria-labelledby="your-data" className="mt-16 grid max-w-4xl gap-10 border-t border-foreground/[0.07] pt-12 md:grid-cols-2">
           <div>
             <SectionTitle id="your-data">Your data</SectionTitle>
             <p className="text-[14px] leading-6 text-muted-foreground">

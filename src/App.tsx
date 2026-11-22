@@ -8,6 +8,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import { useModules } from "@/lib/modules";
+import { ThemeProvider } from "next-themes";
 
 // Every page except the landing page loads on demand.
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -22,6 +23,7 @@ const Students = lazy(() => import("./pages/Students"));
 const FacultySuggestions = lazy(() => import("./pages/FacultySuggestions"));
 const Profile = lazy(() => import("./pages/Profile"));
 const CentralAdmin = lazy(() => import("./pages/CentralAdmin"));
+const AdminOverview = lazy(() => import("./pages/AdminOverview"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Bicycles = lazy(() => import("./pages/Bicycles"));
@@ -39,6 +41,7 @@ function Module({ children }: { children: React.ReactNode }) {
 const PageFallback = () => <div className="min-h-screen bg-background" aria-busy="true" />;
 
 const App = () => (
+  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem themes={["dark", "light"]} storageKey="csb-theme">
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
@@ -50,6 +53,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminOverview /></ProtectedRoute>} />
             <Route path="/central-admin" element={<ProtectedRoute requireAdmin><CentralAdmin /></ProtectedRoute>} />
             <Route path="/lost-found" element={<Module><LostFound /></Module>} />
             <Route path="/complaints" element={<Module><Complaints /></Module>} />
@@ -70,6 +74,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

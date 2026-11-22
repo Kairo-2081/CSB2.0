@@ -312,6 +312,10 @@ export function createApp({ pool, log = console }) {
   app.get('/api/universities', route(() => call('list_open_universities', config.openUniversities)));
   app.get('/api/public/campus-stats', route(() => call('campus_stats', config.launchCampus)));
   app.get('/api/admin/metrics', route((req) => call('admin_metrics', req.user.id)));
+  app.get('/api/admin/overview', route((req) => {
+    const q = parse(schemas.overviewQuery, req.query);
+    return call('admin_overview', req.user.id, q.months ?? 12);
+  }));
   app.get('/api/admin/removed', route((req) => call('list_removed', req.user.id)));
 
   // ---- Campus boards ------------------------------------------------------------

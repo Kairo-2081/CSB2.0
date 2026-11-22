@@ -157,7 +157,7 @@ export default function LostFound() {
                 <li key={item.id} className="grid grid-cols-[64px_minmax(0,1fr)] gap-5 py-8 md:grid-cols-[96px_minmax(0,1fr)_220px] md:gap-8">
                   <DateBlock date={item.created_at} />
                   <div className="min-w-0">
-                    <StatusDot tone={item.item_type === "found" ? "resolved" : "open"} className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8d857c]">
+                    <StatusDot tone={item.item_type === "found" ? "resolved" : "open"} className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       {item.item_type === "found" ? "Found" : "Lost"}
                     </StatusDot>
                     <h3 className="mt-2.5 font-display text-[26px] font-normal leading-[1.2]">{item.title}</h3>

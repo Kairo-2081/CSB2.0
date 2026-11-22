@@ -192,9 +192,9 @@ export default function BloodDonation() {
 
           <section aria-labelledby="by-group">
             <SectionTitle id="by-group">Donors by group</SectionTitle>
-            <ul className="grid grid-cols-4">
+            <ul className="stagger grid grid-cols-4">
               {bloodGroups.map((group) => (
-                <li key={group} className="border-b border-white/[0.07] py-5">
+                <li key={group} className="border-b border-foreground/[0.07] py-5">
                   <span className="block font-display text-[26px]">{group.replace("-", "−")}</span>
                   <span className="mt-1.5 block text-xs text-muted-foreground">
                     {requests.filter((r) => r.blood_type === group).length} donors
@@ -202,7 +202,7 @@ export default function BloodDonation() {
                 </li>
               ))}
             </ul>
-            <p className="mt-5 text-[13px] leading-[22px] text-[#8d857c]">
+            <p className="mt-5 text-[13px] leading-[22px] text-muted-foreground">
               Donors list themselves here and can remove their entry at any time. Call only to arrange a donation.
             </p>
           </section>

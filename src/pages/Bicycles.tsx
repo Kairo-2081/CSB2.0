@@ -167,7 +167,7 @@ export default function Bicycles() {
             { value: stats.total, label: "Total", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" /> },
             { value: stats.available, label: "Available", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-success" /> },
             { value: stats.rented, label: "In use", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warning" /> },
-            { value: stats.maintenance, label: "In repair", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#6f685f]" /> },
+            { value: stats.maintenance, label: "In repair", marker: <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" /> },
           ]}
         />
 

@@ -157,7 +157,7 @@ export default function Marketplace() {
           />
 
           {filteredItems.length > 0 ? (
-            <ul className="mt-10 grid gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="stagger mt-10 grid gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
               {filteredItems.map((item, index) => (
                 <li key={item.id}>
                   <ObjectTile title={item.title} category={item.category} index={index} />

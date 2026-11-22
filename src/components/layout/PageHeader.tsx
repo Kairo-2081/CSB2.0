@@ -49,7 +49,7 @@ export function PageHeader({ eyebrow, title, accent, description, actions, photo
             sizes="(min-width: 1024px) 78vw, 100vw"
             alt={photo.alt}
             decoding="async"
-            className="page-band-photo absolute inset-0 -z-20 h-full w-full object-cover lg:left-auto lg:right-0 lg:w-[78%]"
+            className="page-band-photo animate-band absolute inset-0 -z-20 h-full w-full object-cover lg:left-auto lg:right-0 lg:w-[78%]"
             style={photo.position ? { objectPosition: photo.position } : undefined}
           />
           <div aria-hidden="true" className="page-band-shade absolute inset-0 -z-10" />
@@ -63,7 +63,7 @@ export function PageHeader({ eyebrow, title, accent, description, actions, photo
 
       <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0 max-w-[640px]">
-          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#cfc5ba]">
+          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-foreground/75">
             BUET
             {eyebrow && (
               <>
@@ -77,12 +77,12 @@ export function PageHeader({ eyebrow, title, accent, description, actions, photo
             {accent && (
               <>
                 <br />
-                <span className="text-[#f2a93b]">{accent}</span>
+                <span className="text-primary">{accent}</span>
               </>
             )}
           </h1>
-          <div aria-hidden="true" className="mt-7 h-px w-10 bg-foreground/50" />
-          {description && <p className="mt-5 max-w-[460px] text-[15px] leading-7 text-[#d6cec5]">{description}</p>}
+          <div aria-hidden="true" className="animate-grow-x mt-7 h-px w-10 bg-primary/70 [animation-delay:250ms]" />
+          {description && <p className="mt-5 max-w-[460px] text-[15px] leading-7 text-foreground/75">{description}</p>}
         </div>
         {actions && <div className="flex shrink-0 flex-wrap gap-3">{actions}</div>}
       </div>

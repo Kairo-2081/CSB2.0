@@ -72,7 +72,7 @@ export default function Students() {
                     {user.name.trim().charAt(0).toUpperCase()}
                   </span>
                   <span className="font-display text-xl">{user.name}</span>
-                  <span className="col-start-2 text-sm text-[#d6cec5] md:col-start-auto">{user.department || "Department not set"}</span>
+                  <span className="col-start-2 text-sm text-foreground/75 md:col-start-auto">{user.department || "Department not set"}</span>
                   <span className="col-start-2 text-sm text-muted-foreground md:col-start-auto">
                     {user.phone || user.email ? (
                       <>
