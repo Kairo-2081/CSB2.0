@@ -215,7 +215,7 @@ export default function LendBorrow() {
               </div>
               <select
                 aria-label="Filter by category"
-                className="h-11 rounded-md border border-white/[0.14] bg-[#121014] px-3 text-sm text-foreground"
+                className="h-11 rounded-md border border-foreground/[0.14] bg-card px-3 text-sm text-foreground"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
               >
@@ -228,7 +228,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : filteredItems.length ? (
-              <ul className="grid gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">{filteredItems.map(itemCard)}</ul>
+              <ul className="stagger grid gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">{filteredItems.map(itemCard)}</ul>
             ) : !error ? (
               <EmptyState
                 title={search || category !== "all" ? "No matching items" : "Nothing listed to borrow yet"}
@@ -253,7 +253,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : myListings.length ? (
-              <ul className="grid gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">{myListings.map(itemCard)}</ul>
+              <ul className="stagger grid gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">{myListings.map(itemCard)}</ul>
             ) : !error ? (
               <EmptyState
                 title="You have not listed anything"
@@ -272,7 +272,7 @@ export default function LendBorrow() {
             {isLoading ? (
               <LoadingState />
             ) : requests.length ? (
-              <div className="divide-y divide-white/[0.07] border-y border-white/[0.07]">
+              <div className="stagger divide-y divide-foreground/[0.07] border-y border-foreground/[0.07]">
                 {requests.map((request) => {
                   const incoming = request.owner_id === user?.id;
                   const status = requestStatus[request.status];
@@ -403,7 +403,7 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="border-y border-white/[0.07] px-6 py-16 text-center">
+    <div className="border-y border-foreground/[0.07] px-6 py-16 text-center">
       <h3 className="font-display text-3xl font-normal text-foreground">{title}</h3>
       <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
       {action && <div className="mt-5">{action}</div>}

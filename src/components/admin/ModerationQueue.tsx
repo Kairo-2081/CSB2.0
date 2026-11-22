@@ -92,7 +92,7 @@ export function ModerationQueue() {
         ) : reports.length === 0 ? (
           <p className="text-[15px] text-muted-foreground">Nothing reported. When students flag a post, it shows up here.</p>
         ) : (
-          <ul aria-label="Reported posts" className="divide-y divide-white/[0.07] border-y border-white/[0.07]">
+          <ul aria-label="Reported posts" className="stagger divide-y divide-foreground/[0.07] border-y border-foreground/[0.07]">
             {reports.map((post) => (
               <li key={`${post.board}:${post.row_id}`} className="py-5">
                 <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -102,7 +102,7 @@ export function ModerationQueue() {
                 <p className="mt-2 text-[16px]">{post.label ?? "Untitled"}{post.gone && <span className="ml-2 text-muted-foreground">(already removed)</span>}</p>
                 {post.excerpt && <p className="mt-1 line-clamp-2 text-[14px] text-muted-foreground">{post.excerpt}</p>}
                 {post.details.length > 0 && (
-                  <ul className="mt-2 space-y-1 text-[13px] text-[#d6cec5]">
+                  <ul className="mt-2 space-y-1 text-[13px] text-foreground/75">
                     {post.details.map((d, i) => <li key={i}>“{d}”</li>)}
                   </ul>
                 )}
@@ -126,7 +126,7 @@ export function ModerationQueue() {
         ) : removed.length === 0 ? (
           <p className="text-[15px] text-muted-foreground">Removed notices and complaints appear here and can be restored.</p>
         ) : (
-          <ul aria-label="Removed posts" className="divide-y divide-white/[0.07] border-y border-white/[0.07]">
+          <ul aria-label="Removed posts" className="stagger divide-y divide-foreground/[0.07] border-y border-foreground/[0.07]">
             {removed.map((item) => (
               <li key={item.id} className="flex items-center justify-between gap-4 py-4">
                 <div className="min-w-0">

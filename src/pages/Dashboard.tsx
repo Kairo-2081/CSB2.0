@@ -3,6 +3,7 @@ import { useModules } from "@/lib/modules";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, Search } from "lucide-react";
+import { CountUp } from "@/components/motion/CountUp";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Kicker, SectionTitle } from "@/components/editorial";
@@ -95,13 +96,13 @@ export default function Dashboard() {
           }
         />
 
-        <ul aria-label="Open on campus" className="grid grid-cols-2 border-y border-white/10 lg:grid-cols-4">
+        <ul aria-label="Open on campus" className="stagger grid grid-cols-2 border-y border-foreground/10 lg:grid-cols-4">
           {counts.filter((c) => enabled(c.href)).map((c, i) => (
-            <li key={c.label} className={["border-white/10", i % 2 ? "border-l" : "", i >= 2 ? "border-t lg:border-t-0" : "", i === 2 ? "lg:border-l" : ""].join(" ")}>
-              <Link to={c.href} className="group flex h-full flex-col gap-3.5 px-5 py-7 transition-colors hover:bg-white/[0.025] sm:px-6">
+            <li key={c.label} className={["border-foreground/10", i % 2 ? "border-l" : "", i >= 2 ? "border-t lg:border-t-0" : "", i === 2 ? "lg:border-l" : ""].join(" ")}>
+              <Link to={c.href} className="group flex h-full flex-col gap-3.5 px-5 py-7 transition-colors hover:bg-foreground/[0.025] sm:px-6">
                 <span className="flex items-start justify-between">
-                  <span className="font-display text-5xl leading-none tabular-nums">{c.value === null ? "—" : c.value >= 100 ? "100+" : c.value}</span>
-                  <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+                  <span className="font-display text-5xl leading-none tabular-nums">{c.value === null ? "—" : c.value >= 100 ? "100+" : <CountUp value={c.value} />}</span>
+                  <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-[color,transform] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
                 </span>
                 <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{c.label}</span>
               </Link>
@@ -118,7 +119,7 @@ export default function Dashboard() {
               Latest on campus
             </SectionTitle>
             {latest.length > 0 ? (
-              <ol className="divide-y divide-white/[0.07]">
+              <ol className="stagger divide-y divide-foreground/[0.07]">
                 {latest.map((row) => (
                   <li key={`${row.href}-${row.id}`}>
                     <Link to={row.href} className="group grid grid-cols-[64px_minmax(0,1fr)_16px] items-baseline gap-5 py-5">
@@ -127,7 +128,7 @@ export default function Dashboard() {
                         <Kicker className="capitalize">{row.kind}</Kicker>
                         <span className="mt-1.5 block text-base leading-6">{row.title}</span>
                       </span>
-                      <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-[#8d857c] transition-colors group-hover:text-foreground" />
+                      <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
                     </Link>
                   </li>
                 ))}
@@ -140,7 +141,7 @@ export default function Dashboard() {
           <section aria-labelledby="open-complaints">
             <SectionTitle id="open-complaints">Open complaints</SectionTitle>
             {openComplaints.length > 0 ? (
-              <ul className="divide-y divide-white/[0.07]">
+              <ul className="stagger divide-y divide-foreground/[0.07]">
                 {openComplaints.slice(0, 5).map((c) => (
                   <li key={c.id} className="py-5">
                     <Link to="/complaints" className="block text-[15px] leading-[22px] hover:text-white">{c.title}</Link>
