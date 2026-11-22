@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { EmptyState, FilterBar, RowList } from "@/components/editorial";
+import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,17 +118,18 @@ export default function FacultySuggestions() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+      <div className="page-container">
         <PageHeader
+          photo={{ src: "/campus/bands/buet-studio.webp", alt: "An architecture drafting studio at BUET with model-strewn tables" }}
           eyebrow="Teaching"
           title="Faculty suggestions."
           accent="Help teaching improve."
-          description="Provide constructive feedback to faculty members."
+          description="Constructive feedback on courses and teaching, sent to the department."
           actions={
             <>
-              <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4" />
-                Add Suggestion
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus aria-hidden="true" />
+                Make a suggestion
               </Button>
             </>
           }
@@ -134,11 +137,11 @@ export default function FacultySuggestions() {
 
         {/* Dialog Form */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Faculty Suggestion</DialogTitle>
+              <DialogTitle>Make a suggestion.</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="title">Title</Label>
@@ -227,91 +230,49 @@ export default function FacultySuggestions() {
           </DialogContent>
         </Dialog>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Search & Filter */}
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search suggestions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-muted-foreground">Filters</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <p className="font-medium text-foreground">Total Suggestions</p>
-                <p className="text-2xl font-bold text-primary">{filteredSuggestions.length}</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Suggestions */}
-          <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              Suggestions
-              <Badge variant="secondary">{filteredSuggestions.length}</Badge>
-            </h2>
-
-            {filteredSuggestions.length === 0 ? (
-              <Card className="p-12 text-center">
-                <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No suggestions yet</h3>
-                <p className="text-muted-foreground mt-1">Be the first to add a suggestion!</p>
-              </Card>
-            ) : (
-              filteredSuggestions.map((suggestion, index) => (
-                <Card 
-                  key={suggestion.id} 
-                  className=""
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-                        <User className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1 space-y-3">
-                        <div className="space-y-1">
-                          <h3 className="font-semibold text-foreground">{suggestion.title}</h3>
-                          <p className="text-sm font-medium text-primary">{suggestion.faculty_name}</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{suggestion.feedback}</p>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(suggestion.created_at).toLocaleDateString()}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            {Array.from({ length: suggestion.rating }).map((_, i) => (
-                              <Star key={i} className="h-3 w-3 fill-warning text-warning" />
-                            ))}
-                          </div>
-                          {suggestion.user_id === "current-user-id" && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleDelete(suggestion.id)}
-                              className="ml-auto h-6 px-2 hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
+        <section aria-label="Suggestions">
+          <FilterBar
+            label="Suggestions"
+            tabs={[{ value: "all", label: "All", count: filteredSuggestions.length }]}
+            value="all"
+            onChange={() => undefined}
+            search={searchQuery}
+            onSearch={setSearchQuery}
+            searchLabel="Search suggestions"
+          />
+          {filteredSuggestions.length > 0 ? (
+            <RowList label="Suggestions">
+              {filteredSuggestions.map((suggestion) => (
+                <li key={suggestion.id} className="grid gap-4 py-8 md:grid-cols-[180px_minmax(0,1fr)_140px] md:gap-8">
+                  <div>
+                    <p className="font-display text-2xl leading-tight">{suggestion.faculty_name}</p>
+                    <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                      Rated {suggestion.rating} of 5
+                    </p>
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-display text-2xl font-normal leading-[1.25]">{suggestion.title}</h3>
+                    <p className="mt-2 max-w-2xl text-[15px] leading-[26px] text-muted-foreground">{suggestion.feedback}</p>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-[13px] text-muted-foreground md:flex-col md:items-end">
+                    <span>{shortDate(suggestion.created_at)}</span>
+                    {suggestion.user_id === "current-user-id" && (
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(suggestion.id)} className="text-destructive hover:text-destructive">
+                        <Trash2 aria-hidden="true" /> Delete
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </RowList>
+          ) : (
+            <EmptyState
+              title={suggestions.length === 0 ? "No suggestions yet." : "Nothing matches."}
+              text={suggestions.length === 0 ? "Constructive feedback on a course or its teaching goes here." : "Try a different search."}
+              action={suggestions.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Make the first suggestion</Button> : undefined}
+            />
+          )}
+        </section>
       </div>
     </MainLayout>
   );

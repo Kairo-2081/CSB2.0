@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { EmptyState, FilterBar, Kicker, RowList, SectionTitle } from "@/components/editorial";
+import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -136,125 +138,98 @@ export default function BloodDonation() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+      <div className="page-container">
         <PageHeader
+          glow="oxblood"
+          motif="blood"
           eyebrow="Health"
           title="Blood donation."
           accent={"Give where it's needed."}
-          description="Request or donate blood to save lives."
+          description="Find a donor when someone needs blood, or list yourself as one."
           actions={
             <>
-              <Button 
-             
-                className="gap-2"
-                onClick={() => setIsDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                New Request
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus aria-hidden="true" />
+                Register as a donor
               </Button>
             </>
           }
         />
 
-        {/* Blood Group Filter */}
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant={bloodGroupFilter === "all" ? "default" : "secondary"}
-            size="sm"
-            onClick={() => setBloodGroupFilter("all")}
-          >
-            All Groups
-          </Button>
-          {bloodGroups.map((group) => (
-            <Button
-              key={group}
-              variant={bloodGroupFilter === group ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setBloodGroupFilter(group)}
-              className="min-w-[60px]"
-            >
-              {group}
-            </Button>
-          ))}
-        </div>
-
-        {/* Requests Grid */}
-        <div className="grid gap-4 md:grid-cols-2">
-          {filteredRequests.map((request, index) => (
-            <Card 
-              key={request.id} 
-              className=""
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                    <Droplets className="h-6 w-6" />
-                    <span className="text-lg font-bold mt-1">{request.blood_type}</span>
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(request.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-foreground font-medium">
-                        <Heart className="h-4 w-4 text-destructive" />
-                        {request.name}
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
+        <div className="grid gap-14 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <section aria-labelledby="donors">
+            <SectionTitle id="donors">Donors</SectionTitle>
+            <FilterBar
+              label="Filter by blood group"
+              tabs={[{ value: "all", label: "All" }, ...bloodGroups.map((g) => ({ value: g, label: g.replace("-", "−") }))]}
+              value={bloodGroupFilter}
+              onChange={setBloodGroupFilter}
+            />
+            {filteredRequests.length > 0 ? (
+              <RowList label="Donors">
+                {filteredRequests.map((request) => (
+                  <li key={request.id} className="grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-6 gap-y-3 py-6 sm:grid-cols-[88px_minmax(0,1fr)_auto]">
+                    <span className="font-display text-[44px] leading-none text-accent">{request.blood_type.replace("-", "−")}</span>
+                    <div className="min-w-0">
+                      <Kicker>Available from {shortDate(request.available_date) || "now"}</Kicker>
+                      <p className="mt-2 text-base">{request.name}</p>
+                      <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                        <MapPin aria-hidden="true" className="h-3.5 w-3.5" />
                         {request.location}
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-4 w-4" />
-                        {request.contact_number}
-                      </div>
-                      <div className="text-muted-foreground">
-                        Available Date: <span className="font-semibold">{new Date(request.available_date).toLocaleDateString()}</span>
-                      </div>
+                      </p>
                     </div>
-
-                    <div className="pt-2 border-t border-border flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        Contact Donor
-                      </Button>
-                      {request.user_id === user?.id && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDelete(request.id)}
-                          className="gap-1"
+                    <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:justify-end">
+                      {request.contact_number && (
+                        <a
+                          href={`tel:${request.contact_number}`}
+                          className="inline-flex h-10 items-center rounded-md border border-foreground/30 px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground transition-colors hover:border-foreground/70"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          Call {request.contact_number}
+                        </a>
+                      )}
+                      {request.user_id === user?.id && (
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(request.id)} className="text-destructive hover:text-destructive">
+                          <Trash2 aria-hidden="true" /> Delete
                         </Button>
                       )}
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  </li>
+                ))}
+              </RowList>
+            ) : (
+              <EmptyState
+                title={requests.length === 0 ? "No donors listed yet." : "No donors in this group."}
+                text={requests.length === 0 ? "List yourself as a donor so people on campus can reach you when blood is needed." : "Try another blood group."}
+                action={requests.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Register as a donor</Button> : undefined}
+              />
+            )}
+          </section>
 
-        {filteredRequests.length === 0 && (
-          <Card className="p-12 text-center">
-            <Droplets className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No donations available</h3>
-            <p className="text-muted-foreground mt-1">Be the first to register as a donor</p>
-          </Card>
-        )}
+          <section aria-labelledby="by-group">
+            <SectionTitle id="by-group">Donors by group</SectionTitle>
+            <ul className="grid grid-cols-4">
+              {bloodGroups.map((group) => (
+                <li key={group} className="border-b border-white/[0.07] py-5">
+                  <span className="block font-display text-[26px]">{group.replace("-", "−")}</span>
+                  <span className="mt-1.5 block text-xs text-muted-foreground">
+                    {requests.filter((r) => r.blood_type === group).length} donors
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-5 text-[13px] leading-[22px] text-[#8d857c]">
+              Donors list themselves here and can remove their entry at any time. Call only to arrange a donation.
+            </p>
+          </section>
+        </div>
 
         {/* New Request Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Register Blood Donation</DialogTitle>
+              <DialogTitle>Register as a donor.</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
                 <label className="block text-sm font-medium mb-1">Blood Type *</label>
                 <Select 

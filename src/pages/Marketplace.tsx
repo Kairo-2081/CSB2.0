@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { EmptyState, FilterBar, ObjectTile } from "@/components/editorial";
+import { shortDate } from "@/lib/dates";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,11 +23,15 @@ import {
   DollarSign,
   Tag,
   Loader2,
-  Trash2
+  Trash2,
+  ArrowUpRight,
 } from "lucide-react";
 import { marketplaceService } from "@/services/database.service";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+const takaNumber = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+const taka = { format: (n: number) => `৳ ${takaNumber.format(n)}` };
 
 interface MarketplaceItem {
   id: string;
@@ -140,133 +146,81 @@ export default function Marketplace() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-6 sm:p-8 lg:p-10">
+      <div className="page-container">
         <PageHeader
+          photo={{ src: "/campus/bands/campus-night-market.webp", alt: "A night market stall hung with bags under strings of lights" }}
           eyebrow={"Buy & sell"}
           title="Marketplace,"
           accent="within campus."
-          description="Buy and sell items with other students."
+          description="Buy and sell with other BUET students. Meet on campus to hand things over."
           actions={
             <>
-              <Button 
-             
-                className="gap-2"
-                onClick={() => setIsDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Sell Item
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus aria-hidden="true" />
+                Sell an item
               </Button>
             </>
           }
         />
 
-        {/* Search and Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+        <section aria-label="Listings">
+          <FilterBar
+            label="Filter listings"
+            tabs={[{ value: "all", label: "All" }, ...categories.map((c) => ({ value: c, label: c }))]}
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            search={searchQuery}
+            onSearch={setSearchQuery}
+            searchLabel="Search listings"
+          />
+
+          {filteredItems.length > 0 ? (
+            <ul className="mt-10 grid gap-x-7 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredItems.map((item, index) => (
+                <li key={item.id}>
+                  <ObjectTile title={item.title} category={item.category} index={index} />
+                  <div className="mt-4 flex items-baseline justify-between gap-4">
+                    <h3 className="text-base leading-6">{item.title}</h3>
+                    <span className="whitespace-nowrap font-display text-2xl text-accent">{taka.format(Number(item.price) || 0)}</span>
+                  </div>
+                  {item.description && <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">{item.description}</p>}
+                  <p className="mt-1.5 text-[13px] text-muted-foreground">
+                    {item.seller} · {shortDate(item.created_at)}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    {item.phone ? (
+                      <a href={`tel:${item.phone}`} className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-accent hover:text-foreground">
+                        Call {item.phone}
+                        <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" />
+                      </a>
+                    ) : (
+                      <span />
+                    )}
+                    {user && item.user_id === user.id && (
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} disabled={isLoading} className="text-destructive hover:text-destructive">
+                        <Trash2 aria-hidden="true" /> Delete
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState
+              title={items.length === 0 ? "Nothing for sale yet." : "Nothing matches."}
+              text={items.length === 0 ? "Selling books, a calculator or a lamp? List it for other BUET students." : "Try another category or a different search."}
+              action={items.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Sell the first item</Button> : undefined}
             />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant={categoryFilter === "all" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setCategoryFilter("all")}
-            >
-              All
-            </Button>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={categoryFilter === category ? "default" : "secondary"}
-                size="sm"
-                onClick={() => setCategoryFilter(category)}
-              >
-                {category}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Items Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((item, index) => (
-            <Card 
-              key={item.id} 
-              className="overflow-hidden"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="h-32 bg-muted flex items-center justify-center">
-                <Tag className="h-12 w-12 text-muted-foreground" />
-              </div>
-              <CardContent className="p-5 space-y-4">
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-foreground line-clamp-1">{item.title}</h3>
-                    <Badge variant="secondary">{item.category}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xl font-bold text-primary">
-                    <DollarSign className="h-5 w-5" />
-                    {item.price}
-                  </div>
-                  <span className="text-xs text-muted-foreground">{new Date(item.created_at).toLocaleDateString()}</span>
-                </div>
-
-                <div className="space-y-2 text-sm text-muted-foreground border-t border-border pt-4">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    {item.seller}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    {item.phone}
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1">
-                    Contact Seller
-                  </Button>
-                  {user && item.user_id === user.id && (
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => handleDelete(item.id)}
-                      className="gap-2"
-                      disabled={isLoading}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredItems.length === 0 && (
-          <Card className="p-12 text-center">
-            <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-display text-2xl font-normal tracking-[-0.01em]">No items found</h3>
-            <p className="text-muted-foreground mt-1">Try adjusting your search or filters</p>
-          </Card>
-        )}
+          )}
+        </section>
 
         {/* Sell Item Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>List Item for Sale</DialogTitle>
+              <DialogTitle>Sell an item.</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5">
               <div>
                 <label className="block text-sm font-medium mb-1">Title *</label>
                 <Input
@@ -288,7 +242,7 @@ export default function Marketplace() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Price ($) *</label>
+                <label className="block text-sm font-medium mb-1">Price (৳) *</label>
                 <Input
                   type="number"
                   placeholder="Enter price"

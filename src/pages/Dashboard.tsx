@@ -1,21 +1,30 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Bell, BookOpen, Droplets, MessageSquare, Search, ShoppingBag } from "lucide-react";
+import { ArrowUpRight, BookOpen, Search } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Kicker, SectionTitle } from "@/components/editorial";
+import { StatusDot } from "@/components/ui/status-dot";
+import { shortDate } from "@/lib/dates";
+import { statusLabel, toneFor } from "@/lib/status";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
-interface QueueCounts {
-  complaints: number;
-  notices: number;
-  lostFound: number;
-  marketplace: number;
-  blood: number;
+interface Row {
+  id: string;
+  title: string;
+  created_at?: string;
+  status?: string;
+  category?: string;
+  item_type?: string;
+  is_sold?: boolean;
 }
 
-interface ComplaintRecord {
-  status?: string;
+interface Feeds {
+  complaints: Row[];
+  notices: Row[];
+  lostFound: Row[];
+  marketplace: Row[];
 }
 
 const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
@@ -27,7 +36,7 @@ function getTimeOfDay(date = new Date()) {
     greeting: hour >= 5 && hour < 12 ? "Good morning" : hour >= 12 && hour < 17 ? "Good afternoon" : "Good evening",
     label: hour >= 5 && hour < 12 ? "Morning" : hour >= 12 && hour < 17 ? "Afternoon" : "Evening",
     // A daytime or dusk view of campus, mirrored in a puddle, to match the hour.
-    photo: evening ? "/campus/buet-dusk-reflection.webp" : "/campus/buet-day-reflection.webp",
+    photo: evening ? "/campus/bands/buet-dusk-reflection.webp" : "/campus/bands/buet-day-reflection.webp",
     alt: evening
       ? "BUET buildings at dusk, reflected in standing water"
       : "BUET buildings on a clear day, reflected in standing water",
@@ -38,115 +47,112 @@ export default function Dashboard() {
   const { user } = useAuth();
   const timeOfDay = getTimeOfDay();
   const firstName = user?.name?.trim().split(/\s+/)[0];
-  const [counts, setCounts] = useState<QueueCounts | null>(null);
+  const [feeds, setFeeds] = useState<Feeds | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${baseUrl}/complaints`).then((response) => response.ok ? response.json() : []),
-      fetch(`${baseUrl}/notices`).then((response) => response.ok ? response.json() : []),
-      fetch(`${baseUrl}/lost-found`).then((response) => response.ok ? response.json() : []),
-      fetch(`${baseUrl}/marketplace`).then((response) => response.ok ? response.json() : []),
-      fetch(`${baseUrl}/blood-donation`).then((response) => response.ok ? response.json() : []),
-    ]).then(([complaints, notices, lostFound, marketplace, blood]) => {
-      setCounts({
-        complaints: complaints.filter((item: ComplaintRecord) => item.status !== "resolved").length,
-        notices: notices.length,
-        lostFound: lostFound.length,
-        marketplace: marketplace.length,
-        blood: blood.length,
-      });
-    }).catch(() => setCounts(null));
+    const get = (path: string) => fetch(`${baseUrl}/${path}`).then((r) => (r.ok ? r.json() : [])).catch(() => []);
+    Promise.all([get("complaints"), get("notices"), get("lost-found"), get("marketplace")]).then(
+      ([complaints, notices, lostFound, marketplace]) => setFeeds({ complaints, notices, lostFound, marketplace }),
+    );
   }, []);
 
-  const queue = [
-    { title: "Open complaints", count: counts?.complaints, href: "/complaints", icon: MessageSquare },
-    { title: "Latest notices", count: counts?.notices, href: "/notices", icon: Bell },
-    { title: "Lost and found posts", count: counts?.lostFound, href: "/lost-found", icon: Search },
-    { title: "Marketplace listings", count: counts?.marketplace, href: "/marketplace", icon: ShoppingBag },
-    { title: "Blood donation entries", count: counts?.blood, href: "/blood-donation", icon: Droplets },
+  const openComplaints = feeds?.complaints.filter((c) => c.status !== "resolved") ?? [];
+  const counts = [
+    { label: "Open complaints", value: feeds ? openComplaints.length : null, href: "/complaints" },
+    { label: "Notices", value: feeds?.notices.length ?? null, href: "/notices" },
+    { label: "Lost and found posts", value: feeds?.lostFound.length ?? null, href: "/lost-found" },
+    { label: "For sale", value: feeds ? feeds.marketplace.filter((m) => !m.is_sold).length : null, href: "/marketplace" },
   ];
+
+  const latest = feeds
+    ? [
+        ...feeds.notices.map((n) => ({ ...n, kind: `Notice${n.category ? ` · ${n.category}` : ""}`, href: "/notices" })),
+        ...feeds.lostFound.map((l) => ({ ...l, kind: l.item_type === "found" ? "Found" : "Lost", href: "/lost-found" })),
+        ...feeds.marketplace.filter((m) => !m.is_sold).map((m) => ({ ...m, kind: "Marketplace", href: "/marketplace" })),
+      ]
+        .filter((r) => r.created_at)
+        .sort((x, y) => new Date(y.created_at!).getTime() - new Date(x.created_at!).getTime())
+        .slice(0, 6)
+    : [];
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-7xl space-y-8 p-5 sm:p-8 lg:p-10">
-        <header className="dashboard-hero overflow-hidden rounded-xl">
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,380px)]">
-            <div className="relative z-10 flex flex-col justify-between gap-8 p-6 sm:p-8 lg:p-10">
-              <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                  BUET <span aria-hidden="true" className="mx-2 opacity-50">•</span> {timeOfDay.label}
-                  {user && (
-                    <>
-                      <span aria-hidden="true" className="mx-2 opacity-50">•</span>
-                      {user.role === "admin" ? "Admin" : "Student"}
-                    </>
-                  )}
-                </p>
-                <h1 className="mt-4 font-display text-4xl font-normal leading-[1.02] tracking-[-0.02em] text-foreground sm:text-5xl lg:text-6xl">
-                  {timeOfDay.greeting}
-                  {firstName ? "," : "."}
-                  {firstName && (
-                    <>
-                      <br />
-                      <span className="text-accent/80">{firstName}.</span>
-                    </>
-                  )}
-                </h1>
-                <div aria-hidden="true" className="mt-6 h-px w-10 bg-foreground/40" />
-                <p className="mt-4 max-w-md text-[15px] leading-7 text-muted-foreground">Here's what's open on campus right now.</p>
-              </div>
+      <div className="page-container">
+        <PageHeader
+          eyebrow={`${timeOfDay.label}${user ? (user.role === "admin" ? " · Admin" : " · Student") : ""}`}
+          title={`${timeOfDay.greeting}${firstName ? "," : "."}`}
+          accent={firstName ? `${firstName}.` : undefined}
+          description="Here's what's open on campus right now."
+          photo={{ src: timeOfDay.photo, alt: timeOfDay.alt }}
+          actions={
+            <>
+              <Button asChild><Link to="/lost-found"><Search aria-hidden="true" /> Report a lost item</Link></Button>
+              <Button asChild variant="outline"><Link to="/lend-borrow"><BookOpen aria-hidden="true" /> Lend an item</Link></Button>
+            </>
+          }
+        />
 
-              <section aria-labelledby="quick-actions">
-                <h2 id="quick-actions" className="sr-only">Quick actions</h2>
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild><Link to="/lost-found"><Search aria-hidden="true" /> Post a lost or found item</Link></Button>
-                  <Button asChild variant="outline"><Link to="/lend-borrow"><BookOpen aria-hidden="true" /> Lend and borrow</Link></Button>
-                  <Button asChild variant="outline"><Link to="/marketplace"><ShoppingBag aria-hidden="true" /> Add a listing</Link></Button>
-                  <Button asChild variant="outline"><Link to="/complaints"><MessageSquare aria-hidden="true" /> File a complaint</Link></Button>
-                </div>
-              </section>
-            </div>
+        <ul aria-label="Open on campus" className="grid grid-cols-2 border-y border-white/10 lg:grid-cols-4">
+          {counts.map((c, i) => (
+            <li key={c.label} className={["border-white/10", i % 2 ? "border-l" : "", i >= 2 ? "border-t lg:border-t-0" : "", i === 2 ? "lg:border-l" : ""].join(" ")}>
+              <Link to={c.href} className="group flex h-full flex-col gap-3.5 px-5 py-7 transition-colors hover:bg-white/[0.025] sm:px-6">
+                <span className="flex items-start justify-between">
+                  <span className="font-display text-5xl leading-none tabular-nums">{c.value ?? "—"}</span>
+                  <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+                </span>
+                <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{c.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
 
-            <figure className="relative hidden min-h-[320px] overflow-hidden border-l border-white/[0.07] lg:block">
-              <img src={timeOfDay.photo} alt={timeOfDay.alt} className="dashboard-photo absolute inset-0 h-full w-full object-cover" />
-              <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#0b0a0a] via-transparent to-transparent" />
-            </figure>
-          </div>
-        </header>
-
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
-          <section aria-labelledby="work-queue" className="glass-panel overflow-hidden rounded-xl">
-            <header className="flex items-end justify-between gap-4 border-b border-white/[0.08] px-5 py-5 sm:px-6">
-              <div>
-                <h2 id="work-queue" className="font-display text-2xl font-normal tracking-[-0.01em]">Work queue</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Live counts from campus services</p>
-              </div>
-              <span className="hidden text-xs text-muted-foreground sm:inline">Updated from current records</span>
-            </header>
-            <div className="divide-y divide-white/[0.07]">
-              {queue.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className="group flex items-center gap-4 px-5 py-4 transition-colors duration-200 hover:bg-white/[0.035] sm:px-6"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center text-accent">
-                    <item.icon className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium text-foreground">{item.title}</span>
-                    <span className="mt-0.5 block text-sm text-muted-foreground">View current records</span>
-                  </span>
-                  <span className="min-w-10 text-right font-display text-2xl tabular-nums text-foreground">
-                    {item.count === undefined ? "—" : item.count}
-                  </span>
-                  <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden="true" />
-                </Link>
-              ))}
-            </div>
+        <div className="grid gap-14 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <section aria-labelledby="latest">
+            <SectionTitle
+              id="latest"
+              action={<Link to="/notices" className="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent hover:text-foreground">All notices</Link>}
+            >
+              Latest on campus
+            </SectionTitle>
+            {latest.length > 0 ? (
+              <ol className="divide-y divide-white/[0.07]">
+                {latest.map((row) => (
+                  <li key={`${row.href}-${row.id}`}>
+                    <Link to={row.href} className="group grid grid-cols-[64px_minmax(0,1fr)_16px] items-baseline gap-5 py-5">
+                      <span className="font-display text-xl leading-tight text-accent">{shortDate(row.created_at)}</span>
+                      <span className="min-w-0">
+                        <Kicker className="capitalize">{row.kind}</Kicker>
+                        <span className="mt-1.5 block text-base leading-6">{row.title}</span>
+                      </span>
+                      <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-[#8d857c] transition-colors group-hover:text-foreground" />
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="py-10 text-[15px] text-muted-foreground">{feeds ? "Nothing posted yet. New notices, lost items and listings show up here." : "Loading…"}</p>
+            )}
           </section>
 
-          <ActivityFeed />
+          <section aria-labelledby="open-complaints">
+            <SectionTitle id="open-complaints">Open complaints</SectionTitle>
+            {openComplaints.length > 0 ? (
+              <ul className="divide-y divide-white/[0.07]">
+                {openComplaints.slice(0, 5).map((c) => (
+                  <li key={c.id} className="py-5">
+                    <Link to="/complaints" className="block text-[15px] leading-[22px] hover:text-white">{c.title}</Link>
+                    <span className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                      <StatusDot tone={toneFor(c.status)} className="text-xs text-muted-foreground">{statusLabel(c.status)}</StatusDot>
+                      <span className="opacity-50">·</span>
+                      <span className="capitalize">{c.category}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="py-10 text-[15px] text-muted-foreground">{feeds ? "No open complaints right now." : "Loading…"}</p>
+            )}
+          </section>
         </div>
       </div>
     </MainLayout>
