@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 88 88" role="img" aria-label="CSB 2.0">
+  <rect x="1" y="1" width="86" height="86" rx="18" fill="#0b0a10"/>
+  <rect x="9" y="9" width="70" height="70" rx="10" fill="none" stroke="#f2a93b" stroke-width="2"/>
+  <text x="44" y="61" text-anchor="middle" font-family="'Instrument Serif', Georgia, 'Times New Roman', serif" font-size="50" fill="#f4efe8">C</text>
+  <circle cx="64" cy="26" r="5" fill="#2ec4b0"/>
+</svg>
