@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => ({
       "/api": { target: "http://localhost:3001", changeOrigin: false },
     },
   },
+  // Which build an error report came from: Render sets RENDER_GIT_COMMIT at build time.
+  define: {
+    "import.meta.env.VITE_RELEASE": JSON.stringify((process.env.RENDER_GIT_COMMIT || "dev").slice(0, 7)),
+  },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {

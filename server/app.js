@@ -25,6 +25,7 @@ export const PUBLIC_ROUTES = new Set([
   'GET /api/universities',
   'GET /api/public/campus-stats',
   'GET /api/modules',
+  'POST /api/client-errors',
 ]);
 
 // Map each module to the URL prefix of its API, for MODULES feature flags.
@@ -136,7 +137,28 @@ export function createApp({ pool, log = console }) {
   app.use(['/api/auth/login', '/api/auth/change-password'],
     limiter(15 * 60_000, config.rateLimit.login, 'Too many attempts. Try again in 15 minutes.'));
   app.use('/api/auth/email', limiter(15 * 60_000, 6, 'Too many code requests. Try again in 15 minutes.'));
+  app.use('/api/client-errors', limiter(15 * 60_000, 30, 'Too many error reports.'));
   app.use('/api/auth/register', limiter(60 * 60_000, config.rateLimit.register, 'Too many sign-ups from here. Try again later.'));
+
+  // ---- Error reports from the browser (before the auth gate) --------------------
+  // Crashes and unhandled errors in the app arrive here and go to the same JSON
+  // log as server errors, tagged msg "client error". Nothing is stored. If the
+  // reporter is signed in, their user id is logged so a report can be followed up.
+  app.post('/api/client-errors', async (req, res) => {
+    const parsed = schemas.clientError.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ success: false, error: 'Invalid report' });
+    let user;
+    try {
+      const token = sessionToken(req);
+      if (token) user = (await call('session_user_info', token))?.id;
+    } catch { /* reporting must never fail because of the session lookup */ }
+    log.error(JSON.stringify({
+      level: 'error', msg: 'client error', requestId: req.id, user,
+      userAgent: String(req.get('user-agent') || '').slice(0, 200),
+      ...parsed.data,
+    }));
+    res.status(204).end();
+  });
 
   // ---- Health (before the auth gate; checks the database) ----------------------
   let dbReady = false;
