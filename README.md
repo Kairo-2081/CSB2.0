@@ -307,7 +307,7 @@ database functions decide which changes are allowed.
 > production once a `GROQ_API_KEY` is set on Render.
 
 An "Ask CSB" button on every signed-in page opens a chat. The model (Groq,
-`llama-3.3-70b-versatile` by default) never touches the database; it asks the
+`openai/gpt-oss-120b` by default) never touches the database; it asks the
 server to run one of three tools, and the server decides what it may see.
 
 | Tool | What it does | Who |
@@ -551,7 +551,7 @@ psql postgresql://localhost/csb2 -f scripts/readme-sample-data.sql
 | `DATABASE_SSL` | | `true` to force TLS when the URL lacks `sslmode` |
 | `VITE_PRIVACY_CONTACT` | | Contact address shown on the privacy page (build time) |
 | `GROQ_API_KEY` | | Switches on the campus assistant |
-| `GROQ_MODEL`, `GROQ_BASE_URL` | `llama-3.3-70b-versatile`, Groq's API | Model and any OpenAI-compatible endpoint |
+| `GROQ_MODEL`, `GROQ_BASE_URL` | `openai/gpt-oss-120b`, Groq's API | Model and any OpenAI-compatible endpoint |
 | `ASSISTANT` | | `off` switches the assistant off without removing the key |
 | `RATE_LIMIT_ASSISTANT` | `30` | Questions per student per 10 minutes |
 
