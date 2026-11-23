@@ -375,6 +375,13 @@ export function createApp({ pool, log = console }) {
     return call('report_post', req.user.id, tableFor(b.board), b.row_id, b.reason, b.details ?? null);
   }, 201));
   app.get('/api/admin/reports', route((req) => call('list_reports', req.user.id)));
+  app.get('/api/admin/moderation-log', route((req) => call('list_moderation_log', req.user.id)));
+  app.get('/api/admin/suspended', route((req) => call('list_suspended', req.user.id)));
+  app.post('/api/admin/users/:id/suspend', route((req) => {
+    const b = parse(schemas.suspend, req.body);
+    return call('suspend_user', req.user.id, req.params.id, b.reason);
+  }));
+  app.post('/api/admin/users/:id/unsuspend', route((req) => call('unsuspend_user', req.user.id, req.params.id)));
   app.post('/api/admin/reports/resolve', route((req) => {
     const b = parse(schemas.resolveReport, req.body);
     return call('resolve_reports', req.user.id, b.board, b.row_id, b.action);

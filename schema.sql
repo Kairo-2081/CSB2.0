@@ -363,6 +363,42 @@ BEGIN
 END;
 $$;
 
+-- 4: moderation tools. Posts hide themselves after three reports, admins can
+-- suspend an account, and every moderation step is written to a log.
+DO $$
+DECLARE t text;
+BEGIN
+  IF EXISTS (SELECT 1 FROM schema_migrations WHERE version = 4) THEN
+    RETURN;
+  END IF;
+
+  FOREACH t IN ARRAY ARRAY['notices', 'complaints', 'faculty_suggestions', 'marketplace',
+                           'lost_found', 'bicycles', 'blood_donation', 'animal_welfare'] LOOP
+    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS hidden_at timestamptz', t);
+  END LOOP;
+
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_at timestamptz;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_reason text CHECK (length(suspended_reason) <= 300);
+
+  CREATE TABLE moderation_log (
+    id             text PRIMARY KEY DEFAULT new_id(),
+    university_id  text REFERENCES universities (id),
+    actor_id       text REFERENCES users (id) ON DELETE SET NULL,   -- NULL: done automatically
+    action         text NOT NULL CHECK (action IN ('auto_hide', 'remove', 'dismiss', 'restore',
+                                                    'delete_post', 'suspend', 'unsuspend')),
+    board          text,
+    row_id         text,
+    target_user_id text REFERENCES users (id) ON DELETE SET NULL,
+    detail         text CHECK (length(detail) <= 300),
+    created_at     timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX idx_moderation_log ON moderation_log (university_id, created_at DESC);
+
+  INSERT INTO schema_migrations (version, name)
+  VALUES (4, 'auto-hide, suspensions, moderation log');
+END;
+$$;
+
 -- Keep updated_at current on every UPDATE.
 DO $$
 DECLARE
@@ -420,6 +456,9 @@ BEGIN
   SELECT * INTO u FROM users WHERE id = p_user_id;
   IF NOT FOUND THEN
     PERFORM api_error(401, 'Sign in required');
+  END IF;
+  IF u.suspended_at IS NOT NULL THEN
+    PERFORM api_error(403, 'This account is suspended. Contact your university administrator.');
   END IF;
   RETURN u;
 END;
@@ -517,6 +556,9 @@ BEGIN
     AND password_hash = crypt(p_password, password_hash);
   IF v_id IS NULL THEN
     PERFORM api_error(401, 'Invalid email or password');
+  END IF;
+  IF EXISTS (SELECT 1 FROM users WHERE id = v_id AND suspended_at IS NOT NULL) THEN
+    PERFORM api_error(403, 'This account is suspended. Contact your university administrator.');
   END IF;
   RETURN jsonb_build_object(
     'success', true,
@@ -862,6 +904,15 @@ $$;
 -- the viewer posted it (is_mine) and may delete it (can_delete).
 -- =============================================================================
 
+-- One line in the moderation log. p_actor NULL means it happened automatically.
+CREATE OR REPLACE FUNCTION log_moderation(
+  p_university text, p_actor text, p_action text, p_board text, p_row_id text, p_target text, p_detail text
+) RETURNS void
+LANGUAGE sql AS $$
+  INSERT INTO moderation_log (university_id, actor_id, action, board, row_id, target_user_id, detail)
+  VALUES (p_university, p_actor, p_action, p_board, p_row_id, p_target, left(p_detail, 300));
+$$;
+
 CREATE OR REPLACE FUNCTION board_tables() RETURNS text[]
 LANGUAGE sql IMMUTABLE AS $$
   SELECT ARRAY['notices', 'complaints', 'faculty_suggestions', 'marketplace',
@@ -870,8 +921,9 @@ $$;
 
 CREATE OR REPLACE FUNCTION board_row(p_row jsonb, p_actor users) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
-  SELECT (p_row - 'user_id' - 'deleted_at' - 'deleted_by')
+  SELECT (p_row - 'user_id' - 'deleted_at' - 'deleted_by' - 'hidden_at')
     || jsonb_build_object(
+         'hidden',     p_row->>'hidden_at' IS NOT NULL,
          'is_mine',    p_row->>'user_id' = p_actor.id,
          'can_delete', p_row->>'user_id' = p_actor.id OR p_actor.role = 'admin');
 $$;
@@ -892,6 +944,7 @@ BEGIN
        FROM (SELECT * FROM %I
               WHERE university_id IS NOT DISTINCT FROM $1.university_id
                 AND ($2::timestamptz IS NULL OR created_at < $2)
+                AND (hidden_at IS NULL OR user_id = $1.id OR $1.role = ''admin'')
                 %s
               ORDER BY created_at DESC
               LIMIT $3) r',
@@ -930,6 +983,9 @@ BEGIN
   ELSE
     EXECUTE format('DELETE FROM %I WHERE id = $1', p_table) USING p_id;
   END IF;
+  IF v_owner <> a.id THEN
+    PERFORM log_moderation(v_uni, a.id, 'delete_post', p_table, p_id, v_owner, NULL);
+  END IF;
   RETURN jsonb_build_object('success', true, 'message', 'Deleted');
 END;
 $$;
@@ -937,16 +993,20 @@ $$;
 -- Admins can bring back a soft-deleted notice or complaint.
 CREATE OR REPLACE FUNCTION restore_board_row(p_table text, p_actor_id text, p_id text) RETURNS jsonb
 LANGUAGE plpgsql AS $$
+DECLARE
+  a      users := require_admin(p_actor_id);
+  v_rows int;
 BEGIN
-  PERFORM require_admin(p_actor_id);
   IF p_table NOT IN ('notices', 'complaints') THEN
     PERFORM api_error(404, 'Unknown board');
   END IF;
   EXECUTE format('UPDATE %I SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 AND deleted_at IS NOT NULL', p_table)
     USING p_id;
-  IF NOT FOUND THEN
+  GET DIAGNOSTICS v_rows = ROW_COUNT;   -- EXECUTE does not set FOUND
+  IF v_rows = 0 THEN
     PERFORM api_error(404, 'Not found');
   END IF;
+  PERFORM log_moderation(a.university_id, a.id, 'restore', p_table, p_id, NULL, NULL);
   RETURN jsonb_build_object('success', true);
 END;
 $$;
@@ -1300,6 +1360,7 @@ DECLARE
   a       users := actor(p_actor_id);
   v_owner text;
   v_uni   text;
+  v_rows  int;
 BEGIN
   IF NOT p_board = ANY (board_tables()) THEN
     PERFORM api_error(404, 'Unknown board');
@@ -1314,6 +1375,16 @@ BEGIN
   END IF;
   INSERT INTO reports (board, row_id, reporter_id, university_id, reason, details)
   VALUES (p_board, p_row_id, a.id, v_uni, p_reason, NULLIF(trim(p_details), ''));
+
+  -- Three open reports from different students hide the post until an
+  -- administrator looks at it. The owner and admins can still see it.
+  IF (SELECT count(*) FROM reports WHERE board = p_board AND row_id = p_row_id AND status = 'open') >= 3 THEN
+    EXECUTE format('UPDATE %I SET hidden_at = now() WHERE id = $1 AND hidden_at IS NULL', p_board) USING p_row_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;   -- EXECUTE does not set FOUND
+    IF v_rows > 0 THEN
+      PERFORM log_moderation(v_uni, NULL, 'auto_hide', p_board, p_row_id, v_owner, '3 reports');
+    END IF;
+  END IF;
   RETURN jsonb_build_object('success', true, 'message', 'Thanks. An administrator will review it.');
 EXCEPTION
   WHEN unique_violation THEN
@@ -1347,6 +1418,9 @@ BEGIN
       'label', board_row_label(v_row),
       'excerpt', left(COALESCE(v_row->>'description', v_row->>'feedback', ''), 280),
       'posted_by', COALESCE(v_row->>'posted_by', v_row->>'seller', v_row->>'name'),
+      'owner_id', v_row->>'user_id',
+      'owner_suspended', EXISTS (SELECT 1 FROM users WHERE id = v_row->>'user_id' AND suspended_at IS NOT NULL),
+      'hidden', v_row->>'hidden_at' IS NOT NULL,
       'gone', v_row IS NULL OR (v_row ? 'deleted_at' AND v_row->>'deleted_at' IS NOT NULL)
     );
   END LOOP;
@@ -1358,11 +1432,21 @@ $$;
 -- and complaints). Either way the post's open reports are closed.
 CREATE OR REPLACE FUNCTION resolve_reports(p_actor_id text, p_board text, p_row_id text, p_action text) RETURNS jsonb
 LANGUAGE plpgsql AS $$
-DECLARE a users := require_admin(p_actor_id);
+DECLARE
+  a       users := require_admin(p_actor_id);
+  v_owner text;
 BEGIN
   IF p_action NOT IN ('dismiss', 'remove') THEN
     PERFORM api_error(400, 'Choose dismiss or remove');
   END IF;
+  IF NOT p_board = ANY (board_tables()) THEN
+    PERFORM api_error(404, 'Unknown board');
+  END IF;
+  EXECUTE format('SELECT user_id FROM %I WHERE id = $1', p_board) INTO v_owner USING p_row_id;
+  IF p_action = 'dismiss' THEN
+    EXECUTE format('UPDATE %I SET hidden_at = NULL WHERE id = $1', p_board) USING p_row_id;
+  END IF;
+  PERFORM log_moderation(a.university_id, a.id, p_action, p_board, p_row_id, v_owner, NULL);
   IF p_action = 'remove' THEN
     BEGIN
       PERFORM delete_board_row(p_board, a.id, p_row_id);
@@ -1374,6 +1458,79 @@ BEGIN
                      resolved_by = a.id, resolved_at = now()
   WHERE board = p_board AND row_id = p_row_id AND status = 'open';
   RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- Suspend a student at the admin's university: they are signed out everywhere
+-- and can't sign in or post until an admin lifts it. Admins can't be suspended.
+CREATE OR REPLACE FUNCTION suspend_user(p_actor_id text, p_user_id text, p_reason text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE
+  a users := require_admin(p_actor_id);
+  t users;
+BEGIN
+  SELECT * INTO t FROM users WHERE id = p_user_id;
+  IF NOT FOUND OR t.university_id IS DISTINCT FROM a.university_id THEN
+    PERFORM api_error(404, 'Not found');
+  END IF;
+  IF t.role = 'admin' THEN
+    PERFORM api_error(400, 'Administrators cannot be suspended');
+  END IF;
+  IF t.suspended_at IS NOT NULL THEN
+    PERFORM api_error(409, 'Already suspended');
+  END IF;
+  UPDATE users SET suspended_at = now(), suspended_reason = NULLIF(left(trim(p_reason), 300), '') WHERE id = t.id;
+  UPDATE auth_sessions SET revoked_at = now() WHERE user_id = t.id AND revoked_at IS NULL;
+  PERFORM log_moderation(a.university_id, a.id, 'suspend', NULL, NULL, t.id, p_reason);
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION unsuspend_user(p_actor_id text, p_user_id text) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE a users := require_admin(p_actor_id);
+BEGIN
+  UPDATE users SET suspended_at = NULL, suspended_reason = NULL
+  WHERE id = p_user_id AND suspended_at IS NOT NULL AND university_id IS NOT DISTINCT FROM a.university_id;
+  IF NOT FOUND THEN
+    PERFORM api_error(404, 'Not found');
+  END IF;
+  PERFORM log_moderation(a.university_id, a.id, 'unsuspend', NULL, NULL, p_user_id, NULL);
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION list_suspended(p_actor_id text) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE a users := require_admin(p_actor_id);
+BEGIN
+  RETURN COALESCE((
+    SELECT jsonb_agg(jsonb_build_object('id', id, 'name', name, 'department', department,
+                                        'suspended_at', suspended_at, 'reason', suspended_reason)
+                     ORDER BY suspended_at DESC)
+    FROM users WHERE suspended_at IS NOT NULL AND university_id IS NOT DISTINCT FROM a.university_id
+  ), '[]'::jsonb);
+END;
+$$;
+
+-- The last 200 moderation steps at the admin's university, newest first.
+CREATE OR REPLACE FUNCTION list_moderation_log(p_actor_id text) RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE a users := require_admin(p_actor_id);
+BEGIN
+  RETURN COALESCE((
+    SELECT jsonb_agg(x ORDER BY x->>'at' DESC) FROM (
+      SELECT jsonb_build_object('id', l.id, 'at', l.created_at, 'action', l.action, 'board', l.board,
+                                'row_id', l.row_id, 'detail', l.detail,
+                                'actor', COALESCE(ac.name, 'Automatic'), 'target', tg.name) AS x
+      FROM moderation_log l
+      LEFT JOIN users ac ON ac.id = l.actor_id
+      LEFT JOIN users tg ON tg.id = l.target_user_id
+      WHERE l.university_id IS NOT DISTINCT FROM a.university_id
+      ORDER BY l.created_at DESC
+      LIMIT 200
+    ) s
+  ), '[]'::jsonb);
 END;
 $$;
 

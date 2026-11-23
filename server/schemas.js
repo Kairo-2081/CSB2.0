@@ -159,6 +159,9 @@ export const schemas = {
     limit: z.coerce.number().int().min(1).max(100).optional(),
     offset: z.coerce.number().int().min(0).max(100_000).optional(),
   }),
+  suspend: z.object({
+    reason: z.string().trim().min(3, 'Give a short reason').max(300),
+  }),
   clientError: z.object({
     kind: z.enum(['error', 'unhandledrejection', 'react']),
     message: z.string().trim().min(1).max(500),
