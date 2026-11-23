@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { API_URL } from "@/lib/api-url";
 import { useModules } from "@/lib/modules";
 import { useEffect, useState } from "react";
@@ -72,12 +73,12 @@ const numberFormat = new Intl.NumberFormat("en-US");
 function Stat({ icon: Icon, value, label }: { icon: LucideIcon; value: number | string | null; label: string }) {
   return (
     <li className="flex min-w-0 items-center gap-4 py-5 sm:px-6 sm:first:pl-0">
-      <Icon className="h-7 w-7 shrink-0 text-[#f2a93b]/80" strokeWidth={1.25} aria-hidden="true" />
+      <Icon className="h-7 w-7 shrink-0 text-primary/80" strokeWidth={1.25} aria-hidden="true" />
       <div className="min-w-0">
-        <div className="font-display text-3xl leading-none text-[#f4efe8] tabular-nums">
-          {value === null ? <span className="inline-block h-7 w-12 animate-pulse rounded bg-white/10 motion-reduce:animate-none" /> : typeof value === "number" ? numberFormat.format(value) : value}
+        <div className="font-display text-3xl leading-none text-foreground tabular-nums">
+          {value === null ? <span className="inline-block h-7 w-12 animate-pulse rounded bg-foreground/10 motion-reduce:animate-none" /> : typeof value === "number" ? numberFormat.format(value) : value}
         </div>
-        <div className="mt-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#b7aea4]">{label}</div>
+        <div className="mt-2 text-[11px] font-medium uppercase tracking-[0.14em] text-foreground/75">{label}</div>
       </div>
     </li>
   );
@@ -108,7 +109,7 @@ export default function Index() {
   const showLive = stats.status === "loading" || nonZero.length >= 2;
 
   return (
-    <div className="theme-dark min-h-screen bg-[#07070d] text-[#f4efe8]">
+    <div className="min-h-screen bg-background text-foreground">
       <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden lg:min-h-[max(720px,min(100svh,960px))]">
         {/* Campus photograph, graded down so the type sits on a dusk-toned field */}
         <picture>
@@ -125,7 +126,7 @@ export default function Index() {
         <header className="relative z-20 px-5 pt-5 sm:px-10 sm:pt-7">
           <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-6">
             <Link to="/" className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center border border-[#f4efe8]/70 font-display text-lg leading-none">C</span>
+              <span className="flex h-9 w-9 items-center justify-center border border-foreground/70 font-display text-lg leading-none">C</span>
               <span className="text-sm font-medium uppercase tracking-[0.22em]">CSB 2.0</span>
             </Link>
             <nav aria-label="Primary" className="hidden items-center gap-9 lg:flex">
@@ -137,44 +138,47 @@ export default function Index() {
                 ),
               )}
             </nav>
+            <div className="flex items-center gap-3">
+            <ThemeToggle className="h-[38px] bg-background/30 px-2.5 backdrop-blur-sm" />
             <Link
               to="/auth"
-              className="inline-flex items-center gap-2 rounded-md border border-[#f4efe8]/40 bg-black/20 px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.16em] backdrop-blur-sm transition-colors hover:border-[#f4efe8]/80 hover:bg-black/40"
+              className="inline-flex items-center gap-2 rounded-md border border-foreground/40 bg-background/30 px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.16em] backdrop-blur-sm transition-colors hover:border-foreground/80 hover:bg-background/50"
             >
               Sign in
               <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
+            </div>
           </div>
         </header>
 
         <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-end px-5 pb-10 pt-24 sm:px-10 lg:justify-center lg:pb-36 lg:pt-10">
           <div className="max-w-[640px]">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#cfc5ba]">
-              BUET <span aria-hidden="true" className="mx-2 text-[#cfc5ba]/50">•</span> Notices
-              <span aria-hidden="true" className="mx-2 text-[#cfc5ba]/50">•</span> Lost &amp; found
-              <span aria-hidden="true" className="mx-2 text-[#cfc5ba]/50">•</span> Lending
+            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-foreground/75">
+              BUET <span aria-hidden="true" className="mx-2 text-foreground/75/50">•</span> Notices
+              <span aria-hidden="true" className="mx-2 text-foreground/75/50">•</span> Lost &amp; found
+              <span aria-hidden="true" className="mx-2 text-foreground/75/50">•</span> Lending
             </p>
             <h1 className="mt-6 font-display text-[clamp(2.75rem,6.4vw,5.25rem)] font-normal leading-[0.98] tracking-[-0.02em]">
               Campus life,
               <br />
               in one place.
               <br />
-              <span className="text-[#f2a93b]">Built for BUET.</span>
+              <span className="text-primary">Built for BUET.</span>
             </h1>
-            <div aria-hidden="true" className="mt-8 h-px w-10 bg-[#f4efe8]/50" />
-            <p className="mt-6 max-w-[440px] text-[15px] leading-7 text-[#d6cec5]">
+            <div aria-hidden="true" className="mt-8 h-px w-10 bg-foreground/50" />
+            <p className="mt-6 max-w-[440px] text-[15px] leading-7 text-foreground/75">
               Notices, lost and found, lending and the campus marketplace for BUET students. One sign-in, and every post comes from someone on your campus.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-6">
               <Link
                 to="/auth"
-                className="inline-flex items-center gap-3 rounded-md bg-[#f2a93b] px-6 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#140d04] shadow-[0_12px_40px_rgba(242,169,59,0.25)] transition-colors hover:bg-[#f6bb5c]"
+                className="inline-flex items-center gap-3 rounded-md bg-primary px-6 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-foreground shadow-[0_12px_40px_rgba(242,169,59,0.25)] transition-colors hover:bg-[#f6bb5c]"
               >
                 Get started
                 <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
               </Link>
-              <a href="#services" className="group inline-flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#e9e2d9]">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#f4efe8]/45 transition-colors group-hover:border-[#f4efe8]/90">
+              <a href="#services" className="group inline-flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.16em] text-foreground/90">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-foreground/45 transition-colors group-hover:border-foreground/90">
                   <ArrowDown className="h-4 w-4" aria-hidden="true" />
                 </span>
                 Browse services
@@ -184,8 +188,8 @@ export default function Index() {
         </div>
 
         {(
-          <div className="relative z-10 border-t border-[#f4efe8]/10 bg-gradient-to-t from-[#07070d]/80 to-transparent px-5 sm:px-10 lg:absolute lg:inset-x-0 lg:bottom-0">
-            <ul className="mx-auto grid max-w-[1400px] grid-cols-2 gap-x-6 lg:grid-cols-4 lg:divide-x lg:divide-[#f4efe8]/12" aria-label={showLive ? "Live counts from CSB 2.0 at BUET" : "About CSB 2.0 at BUET"}>
+          <div className="relative z-10 border-t border-foreground/10 bg-gradient-to-t from-background/80 to-transparent px-5 sm:px-10 lg:absolute lg:inset-x-0 lg:bottom-0">
+            <ul className="mx-auto grid max-w-[1400px] grid-cols-2 gap-x-6 lg:grid-cols-4 lg:divide-x lg:divide-foreground/12" aria-label={showLive ? "Live counts from CSB 2.0 at BUET" : "About CSB 2.0 at BUET"}>
               {showLive
                 ? (ready ? nonZero : liveStats).map((s) => (
                     <Stat key={s.key} icon={s.icon} value={ready ? ready[s.key] : null} label={s.label} />
@@ -198,7 +202,7 @@ export default function Index() {
         <a
           href="#services"
           aria-label="Scroll to services"
-          className="absolute bottom-8 right-8 z-20 hidden h-11 w-11 items-center justify-center rounded-full border border-[#f4efe8]/35 bg-black/20 backdrop-blur-sm transition-colors hover:border-[#f4efe8]/80 lg:flex"
+          className="absolute bottom-8 right-8 z-20 hidden h-11 w-11 items-center justify-center rounded-full border border-foreground/35 bg-background/30 backdrop-blur-sm transition-colors hover:border-foreground/80 lg:flex"
         >
           <ArrowDown className="h-4 w-4" aria-hidden="true" />
         </a>
@@ -208,27 +212,27 @@ export default function Index() {
         <div className="mx-auto max-w-[1400px]">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-16">
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#b7aea4]">Campus services</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-foreground/75">Campus services</p>
               <h2 className="mt-4 font-display text-4xl font-normal leading-[1.05] tracking-[-0.015em] sm:text-5xl">
                 Everything on campus,
                 <br />
-                <span className="text-[#f2a93b]">one sign-in.</span>
+                <span className="text-primary">one sign-in.</span>
               </h2>
-              <p className="mt-5 max-w-sm text-[15px] leading-7 text-[#b7aea4]">
+              <p className="mt-5 max-w-sm text-[15px] leading-7 text-foreground/75">
                 Choose a service to continue. You'll be asked to sign in first.
               </p>
             </div>
 
-            <ul className="grid border-t border-[#f4efe8]/10 sm:grid-cols-2">
+            <ul className="grid border-t border-foreground/10 sm:grid-cols-2">
               {modules.filter((module) => enabled(module.href)).map((module) => (
-                <li key={module.href} className="border-b border-[#f4efe8]/10 sm:odd:border-r sm:odd:border-r-[#f4efe8]/10">
-                  <Link to={module.href} className="group flex h-full items-start gap-4 p-5 transition-colors hover:bg-[#f4efe8]/[0.04] sm:p-6">
-                    <module.icon className="mt-0.5 h-5 w-5 shrink-0 text-[#f2a93b]" strokeWidth={1.5} aria-hidden="true" />
+                <li key={module.href} className="border-b border-foreground/10 sm:odd:border-r sm:odd:border-r-foreground/10">
+                  <Link to={module.href} className="group flex h-full items-start gap-4 p-5 transition-colors hover:bg-foreground/[0.04] sm:p-6">
+                    <module.icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.5} aria-hidden="true" />
                     <span className="min-w-0 flex-1">
-                      <span className="block font-medium text-[#f4efe8]">{module.title}</span>
-                      <span className="mt-1 block text-sm leading-6 text-[#b7aea4]">{module.description}</span>
+                      <span className="block font-medium text-foreground">{module.title}</span>
+                      <span className="mt-1 block text-sm leading-6 text-foreground/75">{module.description}</span>
                     </span>
-                    <ArrowUpRight className="h-4 w-4 shrink-0 text-[#b7aea4] transition-colors group-hover:text-[#f4efe8]" aria-hidden="true" />
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-foreground/75 transition-colors group-hover:text-foreground" aria-hidden="true" />
                   </Link>
                 </li>
               ))}
@@ -237,12 +241,12 @@ export default function Index() {
         </div>
       </main>
 
-      <footer className="border-t border-[#f4efe8]/10 px-5 py-6 text-sm text-[#b7aea4] sm:px-10">
+      <footer className="border-t border-foreground/10 px-5 py-6 text-sm text-foreground/75 sm:px-10">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="uppercase tracking-[0.18em] text-[11px]">CSB 2.0</span>
           <span className="flex items-center gap-5">
             <span>Starting at BUET. More campuses later.</span>
-            <Link to="/privacy" className="text-[#d6cec5] underline-offset-4 hover:underline">Privacy</Link>
+            <Link to="/privacy" className="text-foreground/75 underline-offset-4 hover:underline">Privacy</Link>
           </span>
         </div>
       </footer>
