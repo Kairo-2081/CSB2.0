@@ -145,7 +145,14 @@ export function createAssistant({ config, call, log, fetchImpl = globalThis.fetc
       });
       if (res.status === 429) throw new AppError(503, 'The assistant is busy. Try again in a minute.');
       if (!res.ok) {
-        log.error(JSON.stringify({ level: 'error', msg: 'assistant provider error', status: res.status }));
+        // Groq's own error code and message (e.g. model_not_found) say what to fix.
+        // They never contain the student's question.
+        let detail = {};
+        try { detail = (await res.json())?.error ?? {}; } catch { /* not JSON */ }
+        log.error(JSON.stringify({
+          level: 'error', msg: 'assistant provider error', status: res.status, model: config.groqModel,
+          code: detail.code ?? detail.type, error: String(detail.message ?? '').slice(0, 300),
+        }));
         throw new AppError(502, 'The assistant is unavailable right now.');
       }
       return await res.json();
@@ -233,7 +240,10 @@ export function createAssistant({ config, call, log, fetchImpl = globalThis.fetc
         tools: tools(user, boards),
         tool_choice: round < 3 ? 'auto' : 'none',
         temperature: 0.3,
-        max_tokens: 700,
+        // gpt-oss models reason before answering, and that counts against the
+        // token budget; keep the reasoning short so the answer fits.
+        max_tokens: 1500,
+        ...(String(config.groqModel).startsWith('openai/gpt-oss') ? { reasoning_effort: 'low' } : {}),
       });
       const msg = res.choices?.[0]?.message;
       if (!msg) throw new AppError(502, 'The assistant is unavailable right now.');
