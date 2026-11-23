@@ -45,26 +45,29 @@
     --glow: 36 88% 59%;
     --primary-ink: 36 88% 59%;
     --tile-boost: 1;
+    /* Third colour: way-finding (labels, active nav, tabs, dates, tags, second chart series). */
+    --third: 172 55% 50%;
+    --third-ink: 172 60% 58%;
     color-scheme: dark;
   }
 
-  /* Light: white surfaces on warm paper, the same bright saffron as dark mode
-     for buttons and fills, and a deeper amber "ink" for saffron text so small
-     words stay readable on white. */
+  /* Light: blush paper with a burgundy undertone, near-white cards, the same
+     bright saffron as dark mode for buttons, a deeper amber "ink" for saffron
+     text, and burgundy as the glow (charts, highlights). */
   .light {
-    --background: 40 30% 96.5%;
+    --background: 348 42% 95.5%;
     --foreground: 28 20% 10%;
-    --card: 0 0% 100%;
+    --card: 350 60% 99%;
     --card-foreground: 28 20% 10%;
-    --popover: 0 0% 100%;
+    --popover: 350 60% 99%;
     --popover-foreground: 28 20% 10%;
     --primary: 37 92% 52%;
     --primary-foreground: 30 45% 8%;
     --primary-ink: 30 90% 34%;
-    --secondary: 38 24% 92%;
+    --secondary: 348 30% 91%;
     --secondary-foreground: 28 20% 12%;
-    --muted: 38 24% 93%;
-    --muted-foreground: 28 9% 33%;
+    --muted: 348 30% 92%;
+    --muted-foreground: 345 12% 34%;
     --accent: 30 90% 34%;
     --accent-foreground: 0 0% 100%;
     --destructive: 4 72% 45%;
@@ -75,21 +78,38 @@
     --warning-foreground: 0 0% 100%;
     --info: 210 58% 40%;
     --info-foreground: 0 0% 100%;
-    --border: 32 20% 85%;
-    --input: 32 20% 80%;
+    --border: 346 24% 85%;
+    --input: 346 24% 80%;
     --ring: 32 92% 45%;
-    --sidebar-background: 0 0% 100%;
+    --sidebar-background: 348 40% 92%;
     --sidebar-foreground: 28 14% 20%;
     --sidebar-primary: 30 90% 34%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 38 30% 94%;
+    --sidebar-accent: 348 34% 89%;
     --sidebar-accent-foreground: 28 20% 10%;
-    --sidebar-border: 32 20% 88%;
+    --sidebar-border: 346 24% 85%;
     --sidebar-ring: 32 92% 45%;
-    --chart-grid: 32 18% 89%;
-    --glow: 37 92% 52%;
+    --chart-grid: 346 24% 88%;
+    --glow: 345 60% 40%;
     --tile-boost: 1.9;
+    --third: 174 62% 34%;
+    --third-ink: 176 72% 25%;
     color-scheme: light;
+  }
+
+  /* Per-board hue. Set --hue on an element with .hue-scope and everything
+     inside it that uses third / third-ink / third-soft takes that colour. */
+  .hue-scope {
+    --third: var(--hue) 68% 58%;
+    --third-ink: var(--hue) 78% 70%;
+    --third-soft: var(--hue) 45% 14%;
+  }
+
+  .light .hue-scope,
+  .light.hue-scope {
+    --third: var(--hue) 72% 46%;
+    --third-ink: var(--hue) 78% 32%;
+    --third-soft: var(--hue) 90% 94%;
   }
 
   /* Saffron as text needs the deeper ink on white; fills keep the bright tone. */
@@ -117,7 +137,7 @@
     font-feature-settings: "ss01", "cv11";
     background:
       radial-gradient(ellipse at 88% -10%, hsl(var(--glow) / 0.10), transparent 42rem),
-      radial-gradient(ellipse at 0% 100%, rgba(232, 120, 40, 0.06), transparent 40rem),
+      radial-gradient(ellipse at 0% 100%, hsl(var(--third) / 0.09), transparent 40rem),
       hsl(var(--background));
     color: hsl(var(--foreground));
   }
