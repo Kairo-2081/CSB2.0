@@ -318,17 +318,37 @@
 
 
 
+  /* Light mode: the photo stays crisp and fades into blush paper where the
+     headline sits, the same way the page bands do. */
+  .light .landing-photo {
+    filter: saturate(1.05) contrast(1.04);
+  }
+
+  .light .landing-photo-shade {
+    background:
+      linear-gradient(0deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 50%, hsl(var(--background) / 0.82) 72%, hsl(var(--background) / 0.6) 100%);
+  }
+
+  @media (min-width: 1024px) {
+    .light .landing-photo-shade {
+      background:
+        linear-gradient(180deg, hsl(var(--background) / 0.6) 0%, transparent 16%),
+        linear-gradient(90deg, hsl(var(--background)) 20%, hsl(var(--background) / 0.78) 40%, transparent 64%),
+        linear-gradient(0deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.6) 14%, transparent 34%);
+    }
+  }
+
   .landing-nav-link {
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: rgba(244, 239, 232, 0.82);
+    color: hsl(var(--foreground) / 0.82);
     transition: color 150ms ease;
   }
 
   .landing-nav-link:hover {
-    color: #f4efe8;
+    color: hsl(var(--foreground));
   }
 
   .glass-shell {
