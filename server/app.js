@@ -6,6 +6,8 @@ import fs from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { ZodError } from 'zod';
+import { AppError } from './errors.js';
+import { createAssistant } from './assistant.js';
 import { schemas } from './schemas.js';
 import { config } from './config.js';
 import { mailEnabled, sendVerificationCode } from './mailer.js';
@@ -42,12 +44,7 @@ const MODULE_PREFIXES = {
   students: '/api/students',
 };
 
-export class AppError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+export { AppError };
 
 function parseCookies(header = '') {
   const out = {};
@@ -58,7 +55,7 @@ function parseCookies(header = '') {
   return out;
 }
 
-export function createApp({ pool, log = console }) {
+export function createApp({ pool, log = console, assistantFetch } = {}) {
   // Call one function from schema.sql and return its jsonb result.
   // `fn` is always a constant from this file, never user input.
   async function call(fn, ...args) {
@@ -183,6 +180,7 @@ export function createApp({ pool, log = console }) {
     success: true,
     modules: config.modules,
     emailVerification: config.requireEmailVerification ? 'required' : 'off',
+    assistant: config.assistantEnabled ? 'on' : 'off',
   }));
   app.use((req, res, next) => {
     for (const [name, prefix] of Object.entries(MODULE_PREFIXES)) {
@@ -229,7 +227,7 @@ export function createApp({ pool, log = console }) {
   app.use('/api', (req, res, next) => {
     if (!config.requireEmailVerification || !req.user || req.user.emailVerified) return next();
     if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
-    if (req.path.startsWith('/auth/') || req.path.startsWith('/account')) return next();
+    if (req.path.startsWith('/auth/') || req.path.startsWith('/account') || req.path.startsWith('/assistant')) return next();
     return res.status(403).json({ success: false, error: 'Verify your university email before posting. Check your inbox for the code.' });
   });
 
@@ -367,6 +365,22 @@ export function createApp({ pool, log = console }) {
   }
   app.post('/api/notices/:id/restore', route((req) => call('restore_board_row', 'notices', req.user.id, req.params.id)));
   app.post('/api/complaints/:id/restore', route((req) => call('restore_board_row', 'complaints', req.user.id, req.params.id)));
+
+  // ---- Assistant ------------------------------------------------------------------
+  // Off (404) until GROQ_API_KEY is set. Limited per student, not per address.
+  const assistant = createAssistant({ config, call, log, fetchImpl: assistantFetch });
+  const assistantLimit = rateLimit({
+    windowMs: 10 * 60_000, limit: config.rateLimit.assistant, standardHeaders: 'draft-7', legacyHeaders: false,
+    keyGenerator: (req) => `user:${req.user.id}`,
+    message: { success: false, error: 'That is a lot of questions. Try again in a few minutes.' },
+  });
+  app.post('/api/assistant/chat', (req, res, next) => {
+    if (!config.assistantEnabled) return res.status(404).json({ success: false, error: 'The assistant is not switched on' });
+    next();
+  }, assistantLimit, route((req) => {
+    const b = parse(schemas.assistantChat, req.body);
+    return assistant.chat(req.user, b.messages);
+  }));
 
   // ---- Reports and moderation -----------------------------------------------------
   const tableFor = (pathName) => boards[pathName][0];

@@ -1535,6 +1535,69 @@ END;
 $$;
 
 -- =============================================================================
+-- Assistant
+-- =============================================================================
+
+-- Posts matching a free-text query, for the AI assistant. Only what the
+-- student could already see: their university, not hidden by reports (unless
+-- it is their own), not removed. Phone numbers, emails and internal ids are
+-- never returned, so they never reach the AI provider. p_boards is limited by
+-- the server to the modules that are switched on.
+CREATE OR REPLACE FUNCTION assistant_search(p_actor_id text, p_query text, p_boards text[], p_limit int)
+RETURNS jsonb
+LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  a       users := actor(p_actor_id);
+  v_words text[];
+  v_all   jsonb := '[]'::jsonb;
+  v_part  jsonb;
+  t       text;
+  v_owner text;
+BEGIN
+  -- Words of two or more characters; nothing to search for means "latest".
+  SELECT COALESCE(array_agg(DISTINCT w), '{}') INTO v_words
+  FROM unnest(regexp_split_to_array(lower(left(COALESCE(p_query, ''), 200)), '[^[:alnum:]+#-]+')) AS w
+  WHERE length(w) >= 2;
+
+  FOREACH t IN ARRAY p_boards LOOP
+    IF NOT (t = ANY (board_tables()) OR t = 'lending_items') THEN
+      CONTINUE;
+    END IF;
+    v_owner := CASE WHEN t = 'lending_items' THEN 'owner_id' ELSE 'user_id' END;
+    EXECUTE format($q$
+      SELECT COALESCE(jsonb_agg(r), '[]'::jsonb) FROM (
+        SELECT jsonb_build_object(
+                 'board', %L,
+                 'id', j->>'id',
+                 'post', j - 'id' - 'user_id' - 'owner_id' - 'university_id' - 'phone' - 'contact_number'
+                           - 'deleted_at' - 'deleted_by' - 'hidden_at' - 'updated_at' - 'rented_by',
+                 'score', (SELECT count(*) FROM unnest($2::text[]) w
+                            WHERE lower((SELECT string_agg(value, ' ') FROM jsonb_each_text(
+                                    j - 'id' - 'user_id' - 'owner_id' - 'university_id' - 'phone' - 'contact_number'))) LIKE '%%' || w || '%%')
+               ) AS r
+        FROM (SELECT to_jsonb(x) AS j FROM %I x
+               WHERE x.university_id IS NOT DISTINCT FROM $1.university_id
+               ORDER BY x.created_at DESC
+               LIMIT 500) s
+        WHERE (j->>'deleted_at') IS NULL
+          AND ((j->>'hidden_at') IS NULL OR j->>%L = $1.id)
+      ) q
+      WHERE cardinality($2::text[]) = 0 OR (r->>'score')::int > 0
+    $q$, t, t, v_owner)
+    INTO v_part USING a, v_words;
+    v_all := v_all || v_part;
+  END LOOP;
+
+  RETURN COALESCE((
+    SELECT jsonb_agg(e - 'score' ORDER BY (e->>'score')::int DESC, e->'post'->>'created_at' DESC)
+    FROM (SELECT e FROM jsonb_array_elements(v_all) e
+          ORDER BY (e->>'score')::int DESC, e->'post'->>'created_at' DESC
+          LIMIT LEAST(GREATEST(COALESCE(p_limit, 8), 1), 20)) s
+  ), '[]'::jsonb);
+END;
+$$;
+
+-- =============================================================================
 -- Your data: export and account deletion
 -- =============================================================================
 
