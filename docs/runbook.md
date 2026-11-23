@@ -80,11 +80,12 @@ University network page → Reported posts:
 
 Every removal, restore, suspension and automatic hide is written to the Moderation log on the same page. To delete an abusive account and everything it posted, use SQL (`DELETE FROM users WHERE id = '…'`) and tell the other admin.
 
-**A secret leaked** (database password, SMTP password, deploy hook)
+**A secret leaked** (database password, SMTP password, Groq key, deploy hook)
 
 1. Neon → Roles → `neondb_owner` → Reset password. Update `DATABASE_URL` on both Render services and `BACKUP_DATABASE_URL` on GitHub.
 2. SMTP: revoke the app password and create a new one; update `SMTP_URL`.
 3. Deploy hook: Render → Settings → regenerate; update the GitHub secret.
+   Groq: console.groq.com → API Keys → delete the key, create a new one, update `GROQ_API_KEY`.
 4. Sign everyone out if the session table could have been read: `UPDATE auth_sessions SET revoked_at = now() WHERE revoked_at IS NULL;`
 
 **Someone lost admin access**: `UPDATE users SET role = 'admin' WHERE lower(email) = lower('…');` in the Neon SQL editor.
@@ -92,6 +93,7 @@ Every removal, restore, suspension and automatic hide is written to the Moderati
 ## Turning things on
 
 - **Email verification**: set `BREVO_API_KEY` and `MAIL_FROM` on the Render service. `MAIL_FROM` must be a sender verified in Brevo. From then on, unverified accounts can read but not post. Render's free plan blocks the SMTP ports (25, 465, 587), so `SMTP_URL` only works after upgrading to a paid instance.
+- **Campus assistant**: create a free account at console.groq.com, then API Keys → Create. On the Render service set `GROQ_API_KEY` (and optionally `GROQ_MODEL`). The "Ask CSB" button appears after the redeploy. To switch it off quickly, set `ASSISTANT=off`. Render → Logs, search `"msg":"assistant"` for usage (tools used and tokens, never the questions) and `assistant provider error` for failures. If Groq's free limits are hit, students see "The assistant is busy".
 - **Codes not arriving**: Render → Logs, search `Brevo refused`. The message says why (unverified sender, unknown IP, bad key). In Brevo, turn off "Authorised IPs" blocking, since Render's outgoing IPs change.
 - **Fewer modules**: set `MODULES` to the ones you want, for example `notices,lost-found,lend-borrow,marketplace`.
 - **Another university**: add its slug to `OPEN_UNIVERSITIES` and its email domain to `ALLOWED_EMAIL_DOMAINS`.

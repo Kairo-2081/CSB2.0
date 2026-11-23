@@ -44,7 +44,16 @@ export const config = {
     if (env.REQUIRE_EMAIL_VERIFICATION !== undefined) return env.REQUIRE_EMAIL_VERIFICATION === 'true';
     return Boolean(env.BREVO_API_KEY || env.SMTP_URL);
   },
+  // AI assistant (server/assistant.js): on when a Groq key is set, unless ASSISTANT=off.
+  get groqApiKey() { return env.GROQ_API_KEY || null; },
+  get groqModel() { return env.GROQ_MODEL || 'llama-3.3-70b-versatile'; },
+  // Any OpenAI-compatible endpoint; used by tests and local demos.
+  get groqBaseUrl() { return (env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/$/, ''); },
+  get assistantEnabled() {
+    return Boolean(env.GROQ_API_KEY) && env.ASSISTANT !== 'off';
+  },
   rateLimit: {
+    assistant: Number(env.RATE_LIMIT_ASSISTANT) || 30,
     general: Number(env.RATE_LIMIT_GENERAL) || 300,
     login: Number(env.RATE_LIMIT_LOGIN) || 8,
     register: Number(env.RATE_LIMIT_REGISTER) || 10,
