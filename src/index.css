@@ -108,7 +108,7 @@
   .light .hue-scope,
   .light.hue-scope {
     --third: var(--hue) 72% 46%;
-    --third-ink: var(--hue) 78% 32%;
+    --third-ink: var(--hue) 82% 23%;
     --third-soft: var(--hue) 90% 94%;
   }
 

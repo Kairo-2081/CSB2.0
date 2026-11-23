@@ -80,7 +80,7 @@ export function Sidebar() {
               className={cn(
                 "group relative flex items-center gap-3 rounded-lg px-2.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-[color,background-color,transform] duration-200",
                 active
-                  ? "bg-third/15 font-semibold text-third-ink"
+                  ? "bg-third/10 font-semibold text-third-ink"
                   : "text-foreground/75 hover:translate-x-0.5 hover:text-foreground",
               )}
             >
@@ -112,11 +112,11 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
         <div className="mx-2 mb-4 h-px bg-foreground/[0.07]" />
-        <p className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Services</p>
+        <p className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Services</p>
         <NavList items={visibleNavItems} />
         {adminNavItems.length > 0 && (
           <>
-            <p className="mb-3 mt-7 px-3 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Administration</p>
+            <p className="mb-3 mt-7 px-3 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">Administration</p>
             <NavList items={adminNavItems} />
           </>
         )}

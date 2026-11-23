@@ -42,6 +42,7 @@ const categoryConfig: Record<Notice["category"], { label: string }> = {
 
 export default function Notices() {
   const { isAdmin } = useAuth();
+  const [loadError, setLoadError] = useState(false);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -59,11 +60,13 @@ export default function Notices() {
 
   const loadNotices = async () => {
     try {
+      setLoadError(false);
       setIsLoading(true);
       const data = await noticeService.list<Notice>();
       setNotices(data);
     } catch (error) {
       console.error("Error loading notices:", error);
+      setLoadError(true);
       toast.error("Failed to load notices");
     } finally {
       setIsLoading(false);
@@ -181,6 +184,8 @@ export default function Notices() {
             </RowList>
           ) : (
             <EmptyState
+              error={loadError}
+              onRetry={() => void loadNotices()}
               title={notices.length === 0 ? "No notices yet." : "Nothing matches."}
               text={notices.length === 0 ? "Announcements from offices, halls and departments will appear here." : "Try another category or a different search."}
               action={notices.length === 0 && isAdmin ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Post the first notice</Button> : undefined}

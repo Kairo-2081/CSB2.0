@@ -33,6 +33,7 @@ interface MarketplaceItem extends BoardRow {
 
 export default function Marketplace() {
   const { user } = useAuth();
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -52,11 +53,13 @@ export default function Marketplace() {
 
   const loadItems = async () => {
     try {
+      setLoadError(false);
       setIsLoading(true);
       const data = await marketplaceService.list<MarketplaceItem>();
       setItems(data);
     } catch (error) {
       console.error("Error loading items:", error);
+      setLoadError(true);
       toast.error("Failed to load items");
     } finally {
       setIsLoading(false);
@@ -190,6 +193,8 @@ export default function Marketplace() {
             </ul>
           ) : (
             <EmptyState
+              error={loadError}
+              onRetry={() => void loadItems()}
               title={items.length === 0 ? "Nothing for sale yet." : "Nothing matches."}
               text={items.length === 0 ? "Selling books, a calculator or a lamp? List it for other BUET students." : "Try another category or a different search."}
               action={items.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Sell the first item</Button> : undefined}

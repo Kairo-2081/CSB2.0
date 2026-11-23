@@ -35,6 +35,7 @@ interface LostFoundItem extends BoardRow {
 }
 
 export default function LostFound() {
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "lost" | "found">("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -54,11 +55,13 @@ export default function LostFound() {
 
   const loadItems = async () => {
     try {
+      setLoadError(false);
       setIsLoading(true);
       const data = await lostFoundService.list<LostFoundItem>();
       setItems(data);
     } catch (error) {
       console.error("Error loading items:", error);
+      setLoadError(true);
       toast.error("Failed to load items");
     } finally {
       setIsLoading(false);
@@ -189,6 +192,8 @@ export default function LostFound() {
             </RowList>
           ) : (
             <EmptyState
+              error={loadError}
+              onRetry={() => void loadItems()}
               title={items.length === 0 ? "Nothing reported yet." : "Nothing matches."}
               text={items.length === 0 ? "Lost something on campus, or found something that isn't yours? Post it here." : "Try another tab or a different search."}
               action={items.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Report an item</Button> : undefined}

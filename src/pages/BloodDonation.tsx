@@ -36,6 +36,7 @@ interface BloodRequest extends BoardRow {
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 export default function BloodDonation() {
+  const [loadError, setLoadError] = useState(false);
   const [bloodGroupFilter, setBloodGroupFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,11 +55,13 @@ export default function BloodDonation() {
 
   const loadRequests = async () => {
     try {
+      setLoadError(false);
       setIsLoading(true);
       const data = await bloodDonationService.list<BloodRequest>();
       setRequests(data);
     } catch (error) {
       console.error("Error loading requests:", error);
+      setLoadError(true);
       toast.error("Failed to load blood requests");
     } finally {
       setIsLoading(false);
@@ -183,6 +186,8 @@ export default function BloodDonation() {
               </RowList>
             ) : (
               <EmptyState
+              error={loadError}
+              onRetry={() => void loadRequests()}
                 title={requests.length === 0 ? "No donors listed yet." : "No donors in this group."}
                 text={requests.length === 0 ? "List yourself as a donor so people on campus can reach you when blood is needed." : "Try another blood group."}
                 action={requests.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Register as a donor</Button> : undefined}

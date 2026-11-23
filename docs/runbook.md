@@ -65,9 +65,20 @@ Log every restore test in [`evidence/restore-log.md`](evidence/restore-log.md).
 
 The Uptime check workflow calls `/api/health` every 6 hours and emails the repository owner when it fails.
 
+**A student says the page broke**
+
+Crashes and errors in the browser are reported to the server log. Render → Logs, search `client error`. Each line has the page (`url`), the message and stack, the build (`release`, the commit) and the user id if they were signed in.
+
 **A student reports harassment or their details posted without consent**
 
-Admin page → Reported posts → Remove post. Removed notices and complaints can be restored from "Recently removed"; other posts are deleted. If one account keeps abusing, delete it in SQL (`DELETE FROM users WHERE id = '…'` removes everything it posted) and tell the other admin.
+A post that three different students report is hidden automatically until an admin decides; the poster and admins still see it.
+
+University network page → Reported posts:
+- **Remove post.** Removed notices and complaints can be restored from "Recently removed"; other posts are deleted.
+- **Keep it** (or **Keep and show it** for a hidden post) closes the reports and shows the post again.
+- **Suspend poster** signs the account out everywhere and blocks sign-in until an admin lifts it under "Suspended accounts". Their posts stay up; remove them separately. Admins can't be suspended.
+
+Every removal, restore, suspension and automatic hide is written to the Moderation log on the same page. To delete an abusive account and everything it posted, use SQL (`DELETE FROM users WHERE id = '…'`) and tell the other admin.
 
 **A secret leaked** (database password, SMTP password, deploy hook)
 

@@ -35,6 +35,7 @@ const statusConfig = {
 
 
 export default function AnimalWelfare() {
+  const [loadError, setLoadError] = useState(false);
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,10 +53,12 @@ export default function AnimalWelfare() {
 
   const loadReports = async () => {
     try {
+      setLoadError(false);
       const data = await animalWelfareService.list<AnimalReport>();
       setReports(data);
     } catch (error) {
       console.error("Error loading reports:", error);
+      setLoadError(true);
       toast.error("Failed to load reports");
     }
   };
@@ -235,6 +238,8 @@ export default function AnimalWelfare() {
               </RowList>
             ) : (
               <EmptyState
+              error={loadError}
+              onRetry={() => void loadReports()}
                 title={reports.length === 0 ? "No reports yet." : "Nothing at this priority."}
                 text={reports.length === 0 ? "Seen a cat or dog on campus that is hurt, sick or needs feeding? Report it here." : "Try another tab."}
                 action={reports.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Report an animal</Button> : undefined}

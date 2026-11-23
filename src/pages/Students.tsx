@@ -10,6 +10,7 @@ export default function Students() {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
   const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
 
   // The server returns only your university, 100 at a time, and includes
   // phone and email only for people who chose to share them.
@@ -24,7 +25,7 @@ export default function Students() {
         .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load the directory"));
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [search]);
+  }, [search, retry]);
 
   const filtered = users.filter((user) => {
     const matchesText = `${user.name} ${user.department || ""}`
@@ -63,7 +64,6 @@ export default function Students() {
             onSearch={setSearch}
             searchLabel="Search by name or department"
           />
-          {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
           {filtered.length > 0 ? (
             <RowList label="People">
               {filtered.map((user) => (
@@ -90,7 +90,7 @@ export default function Students() {
               ))}
             </RowList>
           ) : (
-            <EmptyState title={users.length === 0 ? "No one here yet." : "No one matches."} text={users.length === 0 ? undefined : "Try another name or department."} />
+            <EmptyState error={Boolean(error)} onRetry={() => setRetry((n) => n + 1)} title={users.length === 0 ? "No one here yet." : "No one matches."} text={users.length === 0 ? undefined : "Try another name or department."} />
           )}
         </section>
       </div>
