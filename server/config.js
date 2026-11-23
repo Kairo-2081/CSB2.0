@@ -47,6 +47,8 @@ export const config = {
   // AI assistant (server/assistant.js): on when a Groq key is set, unless ASSISTANT=off.
   get groqApiKey() { return env.GROQ_API_KEY || null; },
   get groqModel() { return env.GROQ_MODEL || 'llama-3.3-70b-versatile'; },
+  // Any OpenAI-compatible endpoint; used by tests and local demos.
+  get groqBaseUrl() { return (env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/$/, ''); },
   get assistantEnabled() {
     return Boolean(env.GROQ_API_KEY) && env.ASSISTANT !== 'off';
   },

@@ -10,7 +10,6 @@
 import { schemas } from './schemas.js';
 import { AppError } from './errors.js';
 
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 // The names the model uses -> table, module flag, path for links, label.
 export const BOARDS = {
@@ -138,7 +137,7 @@ export function createAssistant({ config, call, log, fetchImpl = globalThis.fetc
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 25_000);
     try {
-      const res = await fetchImpl(GROQ_URL, {
+      const res = await fetchImpl(`${config.groqBaseUrl}/chat/completions`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${config.groqApiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
