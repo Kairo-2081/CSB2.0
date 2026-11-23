@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Flag, Search } from "lucide-react";
+import { Flag, RotateCw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/http";
 import { Button } from "@/components/ui/button";
@@ -176,7 +176,44 @@ export function ObjectTile({ title, category, index = 0 }: { title: string; cate
 }
 
 /** Empty state: a serif line and one action, between hairlines. */
-export function EmptyState({ title, text, action }: { title: string; text?: string; action?: ReactNode }) {
+export function EmptyState({
+  title,
+  text,
+  action,
+  error = false,
+  onRetry,
+}: {
+  title: string;
+  text?: string;
+  action?: ReactNode;
+  /** The list failed to load: say so instead of claiming it is empty. */
+  error?: boolean;
+  onRetry?: () => void;
+}) {
+  if (error) {
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    return (
+      <div role="alert" className="border-y border-destructive/25 py-16 text-center">
+        <p className="animate-enter-scale font-display text-3xl">{offline ? "You're offline." : "Couldn't load this."}</p>
+        <p className="mx-auto mt-3 max-w-md text-[15px] leading-7 text-muted-foreground">
+          {offline
+            ? "Check your connection. The list will be here when you're back online."
+            : "Something went wrong on our side or on the way. Nothing you posted is lost."}
+        </p>
+        {onRetry && (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-2 rounded-md border border-foreground/30 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors hover:border-foreground/60 hover:bg-foreground/[0.04]"
+            >
+              <RotateCw aria-hidden="true" className="h-3.5 w-3.5" /> Try again
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
   return (
     <div className="border-y border-foreground/[0.07] py-16 text-center">
       <p className="animate-enter-scale font-display text-3xl">{title}</p>

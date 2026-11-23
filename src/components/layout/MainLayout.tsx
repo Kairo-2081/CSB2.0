@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { hueFor } from "@/lib/board-hues";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
+import { OfflineBanner } from "./OfflineBanner";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className="min-h-screen bg-background">
       <Sidebar />
       <main className="hue-scope min-h-screen lg:pl-64" style={{ "--hue": hueFor(pathname) } as React.CSSProperties}>
+        <OfflineBanner />
         <VerifyEmailBanner />
         {children}
       </main>

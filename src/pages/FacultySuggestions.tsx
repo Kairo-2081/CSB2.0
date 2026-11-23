@@ -24,6 +24,7 @@ interface Suggestion extends BoardRow {
 
 
 export default function FacultySuggestions() {
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,10 +44,12 @@ export default function FacultySuggestions() {
 
   const loadSuggestions = async () => {
     try {
+      setLoadError(false);
       const data = await facultySuggestionService.list<Suggestion>();
       setSuggestions(data);
     } catch (error) {
       console.error("Error loading suggestions:", error);
+      setLoadError(true);
       toast.error("Failed to load suggestions");
     }
   };
@@ -252,6 +255,8 @@ export default function FacultySuggestions() {
             </RowList>
           ) : (
             <EmptyState
+              error={loadError}
+              onRetry={() => void loadSuggestions()}
               title={suggestions.length === 0 ? "No suggestions yet." : "Nothing matches."}
               text={suggestions.length === 0 ? "Constructive feedback on a course or its teaching goes here." : "Try a different search."}
               action={suggestions.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Make the first suggestion</Button> : undefined}

@@ -49,6 +49,7 @@ const statusConfig = {
 };
 
 export default function Complaints() {
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -67,11 +68,13 @@ export default function Complaints() {
 
   const loadComplaints = async () => {
     try {
+      setLoadError(false);
       setIsLoading(true);
       const data = await complaintService.list<Complaint>();
       setComplaints(data);
     } catch (error) {
       console.error("Error loading complaints:", error);
+      setLoadError(true);
       toast.error("Failed to load complaints");
     } finally {
       setIsLoading(false);
@@ -183,6 +186,8 @@ export default function Complaints() {
             </RowList>
           ) : (
             <EmptyState
+              error={loadError}
+              onRetry={() => void loadComplaints()}
               title={complaints.length === 0 ? "No complaints yet." : "Nothing matches."}
               text={complaints.length === 0 ? "Report a problem in your hall, a lab or on campus, and follow it until it's fixed." : "Try another category or a different search."}
               action={complaints.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Report the first issue</Button> : undefined}
