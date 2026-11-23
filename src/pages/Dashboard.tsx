@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, BookOpen, Search } from "lucide-react";
 import { CountUp } from "@/components/motion/CountUp";
+import { hueFor } from "@/lib/board-hues";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Kicker, SectionTitle } from "@/components/editorial";
@@ -96,15 +97,18 @@ export default function Dashboard() {
           }
         />
 
-        <ul aria-label="Open on campus" className="stagger grid grid-cols-2 border-y border-foreground/10 lg:grid-cols-4">
-          {counts.filter((c) => enabled(c.href)).map((c, i) => (
-            <li key={c.label} className={["border-foreground/10", i % 2 ? "border-l" : "", i >= 2 ? "border-t lg:border-t-0" : "", i === 2 ? "lg:border-l" : ""].join(" ")}>
-              <Link to={c.href} className="group flex h-full flex-col gap-3.5 px-5 py-7 transition-colors hover:bg-foreground/[0.025] sm:px-6">
-                <span className="flex items-start justify-between">
-                  <span className="font-display text-5xl leading-none tabular-nums">{c.value === null ? "—" : c.value >= 100 ? "100+" : <CountUp value={c.value} />}</span>
-                  <ArrowUpRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-[color,transform] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
+        <ul aria-label="Open on campus" className="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {counts.filter((c) => enabled(c.href)).map((c) => (
+            <li key={c.label} className="hue-scope" style={{ "--hue": hueFor(c.href) } as React.CSSProperties}>
+              <Link to={c.href} className="lift group relative flex h-full flex-col gap-4 overflow-hidden rounded-2xl border border-third/25 bg-third-soft px-5 py-6 sm:px-6">
+                <span aria-hidden="true" className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-third/20 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+                <span className="relative flex items-start justify-between">
+                  <span className="font-display text-5xl leading-none tabular-nums text-third-ink">{c.value === null ? "—" : c.value >= 100 ? "100+" : <CountUp value={c.value} />}</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-third text-background transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
+                    <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+                  </span>
                 </span>
-                <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{c.label}</span>
+                <span className="relative text-[11px] font-semibold uppercase tracking-[0.14em] text-third-ink">{c.label}</span>
               </Link>
             </li>
           ))}

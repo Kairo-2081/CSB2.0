@@ -1,5 +1,8 @@
+import { useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
+import { hueFor } from "@/lib/board-hues";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
+import { OfflineBanner } from "./OfflineBanner";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -10,10 +13,12 @@ interface MainLayoutProps {
  * like the landing page, and open with a full-width PageHeader band.
  */
 export function MainLayout({ children }: MainLayoutProps) {
+  const { pathname } = useLocation();
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="min-h-screen lg:pl-64">
+      <main className="hue-scope min-h-screen lg:pl-64" style={{ "--hue": hueFor(pathname) } as React.CSSProperties}>
+        <OfflineBanner />
         <VerifyEmailBanner />
         {children}
       </main>

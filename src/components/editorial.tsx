@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Flag, Search } from "lucide-react";
+import { Flag, RotateCw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/http";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { monthFmt } from "@/lib/dates";
 import { CountUp } from "@/components/motion/CountUp";
+import { TILE_HUES } from "@/lib/board-hues";
 
 /**
  * Building blocks for the editorial list pages: hairline rows, serif dates,
@@ -29,8 +30,8 @@ export function DateBlock({ date, className }: { date?: string | null; className
   const valid = d && !Number.isNaN(d.getTime());
   return (
     <span className={cn("block", className)}>
-      <span className="block font-display text-[40px] leading-none">{valid ? d.getDate() : "—"}</span>
-      <span className="mt-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+      <span className="block font-display text-[40px] leading-none text-third-ink">{valid ? d.getDate() : "—"}</span>
+      <span className="mt-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-third-ink">
         {valid ? monthFmt.format(d) : ""}
       </span>
     </span>
@@ -40,7 +41,7 @@ export function DateBlock({ date, className }: { date?: string | null; className
 /** Small spaced-capital label above a row title. */
 export function Kicker({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <span className={cn("block text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground", className)}>
+    <span className={cn("inline-block w-fit rounded-full bg-third/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-third-ink", className)}>
       {children}
     </span>
   );
@@ -93,7 +94,7 @@ export function FilterBar<T extends string>({
               onClick={() => onChange(tab.value)}
               className={cn(
                 "shrink-0 border-b pb-4 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors",
-                active ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+                active ? "border-b-2 border-third text-third-ink" : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
               {tab.label}
@@ -140,7 +141,7 @@ export function CountStrip({ items, label }: { items: Count[]; label: string }) 
             i === 0 && "sm:pl-0",
           )}
         >
-          <span className="block font-display text-4xl leading-none sm:text-5xl">
+          <span className="block font-display text-4xl leading-none text-third-ink sm:text-5xl">
             {typeof item.value === "number" ? <CountUp value={item.value} /> : item.value}
           </span>
           <span className="mt-3 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -153,28 +154,66 @@ export function CountStrip({ items, label }: { items: Count[]; label: string }) 
   );
 }
 
-// Saffron glows of different strength over the card colour, so tiles work in both themes.
-const tileTones = [0.16, 0.07, 0.13, 0.05, 0.11, 0.09];
 
 /** A warm tile with a large serif initial, used when a listing has no photo. */
 export function ObjectTile({ title, category, index = 0 }: { title: string; category?: string; index?: number }) {
   return (
     <span
-      className="lift group relative flex aspect-[4/3] items-end justify-end overflow-hidden rounded-md border border-foreground/[0.07] p-5"
-      style={{ background: `radial-gradient(120% 90% at 100% 100%, hsl(var(--primary) / ${tileTones[index % tileTones.length]}), hsl(var(--card)) 70%)` }}
+      className="hue-scope lift group relative flex aspect-[4/3] items-end justify-end overflow-hidden rounded-xl border border-third/20 bg-third-soft p-5"
+      style={{ "--hue": TILE_HUES[index % TILE_HUES.length] } as React.CSSProperties}
     >
-      <span aria-hidden="true" className="font-display text-8xl leading-none text-foreground/[0.18] transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-105">
-        {title.trim().charAt(0).toUpperCase() || "·"}
+      <span aria-hidden="true" className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-third/25 blur-2xl transition-transform duration-700 group-hover:scale-125" />
+      <span aria-hidden="true" className="relative font-display text-8xl leading-none text-third/70 transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-105">
+        {title.trim().charAt(0).toUpperCase()}
       </span>
       {category && (
-        <span className="absolute left-4 top-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/75">{category}</span>
+        <span className="absolute left-4 top-4 rounded-full bg-third/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-third-ink">
+          {category}
+        </span>
       )}
     </span>
   );
 }
 
 /** Empty state: a serif line and one action, between hairlines. */
-export function EmptyState({ title, text, action }: { title: string; text?: string; action?: ReactNode }) {
+export function EmptyState({
+  title,
+  text,
+  action,
+  error = false,
+  onRetry,
+}: {
+  title: string;
+  text?: string;
+  action?: ReactNode;
+  /** The list failed to load: say so instead of claiming it is empty. */
+  error?: boolean;
+  onRetry?: () => void;
+}) {
+  if (error) {
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    return (
+      <div role="alert" className="border-y border-destructive/25 py-16 text-center">
+        <p className="animate-enter-scale font-display text-3xl">{offline ? "You're offline." : "Couldn't load this."}</p>
+        <p className="mx-auto mt-3 max-w-md text-[15px] leading-7 text-muted-foreground">
+          {offline
+            ? "Check your connection. The list will be here when you're back online."
+            : "Something went wrong on our side or on the way. Nothing you posted is lost."}
+        </p>
+        {onRetry && (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-2 rounded-md border border-foreground/30 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition-colors hover:border-foreground/60 hover:bg-foreground/[0.04]"
+            >
+              <RotateCw aria-hidden="true" className="h-3.5 w-3.5" /> Try again
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
   return (
     <div className="border-y border-foreground/[0.07] py-16 text-center">
       <p className="animate-enter-scale font-display text-3xl">{title}</p>
@@ -188,7 +227,8 @@ export function EmptyState({ title, text, action }: { title: string; text?: stri
 export function SectionTitle({ id, children, action }: { id: string; children: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-foreground/10 pb-4">
-      <h2 id={id} className="font-display text-[30px] font-normal tracking-[-0.01em]">
+      <h2 id={id} className="flex items-center gap-3 font-display text-[30px] font-normal tracking-[-0.01em]">
+        <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-third shadow-[0_0_0_4px_hsl(var(--third)/0.15)]" />
         {children}
       </h2>
       {action}

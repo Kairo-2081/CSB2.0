@@ -70,6 +70,7 @@ function getBicycleStatus(status?: string) {
 
 
 export default function Bicycles() {
+  const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [bicycles, setBicycles] = useState<Bicycle[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -84,11 +85,13 @@ export default function Bicycles() {
 
   const loadBicycles = async () => {
     try {
+      setLoadError(false);
       setIsLoading(true);
       const data = await bicycleService.list<Bicycle>();
       setBicycles(data);
     } catch (error) {
       console.error("Error loading bicycles:", error);
+      setLoadError(true);
       toast.error("Failed to load bicycles");
     } finally {
       setIsLoading(false);
@@ -214,6 +217,8 @@ export default function Bicycles() {
             </RowList>
           ) : (
             <EmptyState
+              error={loadError}
+              onRetry={() => void loadBicycles()}
               title={bicycles.length === 0 ? "No bicycles yet." : "None in this state."}
               text={bicycles.length === 0 ? "Register a campus bicycle so students can book it." : "Try another tab."}
               action={bicycles.length === 0 ? <Button onClick={() => setIsDialogOpen(true)}><Plus aria-hidden="true" /> Add a bicycle</Button> : undefined}

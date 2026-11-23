@@ -35,3 +35,4 @@ dist-ssr
 # Test output
 test-results/
 playwright-report/
+.github/assets/readme/raw/

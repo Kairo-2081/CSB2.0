@@ -63,7 +63,7 @@ export function PageHeader({ eyebrow, title, accent, description, actions, photo
 
       <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0 max-w-[640px]">
-          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-foreground/75">
+          <p className="inline-flex items-center rounded-full border border-third/40 bg-third/15 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-third-ink backdrop-blur-sm">
             BUET
             {eyebrow && (
               <>
@@ -77,11 +77,11 @@ export function PageHeader({ eyebrow, title, accent, description, actions, photo
             {accent && (
               <>
                 <br />
-                <span className="text-primary">{accent}</span>
+                <span className="text-third-ink">{accent}</span>
               </>
             )}
           </h1>
-          <div aria-hidden="true" className="animate-grow-x mt-7 h-px w-10 bg-primary/70 [animation-delay:250ms]" />
+          <div aria-hidden="true" className="animate-grow-x mt-7 h-0.5 w-12 rounded-full bg-third [animation-delay:250ms]" />
           {description && <p className="mt-5 max-w-[460px] text-[15px] leading-7 text-foreground/75">{description}</p>}
         </div>
         {actions && <div className="flex shrink-0 flex-wrap gap-3">{actions}</div>}

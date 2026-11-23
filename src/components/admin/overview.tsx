@@ -88,7 +88,7 @@ export function Panel({ children, className }: { children: ReactNode; className?
   return (
     <section
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-foreground/[0.08] bg-card/80 p-6 shadow-[0_1px_0_hsl(var(--foreground)/0.04)_inset] backdrop-blur-sm sm:p-7",
+        "surface relative overflow-hidden rounded-2xl p-6 sm:p-7",
         className,
       )}
     >
@@ -170,7 +170,7 @@ export function KpiCard({
   format?: (n: number) => string;
 }) {
   return (
-    <div className="lift group relative overflow-hidden rounded-2xl border border-foreground/[0.08] bg-card/80 p-6 backdrop-blur-sm">
+    <div className="surface lift group relative overflow-hidden rounded-2xl p-6">
       <span aria-hidden="true" className="animate-grow-x absolute left-6 top-0 h-[2px] w-1/2 rounded-full" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <p className="mt-3 text-[40px] font-semibold leading-none tracking-tight">

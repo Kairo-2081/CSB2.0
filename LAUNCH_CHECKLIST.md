@@ -50,7 +50,7 @@ Tick an item only when it is true in production, not when the code exists. Statu
 - [ ] At least half the invited students come back weekly.
 - [ ] Admins still post and moderate without being asked.
 - [ ] Someone other than the author tried to break it (OWASP ZAP baseline or a friend), and the findings are fixed. Record it in `docs/evidence/`.
-- [ ] Accessibility checked with axe on the main pages; findings fixed.
+- [x] Accessibility checked with axe on the main pages; findings fixed. (`tests/e2e/a11y.spec.ts` runs in CI on every push, both themes.)
 - [ ] Decide which modules launch (`MODULES`); all ten are on today.
 - [ ] Open sign-up to all of BUET.
 
