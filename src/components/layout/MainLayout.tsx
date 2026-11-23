@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { hueFor } from "@/lib/board-hues";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
 import { OfflineBanner } from "./OfflineBanner";
+import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <VerifyEmailBanner />
         {children}
       </main>
+      <AssistantPanel />
     </div>
   );
 }
