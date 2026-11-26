@@ -17,6 +17,7 @@ export function moduleForPath(path: string): ModuleName | null {
 interface SiteConfig {
   modules: ModuleName[];
   emailVerification: "required" | "off";
+  assistant?: "on" | "off";
 }
 
 let cached: Promise<SiteConfig> | null = null;
@@ -25,6 +26,7 @@ function loadConfig(): Promise<SiteConfig> {
     // If the check fails, show everything; the API still enforces it.
     modules: [...ALL_MODULES],
     emailVerification: "off" as const,
+    assistant: "off" as const,
   }));
   return cached;
 }
@@ -34,6 +36,7 @@ export function useModules(): {
   enabled: (path: string) => boolean;
   ready: boolean;
   emailVerificationRequired: boolean;
+  assistant: boolean;
 } {
   const [config, setConfig] = useState<SiteConfig | null>(null);
   useEffect(() => {
@@ -47,6 +50,7 @@ export function useModules(): {
   return {
     ready: config !== null,
     emailVerificationRequired: config?.emailVerification === "required",
+    assistant: config?.assistant === "on",
     enabled: (path: string) => {
       const name = moduleForPath(path);
       return name === null || modules === null || modules.includes(name);

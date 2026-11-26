@@ -31,6 +31,7 @@ BUET students, behind one sign-in, with every post from someone on your campus.
 <div align="center">
 
 [Product tour](#product-tour) · [How a post moves](#how-a-post-moves) ·
+[Campus assistant](#campus-assistant) ·
 [Privacy and your data](#privacy-and-your-data) · [Data model](#data-model) ·
 [Architecture](#architecture) · [Performance](#performance) ·
 [Quality](#quality-and-safety) · [Get started](#get-started) ·
@@ -52,18 +53,19 @@ first; other Bangladeshi universities come later.
 | --- | --- |
 | **Ten services, one sign-in** | Notices, lost and found, lend and borrow, marketplace, complaints, bicycles, blood donation, animal welfare, faculty suggestions and a student directory. Each can be switched off with one setting. |
 | **Campus only** | Sign-up needs an `@buet.ac.bd` address, and every list shows posts from your own university only. |
-| **The database decides** | All 55 data functions live in [`schema.sql`](./schema.sql) as PL/pgSQL. The API takes your identity from the session, never from the request, and the database checks campus, ownership and role. |
+| **The database decides** | All 56 data functions live in [`schema.sql`](./schema.sql) as PL/pgSQL. The API takes your identity from the session, never from the request, and the database checks campus, ownership and role. |
 | **Moderation built in** | Any post can be reported; three reports hide it until an admin decides; admins can suspend accounts, and every step is logged. |
+| **Campus assistant** | An optional AI helper (Groq) that searches your campus, drafts posts for you to check and post, explains how things work and, for admins, summarises activity. Phone numbers and emails never leave the server. |
 | **Two themes** | Dark and a blush light mode, each board with its own colour, motion that switches off for reduced-motion users. |
-| **Verified** | 54 API test cases, 7 Playwright tests including an axe scan of 15 pages in both themes, a nightly encrypted backup that is restored and checked every night. |
+| **Verified** | 60 API test cases, 7 Playwright tests including an axe scan of 15 pages in both themes, a nightly encrypted backup that is restored and checked every night. |
 
 ## Who does what
 
 | Role | Gets | How you become one |
 | --- | --- | --- |
 | **Visitor** | The landing page with live campus counts, and the privacy notice | Anyone |
-| **Student** | All ten services: post, borrow, report, find people; a profile with contact privacy, data export and account deletion | Sign up with a university email at an open university |
-| **Admin** | Everything a student has, plus notices, the campus overview charts, the moderation queue, suspensions and the moderation log | Set by another admin or the first-run `ADMIN_EMAIL`; there is no public admin sign-up |
+| **Student** | All ten services: post, borrow, report, find people; the campus assistant; a profile with contact privacy, data export and account deletion | Sign up with a university email at an open university |
+| **Admin** | Everything a student has, plus notices, the campus overview charts, the moderation queue, suspensions, the moderation log and assistant summaries of campus activity | Set by another admin or the first-run `ADMIN_EMAIL`; there is no public admin sign-up |
 
 ## Try it
 
@@ -189,6 +191,20 @@ regenerates every image.
 </tr>
 </table>
 
+#### Campus assistant
+
+<table>
+<tr>
+<td colspan="2" valign="top">
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="./.github/assets/readme/app-assistant.jpg" />
+<img src="./.github/assets/readme/app-assistant-light.jpg" alt="The campus assistant panel beside the dashboard: matching posts as cards, then a lost-and-found draft with title, description, lost or found, place and a Post button" width="100%" />
+</picture>
+<p><b>Ask, find, draft.</b> Matching posts come back as cards that open their board, and a request to post becomes a draft to check and post yourself. Captured locally with a stand-in model, so the reply wording is scripted; the posts found and the draft form are the real app.</p>
+</td>
+</tr>
+</table>
+
 #### Admin
 
 <table>
@@ -285,6 +301,29 @@ database functions decide which changes are allowed.
 | Account | active → suspended → active | Suspension revokes every session |
 | Email | unverified → verified | Six-digit code; required only when mail is configured |
 
+## Campus assistant
+
+> **Status:** built and tested against a stand-in provider; switched on in
+> production once a `GROQ_API_KEY` is set on Render.
+
+An "Ask CSB" button on every signed-in page opens a chat. The model (Groq,
+`openai/gpt-oss-120b` by default) never touches the database; it asks the
+server to run one of three tools, and the server decides what it may see.
+
+| Tool | What it does | Who |
+| --- | --- | --- |
+| `search_posts` | `assistant_search` in `schema.sql`: matching posts at your university that you could already see, without phone numbers, emails or user ids | Everyone |
+| `draft_post` | Fills a post for lost and found, marketplace, complaints, animal welfare, faculty suggestions or lending (notices for admins), checked with the form's own schema. It comes back as an editable draft; you press Post | Everyone |
+| `campus_summary` | The campus overview and open reports, condensed | Admins |
+
+The prompt carries a short guide to how CSB works, answers in English or
+Bangla, and treats post text as data, never as instructions. Limited to 30
+questions per student per 10 minutes; the server logs which tools ran and the
+token count, never the conversation. Tests in
+[`tests/api/assistant.test.js`](./tests/api/assistant.test.js) use a fake
+provider to check that other campuses, hidden posts, phone numbers, emails and
+user ids never reach it.
+
 ## Privacy and your data
 
 > **Status:** the privacy notice is written in plain language but has not yet
@@ -298,6 +337,7 @@ database functions decide which changes are allowed.
 | **Anonymous posts** | Complaints and faculty suggestions can hide your name. The server still records who posted, for ownership and moderation. |
 | **Your data** | Profile → Download my data gives a JSON copy of your account and posts (never the password hash). Delete my account removes the account and everything you posted; the last admin cannot delete themselves. |
 | **Passwords and sessions** | bcrypt hashes (cost 12); sessions are an HttpOnly cookie and only a SHA-256 of the token is stored. |
+| **Campus assistant** | Optional. Questions, the conversation and matching posts go to Groq (United States); phone numbers, emails and account ids are removed first, and only posts you could already see are searched. Conversations are not kept; the assistant never posts for you. |
 | **Error reports** | Browser errors are logged with your user id if you were signed in, so a broken page can be followed up. Nothing else is tracked. |
 
 ## Data model
@@ -348,7 +388,7 @@ Measured on the production build of 23 Nov 2026 (`npm run build`):
 | What loads | Size | Gzipped |
 | --- | --- | --- |
 | Main JavaScript (landing page and shell) | 342 kB | 110 kB |
-| CSS | 104 kB | 18 kB |
+| CSS | 106 kB | 18 kB |
 | Each board page, loaded on demand | 4 to 37 kB | 1 to 13 kB |
 | Admin overview with charts, loaded only on `/admin` | 455 kB | 122 kB |
 
@@ -361,7 +401,7 @@ sleeps when idle, so the first visit after a quiet spell takes up to a minute.
 
 | Area | What is in place |
 | --- | --- |
-| **Tests** | 54 API test cases in 9 files against a real PostgreSQL, one for every access rule; 7 Playwright tests: sign-up to sign-out, ownership, privacy, the retry state and the accessibility scan |
+| **Tests** | 60 API test cases in 10 files against a real PostgreSQL, one for every access rule; 7 Playwright tests: sign-up to sign-out, ownership, privacy, the retry state and the accessibility scan |
 | **Accessibility** | axe (WCAG 2.1 A and AA) over the 3 public pages and all 12 signed-in pages, in dark and light, on every CI run; serious or critical problems fail the build |
 | **API access** | Default deny: only the routes in `PUBLIC_ROUTES` work without a session, and a test walks the router to prove it |
 | **Sessions** | HttpOnly, SameSite=Lax cookie (Secure in production), hashed at rest, 7-day expiry, revoked on sign-out, password change and suspension |
@@ -401,6 +441,7 @@ What this does not prove yet:
 | Database | PostgreSQL with PL/pgSQL; Neon in production |
 | Authentication | Hashed session tokens in an HttpOnly cookie |
 | Email | Brevo HTTPS API (or SMTP where the host allows it) |
+| AI | Groq chat completions with tool calling |
 | Testing | Node.js test runner, Playwright, axe-core |
 | Hosting | Render web service in Singapore, Neon PostgreSQL in Singapore |
 | CI | GitHub Actions with PostgreSQL |
@@ -411,6 +452,7 @@ What this does not prove yet:
 - **The schema applies at start-up.** Simple to run anywhere (one file, no migration tool). The cost: a bad migration stops the server starting, so migrations are tested in CI against a real PostgreSQL, and the runbook says to take a Neon snapshot branch before a risky one reaches production.
 - **Campus scope everywhere.** Every row has a `university_id` and every list filters by the viewer's. Opening a second university is a configuration change, not a rewrite.
 - **Moderation before scale.** Reports, auto-hide, suspensions and a log exist before the pilot, because a campus board without them fills with spam fast.
+- **The AI never touches the database.** The model can only ask for three tools; the server runs them as the signed-in student and strips contact details. The cost: answers are only as good as a keyword search, not a semantic one.
 - **In-house error reporting.** Browser errors go to the same log as server errors instead of a third-party tracker. No account or extra privacy notice is needed; the cost is no dashboard or alerting.
 - **Free tier first.** Render's free plan sleeps when idle and blocks SMTP, so mail goes over Brevo's HTTPS API and the first visit after a quiet spell is slow. A paid plan removes both at launch.
 
@@ -422,6 +464,7 @@ flowchart LR
     W -->|HTTPS, HttpOnly session cookie| A[Express API on Render]
     A -->|SELECT fn ...| D[(PostgreSQL on Neon<br/>schema.sql functions)]
     A --> M[Brevo email]
+    A -->|questions and matching posts,<br/>no phones or emails| G[Groq AI]
     W -.->|browser errors| A
     J[GitHub Actions schedules] -->|pg_dump, restore check| D
     J -->|/api/health| A
@@ -507,6 +550,10 @@ psql postgresql://localhost/csb2 -f scripts/readme-sample-data.sql
 | `CORS_ORIGINS` | none in production | Other origins allowed to call the API |
 | `DATABASE_SSL` | | `true` to force TLS when the URL lacks `sslmode` |
 | `VITE_PRIVACY_CONTACT` | | Contact address shown on the privacy page (build time) |
+| `GROQ_API_KEY` | | Switches on the campus assistant |
+| `GROQ_MODEL`, `GROQ_BASE_URL` | `openai/gpt-oss-120b`, Groq's API | Model and any OpenAI-compatible endpoint |
+| `ASSISTANT` | | `off` switches the assistant off without removing the key |
+| `RATE_LIMIT_ASSISTANT` | `30` | Questions per student per 10 minutes |
 
 All settings are read in [`server/config.js`](./server/config.js); the example
 file is [`.env.local.example`](./.env.local.example). Never commit `.env.local`.
@@ -553,7 +600,8 @@ Point tests at a throwaway database only. CI provisions its own PostgreSQL.
 src/
   pages/              One page per service, plus the landing page, sign-in, profile, admin
   components/         layout/ (sidebar, page header), admin/ (overview, moderation),
-                      editorial.tsx (shared lists and states), motion/, theme/, ui/
+                      assistant/ (the chat panel), editorial.tsx (shared lists and states),
+                      motion/, theme/, ui/
   lib/                API client, board colours, overview formats, error reporting
   services/           Typed calls to the API
 server.js             Starts the server and applies schema.sql
@@ -562,7 +610,8 @@ server/
   config.js           Every environment setting
   schemas.js          zod request schemas
   mailer.js           Brevo or SMTP mail
-schema.sql            Tables, 4 migrations and 55 PL/pgSQL and SQL functions
+  assistant.js        The campus assistant: prompt, tools, Groq calls
+schema.sql            Tables, 4 migrations and 56 PL/pgSQL and SQL functions
 tests/api/            Node test-runner tests against a real PostgreSQL
 tests/e2e/            Playwright smoke and accessibility tests
 scripts/              Database reset, sample data, README captures
@@ -573,7 +622,7 @@ docs/                 Runbook and launch evidence
 ## Project status and next steps
 
 - **Pilot at BUET:** planned for January 2027 with two admins and invited students. Gates are in [`LAUNCH_CHECKLIST.md`](./LAUNCH_CHECKLIST.md).
-- **Before real students:** delete the sample accounts, switch on email codes (Brevo), get a legal read of the privacy notice, and wipe the copy of real accounts on staging.
+- **Before real students:** delete the sample accounts, switch on email codes (Brevo), decide whether to switch on the assistant (Groq key), get a legal read of the privacy notice, and wipe the copy of real accounts on staging.
 - **Before the campus launch:** an outside security pass, a deliberate rollback drill, branch protection on `main`, and a load-time check on a real phone.
 - **Later:** a second university, once 30 days of launch numbers look right.
 

@@ -159,6 +159,12 @@ export const schemas = {
     limit: z.coerce.number().int().min(1).max(100).optional(),
     offset: z.coerce.number().int().min(0).max(100_000).optional(),
   }),
+  assistantChat: z.object({
+    messages: z.array(z.object({
+      role: z.enum(['user', 'assistant']),
+      content: z.string().trim().min(1).max(2000),
+    })).min(1).max(24).refine((m) => m.at(-1).role === 'user', { error: 'The last message must be the question' }),
+  }),
   suspend: z.object({
     reason: z.string().trim().min(3, 'Give a short reason').max(300),
   }),

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 // A plain-language privacy notice. Keep it in step with schema.sql: every
 // claim here describes what the code actually stores and shows.
 const CONTACT = import.meta.env.VITE_PRIVACY_CONTACT as string | undefined;
-const UPDATED = "22 November 2026";
+const UPDATED = "23 November 2026";
 
 const sections: { title: string; body: React.ReactNode }[] = [
   {
@@ -36,7 +36,7 @@ const sections: { title: string; body: React.ReactNode }[] = [
         <li>Your posts show your name. Complaints and faculty suggestions can be posted anonymously; administrators can still see who posted them so abuse can be handled.</li>
         <li>Phone numbers you type into a listing are shown with that listing.</li>
         <li>Blood donation listings show your name, blood group, location and phone, and only after you agree when you list yourself.</li>
-        <li>Administrators can remove posts and see reports. We do not sell or share your data with anyone else.</li>
+        <li>Administrators can remove posts and see reports. We do not sell your data. The only outside service that sees any of it is the AI provider behind the campus assistant, and only when you use the assistant (below).</li>
       </ul>
     ),
   },
@@ -47,6 +47,27 @@ const sections: { title: string; body: React.ReactNode }[] = [
         The site runs on Render and the database on Neon, both in Singapore. Backups are encrypted and kept for
         up to 30 days.
       </p>
+    ),
+  },
+  {
+    title: "The campus assistant",
+    body: (
+      <ul>
+        <li>
+          The assistant is optional. When you ask it something, your question, the conversation so far and the posts
+          that match it are sent to Groq, an AI company in the United States, to write the answer.
+        </li>
+        <li>
+          Phone numbers, email addresses and account ids are removed first and are never sent. Only posts you could
+          already see are searched.
+        </li>
+        <li>
+          We do not keep your conversations. The server logs only that the assistant was used and how much, not what
+          you asked. Groq's own retention is described in its privacy policy.
+        </li>
+        <li>The assistant never posts for you. Drafts appear on your screen; you edit them and press Post yourself.</li>
+        <li>AI answers can be wrong. Check the post itself before you act on it.</li>
+      </ul>
     ),
   },
   {
